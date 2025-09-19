@@ -11,7 +11,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "",
+  title: "Mama's Pizza",
   description: "Discover and order delicious food nearby",
 };
 

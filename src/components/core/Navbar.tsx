@@ -238,7 +238,7 @@ const Navbar: React.FC = () => {
 
             {/* Main Nav */}
             <div className={`w-full bg-white shadow-lg border-b border-gray-100`}>
-                <nav className="flex relative py-4 justify-between ah-container items-center text-gray-800">
+                <nav className="flex relative  justify-between ah-container items-center text-gray-800">
                     {/* Logo Section */}
                     <div className="flex items-center gap-2">
                         <Link href="/" className="flex items-center">

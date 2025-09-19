@@ -5,12 +5,12 @@ import React from 'react';
 
 const Logo = () => {
     return (
-        <div className='w-[80px] md:w-[100px] overflow-hidden '>
+        <div className='w-[40px] md:w-[100px]  overflow-hidden'>
             <Image
                 // style={{
                 //     filter: 'drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.25))'
                 // }}
-                className="object-cover scale-125 w-full"
+                className="object-cover  w-full"
                 src={'/Logo.png'}
                 // src={'/logo/logo-regular.png'}
                 alt="Logo"
