@@ -2,7 +2,7 @@
 import React, { useState, createContext, useContext } from 'react';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminNavbar from '@/components/admin/AdminNavbar';
-import Protected from '@/lib/auth/Protected';
+import RoleProtected from '@/lib/auth/RoleProtected';
 
 // Create context for sidebar state
 const SidebarContext = createContext<{
@@ -35,7 +35,7 @@ const Template = ({ children }: { children: React.ReactNode }) => {
     }
 
     return (
-        <Protected>
+        <RoleProtected allowedRoles={['admin', 'staff']}>
             <SidebarContext.Provider value={{ isCollapsed, setIsCollapsed }}>
                 <div className="min-h-screen bg-gray-50/50">
                     {/* Sidebar */}
@@ -57,7 +57,7 @@ const Template = ({ children }: { children: React.ReactNode }) => {
                     </div>
                 </div>
             </SidebarContext.Provider>
-        </Protected>
+        </RoleProtected>
     );
 };
 

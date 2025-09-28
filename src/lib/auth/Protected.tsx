@@ -2,7 +2,8 @@
 
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "./useAuth";
+// import { useAuth } from "./AuthContext";
 
 // Client-only protective wrapper for admin routes
 export default function Protected({ children }: { children: React.ReactNode }) {

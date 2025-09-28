@@ -1,17 +1,34 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Mail, Lock, Eye, EyeOff, UserPlus, User } from 'lucide-react'
 import Image from 'next/image'
 import Logo from '@/components/core/Logo'
+import { useAuth, authAPI } from '@/lib/auth/useAuth'
+import { useRouter } from 'next/navigation'
 
 const SignUpPage = () => {
     const [showPassword, setShowPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [formData, setFormData] = useState({
         name: '',
         email: '',
-        password: ''
+        password: '',
+        password_confirmation: ''
     })
+    const { setUser, setLoading, loading, user, isAuthenticated } = useAuth()
+    const router = useRouter()
+
+    // Redirect if already authenticated
+    useEffect(() => {
+        if (isAuthenticated && user) {
+            if (user.role === 'admin' || user.role === 'staff') {
+                router.replace('/admin')
+            } else {
+                router.replace('/')
+            }
+        }
+    }, [isAuthenticated, user, router])
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target
@@ -21,10 +38,32 @@ const SignUpPage = () => {
         }))
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        console.log('Sign up form submitted with values:', formData)
-        // Here you would typically handle the sign up logic
+        
+        // Validate passwords match
+        if (formData.password !== formData.password_confirmation) {
+            return
+        }
+        
+        setLoading(true)
+        
+        const result = await authAPI.register(
+            formData.name,
+            formData.email,
+            formData.password,
+            formData.password_confirmation
+        )
+        
+        if (result.success && result.user && result.token) {
+            setUser(result.user, result.token)
+            // Navigation will be handled by useEffect
+        } else {
+            // Handle error - you can add error state here if needed
+            console.error('Registration failed:', result.message)
+        }
+        
+        setLoading(false)
     }
 
     return (
@@ -154,6 +193,39 @@ const SignUpPage = () => {
                                 </div>
                             </div>
 
+                            {/* Confirm Password Field */}
+                            <div>
+                                <label htmlFor="password_confirmation" className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Confirm Password *
+                                </label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <Lock size={20} className="text-gray-400" />
+                                    </div>
+                                    <input
+                                        id="password_confirmation"
+                                        name="password_confirmation"
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        required
+                                        value={formData.password_confirmation}
+                                        onChange={handleInputChange}
+                                        placeholder="Confirm your password"
+                                        className="w-full rounded-2xl border-2 border-gray-200 bg-white pl-12 pr-12 py-4 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        className="absolute inset-y-0 right-0 pr-4 flex items-center"
+                                    >
+                                        {showConfirmPassword ? (
+                                            <EyeOff size={20} className="text-gray-400 hover:text-gray-600" />
+                                        ) : (
+                                            <Eye size={20} className="text-gray-400 hover:text-gray-600" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
                             {/* Terms and Conditions */}
                             <div className="flex items-start">
                                 <input
@@ -177,10 +249,11 @@ const SignUpPage = () => {
                             <div className="pt-4">
                                 <button
                                     type="submit"
-                                    className="group w-full bg-gradient-to-r from-orange-600 to-red-500 text-white px-8 py-3 rounded-2xl text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3"
+                                    disabled={loading}
+                                    className="group w-full bg-gradient-to-r from-orange-600 to-red-500 disabled:opacity-60 disabled:cursor-not-allowed text-white px-8 py-3 rounded-2xl text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3"
                                 >
                                     <UserPlus size={20} className="group-hover:translate-x-1 transition-transform duration-300" />
-                                    Create Account
+                                    {loading ? 'Creating Account...' : 'Create Account'}
                                 </button>
                             </div>
 

@@ -34,7 +34,7 @@ const ItemPage: React.FC = () => {
     const { deleteMenu, loading: deleteLoading } = useDeleteMenu();
 
     const filteredItems = menus.filter(item => {
-        const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             item.category.name.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesStatus = filterStatus === 'All' || item.status === filterStatus;
         const matchesCategory = filterCategory === 'All' || item.category.name === filterCategory;
@@ -206,10 +206,10 @@ const ItemPage: React.FC = () => {
                                                 )}
                                                 <div>
                                                     <div className="text-sm font-medium text-gray-900">
-                                                        {item.title}
+                                                        {item.name}
                                                     </div>
                                                     <div className="text-sm text-gray-500">
-                                                        {item.short_description}
+                                                        {item.details}
                                                     </div>
                                                 </div>
                                             </div>
@@ -221,12 +221,12 @@ const ItemPage: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm font-medium text-gray-900">
-                                                {formatPrice(item.regular_price)}
+                                                {formatPrice(item?.prev_price.toString())}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm font-medium text-green-600">
-                                                {formatPrice(item.actual_price)}
+                                                {formatPrice(item?.main_price.toString())}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">

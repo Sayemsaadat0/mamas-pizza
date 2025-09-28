@@ -1,7 +1,8 @@
 "use client";
 
+import { useAuth } from '@/lib/auth/useAuth';
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/lib/auth/AuthContext';
+// import { useAuth } from '@/lib/auth/AuthContext';
 
 export interface Restaurant {
   id: number;

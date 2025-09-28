@@ -3,21 +3,33 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/auth/useAuth';
 
-export interface Category {
+export interface DeliveryAddress {
   id: string;
-  name: string;
+  fields: string;
+  city: string;
+  country: string;
+  zip_code: string;
+  road_no: string;
+  house_no: string;
+  details: string;
   created_at: string;
   updated_at: string;
 }
 
-// GET categories
-export function useCategories() {
+export interface DeliveryAddressResponse {
+  success: boolean;
+  data: DeliveryAddress[];
+  message?: string;
+}
+
+// GET delivery addresses
+export function useDeliveryAddresses() {
   const { token } = useAuth();
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [addresses, setAddresses] = useState<DeliveryAddress[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCategories = useCallback(async () => {
+  const fetchAddresses = useCallback(async () => {
     if (!token) return;
     
     setLoading(true);
@@ -25,7 +37,7 @@ export function useCategories() {
     
     try {
       const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/v1/categories`, {
+      const response = await fetch(`${base}/api/v1/delivery-addresses`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -34,9 +46,9 @@ export function useCategories() {
       const responseData = await response.json();
       // Handle the API response structure: {success: true, message: "...", data: []}
       if (responseData.success && Array.isArray(responseData.data)) {
-        setCategories(responseData.data);
+        setAddresses(responseData.data);
       } else {
-        setCategories([]);
+        setAddresses([]);
       }
     } catch (err: any) {
       setError(err.message);
@@ -46,19 +58,27 @@ export function useCategories() {
   }, [token]);
 
   useEffect(() => {
-    fetchCategories();
-  }, [token, fetchCategories]);
+    fetchAddresses();
+  }, [token, fetchAddresses]);
 
-  return { categories, loading, error, refetch: fetchCategories };
+  return { addresses, loading, error, refetch: fetchAddresses };
 }
 
-// CREATE category
-export function useCreateCategory() {
+// CREATE delivery address
+export function useCreateDeliveryAddress() {
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createCategory = async (categoryData: { name: string }) => {
+  const createAddress = async (addressData: {
+    fields: string;
+    city: string;
+    country: string;
+    zip_code: string;
+    road_no: string;
+    house_no: string;
+    details: string;
+  }) => {
     if (!token) return null;
     
     setLoading(true);
@@ -66,17 +86,17 @@ export function useCreateCategory() {
     
     try {
       const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/v1/categories`, {
+      const response = await fetch(`${base}/api/v1/delivery-addresses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(categoryData),
+        body: JSON.stringify(addressData),
       });
       
       const data = await response.json();
-      return data.data;
+      return data;
     } catch (err: any) {
       setError(err.message);
       return null;
@@ -85,16 +105,24 @@ export function useCreateCategory() {
     }
   };
 
-  return { createCategory, loading, error };
+  return { createAddress, loading, error };
 }
 
-// UPDATE category
-export function useUpdateCategory() {
+// UPDATE delivery address
+export function useUpdateDeliveryAddress() {
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const updateCategory = async (id: string, categoryData: { name: string }) => {
+  const updateAddress = async (id: string, addressData: {
+    fields?: string;
+    city?: string;
+    country?: string;
+    zip_code?: string;
+    road_no?: string;
+    house_no?: string;
+    details?: string;
+  }) => {
     if (!token) return null;
     
     setLoading(true);
@@ -102,17 +130,17 @@ export function useUpdateCategory() {
     
     try {
       const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/v1/categories/${id}`, {
+      const response = await fetch(`${base}/api/v1/delivery-addresses/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(categoryData),
+        body: JSON.stringify(addressData),
       });
       
       const data = await response.json();
-      return data.data;
+      return data;
     } catch (err: any) {
       setError(err.message);
       return null;
@@ -121,16 +149,16 @@ export function useUpdateCategory() {
     }
   };
 
-  return { updateCategory, loading, error };
+  return { updateAddress, loading, error };
 }
 
-// DELETE category
-export function useDeleteCategory() {
+// DELETE delivery address
+export function useDeleteDeliveryAddress() {
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const deleteCategory = async (id: string) => {
+  const deleteAddress = async (id: string) => {
     if (!token) return null;
     
     setLoading(true);
@@ -138,7 +166,7 @@ export function useDeleteCategory() {
     
     try {
       const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/v1/categories/${id}`, {
+      const response = await fetch(`${base}/api/v1/delivery-addresses/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -155,5 +183,6 @@ export function useDeleteCategory() {
     }
   };
 
-  return { deleteCategory, loading, error };
+  return { deleteAddress, loading, error };
 }
+

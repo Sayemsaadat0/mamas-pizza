@@ -1,7 +1,7 @@
-'use client';;
+'use client';
 import { useEffect, useState } from 'react';
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
     ArrowRight,
@@ -17,7 +17,11 @@ import {
     Instagram,
     Youtube,
     User,
+    LogIn,
+    LogOut,
+    UserCircle,
 } from 'lucide-react';
+import { useAuth } from '@/lib/auth/useAuth';
 import { defaultNavMenuData } from '../constant';
 import Image from 'next/image';
 import Logo from './Logo';
@@ -223,6 +227,8 @@ export const DefaultNavMenuList: React.FC = () => {
 // -------------------------
 const Navbar: React.FC = () => {
     const [hide, setHide] = useState(false);
+    const { user, isAuthenticated, clearUser } = useAuth();
+    const router = useRouter();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -231,6 +237,11 @@ const Navbar: React.FC = () => {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    const handleLogout = () => {
+        clearUser();
+        router.push('/');
+    };
 
     return (
         <div className={` fixed w-full top-0 left-0 z-30`}>
@@ -260,12 +271,31 @@ const Navbar: React.FC = () => {
                         
 
                             {/* User Account */}
-                            <Link
-                                href="/profile"
-                                className="hidden md:flex p-2 rounded-full bg-gray-100 hover:bg-orange-100 transition-colors group"
-                            >
-                                <User size={20} className="text-gray-600 group-hover:text-orange-600" />
-                            </Link>
+                            {isAuthenticated ? (
+                                <div className="hidden md:flex items-center gap-2">
+                                    <Link
+                                        href="/profile"
+                                        className="flex items-center gap-2 p-2 rounded-full bg-gray-100 hover:bg-orange-100 transition-colors group"
+                                    >
+                                        <UserCircle size={20} className="text-gray-600 group-hover:text-orange-600" />
+                                        <span className="text-sm font-medium text-gray-700">{user?.name}</span>
+                                    </Link>
+                                    <button
+                                        onClick={handleLogout}
+                                        className="flex items-center gap-2 p-2 rounded-full bg-red-100 hover:bg-red-200 transition-colors group"
+                                    >
+                                        <LogOut size={16} className="text-red-600" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <Link
+                                    href="/login"
+                                    className="hidden md:flex items-center gap-2 p-2 rounded-full bg-gray-100 hover:bg-orange-100 transition-colors group"
+                                >
+                                    <LogIn size={20} className="text-gray-600 group-hover:text-orange-600" />
+                                    <span className="text-sm font-medium text-gray-700">Login</span>
+                                </Link>
+                            )}
 
                             {/* Cart */}
                             <Link

@@ -1,7 +1,8 @@
 "use client";
 import React, { useState } from "react";
 import { Lock, Eye, EyeOff } from "lucide-react";
-import { useAuth } from "../../lib/auth/AuthContext";
+import { useAuth } from "@/lib/auth/useAuth";
+// import { useAuth } from "../../lib/auth/AuthContext";
 
 const PasswordChangeForm: React.FC = () => {
   const { token } = useAuth();

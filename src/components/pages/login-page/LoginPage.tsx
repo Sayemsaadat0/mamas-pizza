@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Mail, Lock, Eye, EyeOff, LogIn, ChefHat } from 'lucide-react'
 import Image from 'next/image'
 import Logo from '@/components/core/Logo'
-import { useAuth } from '@/lib/auth/AuthContext'
+import { useAuth, authAPI } from '@/lib/auth/useAuth'
 import { useRouter } from 'next/navigation'
 
 const LoginPage = () => {
@@ -13,8 +13,19 @@ const LoginPage = () => {
         email: '',
         password: ''
     })
-    const { login, loading, error } = useAuth()
+    const { setUser, setLoading, loading, user, isAuthenticated } = useAuth()
     const router = useRouter()
+
+    // Redirect if already authenticated
+    useEffect(() => {
+        if (isAuthenticated && user) {
+            if (user.role === 'admin' || user.role === 'staff') {
+                router.replace('/admin')
+            } else {
+                router.replace('/')
+            }
+        }
+    }, [isAuthenticated, user, router])
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target
@@ -26,10 +37,19 @@ const LoginPage = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        const res = await login(formData.email, formData.password)
-        if (res && res.status) {
-            router.replace('/admin')
+        setLoading(true)
+        
+        const result = await authAPI.login(formData.email, formData.password)
+        
+        if (result.success && result.user && result.token) {
+            setUser(result.user, result.token)
+            // Navigation will be handled by useEffect
+        } else {
+            // Handle error - you can add error state here if needed
+            console.error('Login failed:', result.message)
         }
+        
+        setLoading(false)
     }
 
     return (
@@ -138,12 +158,6 @@ const LoginPage = () => {
                                 </div>
                             </div>
 
-                            {/* Error */}
-                            {error && (
-                                <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl p-3">
-                                    {error}
-                                </div>
-                            )}
 
                             {/* Submit Button */}
                             <div className="pt-4">

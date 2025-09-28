@@ -1,16 +1,15 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/lib/auth/AuthContext';
+import { useAuth } from '@/lib/auth/useAuth';
 
 export interface MenuItem {
   id: string;
-  title: string;
+  name: string;
   category_id: string;
-  description: string;
-  short_description: string;
-  regular_price: string;
-  actual_price: string;
+  details: string;
+  main_price: number;
+  prev_price: number;
   thumbnail: string;
   status: 'active' | 'inactive';
   created_at: string;
@@ -54,15 +53,20 @@ export function useMenus() {
     
     try {
       const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/menus`, {
+      const response = await fetch(`${base}/api/v1/items`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
       
-      const data: MenuResponse = await response.json();
-      setMenus(data.data || []);
-      setPagination(data.pagination || null);
+      const responseData = await response.json();
+      // Handle the API response structure: {success: true, message: "...", data: []}
+      if (responseData.success && Array.isArray(responseData.data)) {
+        setMenus(responseData.data);
+      } else {
+        setMenus([]);
+      }
+      setPagination(null); // API doesn't return pagination in this format
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -100,7 +104,7 @@ export function useCreateMenu() {
     
     try {
       const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/menus`, {
+      const response = await fetch(`${base}/api/v1/items`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -145,7 +149,7 @@ export function useUpdateMenu() {
     
     try {
       const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/menus/${id}`, {
+      const response = await fetch(`${base}/api/v1/items/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -181,7 +185,7 @@ export function useDeleteMenu() {
     
     try {
       const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/menus/${id}`, {
+      const response = await fetch(`${base}/api/v1/items/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
