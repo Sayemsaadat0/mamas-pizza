@@ -246,7 +246,7 @@ const ItemPage: React.FC = () => {
                                                     <Edit size={16} />
                                                 </button>
                                                 <button 
-                                                    onClick={() => handleDeleteMenu(item.id)}
+                                                    onClick={() => handleDeleteMenu(item.id.toString())}
                                                     disabled={deleteLoading}
                                                     className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors disabled:opacity-50"
                                                 >

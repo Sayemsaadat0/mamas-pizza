@@ -12,24 +12,20 @@ export interface Category {
 
 // GET categories
 export function useCategories() {
-  const { token } = useAuth();
+  // const { token } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchCategories = useCallback(async () => {
-    if (!token) return;
+    // if (!token) return;
     
     setLoading(true);
     setError(null);
     
     try {
       const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/v1/categories`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(`${base}/api/v1/categories`);
       
       const responseData = await response.json();
       // Handle the API response structure: {success: true, message: "...", data: []}
@@ -43,11 +39,11 @@ export function useCategories() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
     fetchCategories();
-  }, [token, fetchCategories]);
+  }, [fetchCategories]);
 
   return { categories, loading, error, refetch: fetchCategories };
 }

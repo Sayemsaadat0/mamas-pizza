@@ -1,325 +1,164 @@
-"use client";
+'use client'
 
-import React, { useMemo, useState } from "react";
-import Image from "next/image";
-import {
-  ShoppingCart,
-  Utensils,
-  Pizza,
-  Coffee,
-  Sandwich,
-  Search as SearchIcon,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-} from "lucide-react";
-import { useMenus, MenuItem } from "@/hooks/menu.hook";
-import { useCategories, Category } from "@/hooks/category.hook";
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { useCategories } from "@/hooks/category.hook";
+import { useMenus } from "@/hooks/menu.hook";
+import { useDebounce } from "@/hooks/useDebounce";
+import MenuCard from "@/components/MenuCard";
 
-// Legacy interface for backward compatibility
-interface FoodItem {
-  id: number;
-  name: string;
-  description: string;
-  price: string;
-  image: string;
-  category_id?: string;
-}
+const Menu = () => {
+  // --- State ---
+  const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const perPage = 6; // items per page
 
-export default function MenuPage() {
-  const [activeTab, setActiveTab] = useState("All");
-  const [query, setQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const debouncedSearch = useDebounce(search, 500);
 
-  // API hooks
-  const { menus, loading: menusLoading, error: menusError } = useMenus();
-  const { categories, loading: categoriesLoading, error: categoriesError } = useCategories();
-
-  // Convert API menu items to legacy format
-  const convertMenuItemToFoodItem = (menuItem: MenuItem): FoodItem => ({
-    id: parseInt(menuItem.id),
-    name: menuItem.name,
-    description: menuItem.details,
-    price: `$${menuItem.main_price.toFixed(2)}`,
-    image: menuItem.thumbnail || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-    category_id: menuItem.category_id,
+  // --- Hooks ---
+  const { categories, loading: catLoading } = useCategories();
+  const { menus, loading: menuLoading, pagination } = useMenus({
+    category_id: categoryId,
+    per_page: perPage,
+    page,
+    search: debouncedSearch,
   });
 
-  // Get all available items (API data only)
-  const allItems = useMemo(() => {
-    // Ensure menus is always an array
-    const safeMenus = Array.isArray(menus) ? menus : [];
-    return safeMenus.map(convertMenuItemToFoodItem);
-  }, [menus]);
+  console.log(menus) 
 
-  // Create dynamic tabs from categories (API data only)
-  const dynamicTabs = useMemo(() => {
-    const tabs = [{ name: "All", icon: Utensils }];
-    // Ensure categories is always an array
-    const safeCategories = Array.isArray(categories) ? categories : [];
-    safeCategories.forEach(category => {
-      const iconMap: { [key: string]: any } = {
-        'pizza': Pizza,
-        'burgers': Sandwich,
-        'drinks': Coffee,
-        'coffee': Coffee,
-      };
-      const icon = iconMap[category.name.toLowerCase()] || Utensils;
-      tabs.push({ name: category.name, icon });
-    });
-    return tabs;
-  }, [categories]);
-
-  const filteredItems = useMemo(() => {
-    const byTab =
-      activeTab === "All"
-        ? allItems
-        : allItems.filter((item) => {
-            // Find the category name that matches the active tab
-            const category = categories.find(cat => cat.name === activeTab);
-            return category && item.category_id === category.id;
-          });
-
-    const byQuery = query
-      ? byTab.filter((item) =>
-          item.name.toLowerCase().includes(query.toLowerCase())
-        )
-      : byTab;
-
-    return byQuery;
-  }, [allItems, activeTab, query, categories]);
-
-  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentItems = filteredItems.slice(startIndex, endIndex);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  // --- Handlers ---
+  const handleCategoryClick = (id?: string) => {
+    setCategoryId(id);
+    setPage(1);
   };
 
-  // Helper function to get proper image URL
-  const getImageUrl = (imagePath: string | null | undefined) => {
-    if (!imagePath) return "https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80";
-    
-    // If it's already a complete URL, return it
-    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-      return imagePath;
-    }
-    
-    // If it starts with storage/, add the API URL
-    if (imagePath.startsWith('storage/')) {
-      return `${process.env.NEXT_PUBLIC_API_URL}/${imagePath}`;
-    }
-    
-    // Handle specific case: "http://localhost:8000storage/" -> "http://localhost:8000/storage/"
-    if (imagePath.includes('://') && imagePath.includes('storage/')) {
-      return imagePath.replace(/(:\d+)(storage)/, '$1/$2');
-    }
-    
-    // Default: prepend API URL
-    return `${process.env.NEXT_PUBLIC_API_URL}/${imagePath}`;
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setPage(1);
   };
 
-  // Reusable card: same visual design as in MenuSection
-  function FoodCard({ item }: { item: FoodItem }) {
-    return (
-      <div className="group bg-white rounded-3xl shadow-lg hover:shadow-2xl overflow-hidden transition-all duration-500 transform hover:-translate-y-2 border border-gray-100">
-        {/* Image Container */}
-        <div className="relative h-72 w-full overflow-hidden">
-          <Image
-            src={getImageUrl(item.image)}
-            alt={item.name}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-110"
-            onError={(e) => {
-              // Fallback to placeholder if image fails to load
-              const target = e.target as HTMLImageElement;
-              target.src = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80";
-            }}
-          />
-          {/* Overlay gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        </div>
+  const handlePrevPage = () => {
+    if (pagination?.has_prev_page) setPage(prev => prev - 1);
+  };
+  const handleNextPage = () => {
+    if (pagination?.has_next_page) setPage(prev => prev + 1);
+  };
 
-        {/* Content */}
-        <div className="p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-orange-600 transition-colors duration-300">
-            {item.name}
-          </h3>
-          <p className="text-gray-600 mb-4 line-clamp-2 leading-relaxed">
-            {item.description}
-          </p>
-          <div className="flex items-center justify-between">
-            <span className="text-2xl font-bold text-orange-600">
-              {item.price}
-            </span>
-            <button className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center gap-2 group">
-              <ShoppingCart size={20} />
-              Add to Cart
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleAddToCart = (menu: any) => {
+    // Add to cart logic here
+    console.log('Adding to cart:', menu);
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Our <span className="text-orange-600">Delicious</span> Menu
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50">
+      <div className="max-w-7xl mx-auto px-4 py-10 mt-40">
+        {/* --- Page Title --- */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
+            Our Menu
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Discover our carefully crafted dishes made with the finest ingredients
-            and prepared with love by our expert chefs.
-          </p>
+          <div className="w-24 h-1 bg-gradient-to-r from-orange-400 to-orange-600 mx-auto rounded-full"></div>
         </div>
 
-        {/* Search Bar */}
-        <div className="max-w-2xl mx-auto mb-12">
-          <div className="relative">
-            <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+        {/* --- Search --- */}
+        <div className="flex justify-center mb-8">
+          <div className="relative w-full max-w-md">
             <input
               type="text"
-              placeholder="Search for your favorite dish..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:border-orange-500 focus:outline-none transition-colors duration-300 bg-white shadow-sm"
+              placeholder="Search menu..."
+              value={search}
+              onChange={handleSearch}
+              className="w-full border-2 border-orange-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 shadow-sm bg-white placeholder-orange-300"
             />
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-orange-400">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
           </div>
         </div>
 
-        {/* Category Tabs */}
-        {categoriesLoading ? (
-          <div className="text-center py-8">
-            <div className="bg-gray-50 rounded-3xl p-8 max-w-md mx-auto">
-              <div className="text-gray-400 mb-4">
-                <Loader2 size={32} className="mx-auto animate-spin" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">Loading categories...</h3>
-              <p className="text-gray-500">Please wait while we fetch the menu categories.</p>
-            </div>
-          </div>
-        ) : categoriesError ? (
-          <div className="text-center py-8">
-            <div className="bg-red-50 rounded-3xl p-8 max-w-md mx-auto">
-              <div className="text-red-400 mb-4">
-                <Utensils size={32} className="mx-auto" />
-              </div>
-              <h3 className="text-lg font-semibold text-red-700 mb-2">Error loading categories</h3>
-              <p className="text-red-500">{categoriesError}</p>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-wrap justify-center gap-4 mb-12">
-            {dynamicTabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.name}
-                  onClick={() => setActiveTab(tab.name)}
-                  className={`flex items-center gap-3 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 ${
-                    activeTab === tab.name
-                      ? "bg-orange-600 text-white shadow-lg"
-                      : "bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 shadow-md hover:shadow-lg"
-                  }`}
-                >
-                  <Icon size={20} />
-                  {tab.name}
-                </button>
-              );
-            })}
-          </div>
-        )}
+        {/* --- Categories --- */}
+        <div className="flex gap-3 flex-wrap justify-center mb-10">
+          <button
+            onClick={() => handleCategoryClick(undefined)}
+            className={`px-5 py-2.5 rounded-full text-sm font-semibold border-2 transition-all duration-200 ${
+              !categoryId
+                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white border-orange-600 shadow-lg shadow-orange-200"
+                : "bg-white text-orange-600 border-orange-200 hover:bg-orange-50 hover:border-orange-300"
+            }`}
+          >
+            All
+          </button>
+          {catLoading ? (
+            <p className="text-orange-500">Loading categories...</p>
+          ) : (
+            categories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => handleCategoryClick(cat.id)}
+                className={`px-5 py-2.5 rounded-full text-sm font-semibold border-2 transition-all duration-200 ${
+                  categoryId === cat.id
+                    ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white border-orange-600 shadow-lg shadow-orange-200"
+                    : "bg-white text-orange-600 border-orange-200 hover:bg-orange-50 hover:border-orange-300"
+                }`}
+              >
+                {cat.name}
+              </button>
+            ))
+          )}
+        </div>
 
-        {/* Menu Items */}
-        {menusLoading ? (
-          <div className="text-center py-20">
-            <div className="bg-gray-50 rounded-3xl p-12 max-w-md mx-auto">
-              <div className="text-gray-400 mb-4">
-                <Loader2 size={48} className="mx-auto animate-spin" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">Loading menu...</h3>
-              <p className="text-gray-500">Please wait while we fetch the latest menu items.</p>
-            </div>
+        {/* --- Menus --- */}
+        {menuLoading ? (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-500"></div>
+            <p className="text-orange-600 mt-4 font-medium">Loading menus...</p>
           </div>
-        ) : menusError ? (
-          <div className="text-center py-20">
-            <div className="bg-red-50 rounded-3xl p-12 max-w-md mx-auto">
-              <div className="text-red-400 mb-4">
-                <Utensils size={48} className="mx-auto" />
-              </div>
-              <h3 className="text-xl font-semibold text-red-700 mb-2">Error loading menu</h3>
-              <p className="text-red-500 mb-4">{menusError}</p>
-              <p className="text-gray-500">Please try again later.</p>
-            </div>
-          </div>
-        ) : filteredItems.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-10">
-            {currentItems.map((item) => (
-              <FoodCard key={item.id} item={item} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-20">
-            <div className="bg-gray-50 rounded-3xl p-12 max-w-md mx-auto">
-              <div className="text-gray-400 mb-4">
-                <Utensils size={48} className="mx-auto" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">No menu available</h3>
-              <p className="text-gray-500">
-                {query
-                  ? `No items match "${query}"`
-                  : "No menu items are currently available"}
-              </p>
-            </div>
-          </div>
-        )}
+        ) : menus.length === 0 ? (
+          <p className="text-center text-orange-400 py-12 text-lg">No menus found.</p>
+         ) : (
+           <motion.div
+             layout
+             className="grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6"
+           >
+             {menus.map((menu, index) => (
+               <MenuCard
+                 key={menu.id}
+                 menu={menu}
+                 index={index}
+                 onAddToCart={handleAddToCart}
+               />
+             ))}
+           </motion.div>
+         )}
 
-        {/* Pagination */}
-        {filteredItems.length > itemsPerPage && (
+        {/* --- Pagination --- */}
+        {pagination && (
           <div className="flex justify-center items-center gap-4 mt-12">
             <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-md hover:shadow-lg"
+              disabled={!pagination.has_prev_page}
+              onClick={handlePrevPage}
+              className="px-6 py-2.5 border-2 border-orange-200 rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed bg-white text-orange-600 hover:bg-orange-50 hover:border-orange-300 transition-all duration-200"
             >
-              <ChevronLeft size={20} />
               Previous
             </button>
-
-            <div className="flex gap-2">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  onClick={() => handlePageChange(page)}
-                  className={`w-10 h-10 rounded-xl font-semibold transition-all duration-300 ${
-                    currentPage === page
-                      ? "bg-orange-600 text-white shadow-lg"
-                      : "bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 shadow-md hover:shadow-lg"
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-            </div>
-
+            <span className="text-orange-700 font-medium px-4 py-2 bg-orange-50 rounded-lg border border-orange-200">
+              Page {pagination.current_page} of {pagination.total_pages}
+            </span>
             <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-md hover:shadow-lg"
+              disabled={!pagination.has_next_page}
+              onClick={handleNextPage}
+              className="px-6 py-2.5 border-2 border-orange-200 rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed bg-white text-orange-600 hover:bg-orange-50 hover:border-orange-300 transition-all duration-200"
             >
               Next
-              <ChevronRight size={20} />
             </button>
           </div>
         )}
       </div>
     </div>
   );
-}
+};
+
+export default Menu;

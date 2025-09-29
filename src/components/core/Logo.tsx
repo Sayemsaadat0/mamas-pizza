@@ -5,14 +5,10 @@ import React from 'react';
 
 const Logo = () => {
     return (
-        <div className='w-[40px] md:w-[100px]  overflow-hidden'>
+        <div className='w-[60px] sm:w-[80px] md:w-[100px]  overflow-hidden'>
             <Image
-                // style={{
-                //     filter: 'drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.25))'
-                // }}
-                className="object-cover  w-full"
+                className="object-contain w-full h-auto"
                 src={'/Logo.png'}
-                // src={'/logo/logo-regular.png'}
                 alt="Logo"
                 width={220}
                 height={150}

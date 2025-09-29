@@ -10,7 +10,6 @@ export default function Footer() {
     { name: "Home", href: "/" },
     { name: "Menu", href: "/menu" },
     { name: "About", href: "/about" },
-    { name: "Contact", href: "/contact" },
     { name: "Track Order", href: "/track" },
     { name: "My Account", href: "/profile" }
   ];
@@ -106,33 +105,13 @@ export default function Footer() {
               </nav>
             </div>
 
-            {/* Newsletter & Social */}
+            {/* Social Links */}
             <div className="space-y-6 text-center md:text-left">
               <div>
-                <h3 className="text-lg font-semibold mb-4 text-white">Newsletter</h3>
-                <p className="text-gray-300 text-sm mb-4 max-w-sm mx-auto md:mx-0">
-                  Get the latest deals, menu updates, and exclusive offers delivered to your inbox.
+                <h3 className="text-lg font-semibold mb-4 text-white">Follow Us</h3>
+                <p className="text-gray-300 text-sm mb-6 max-w-sm mx-auto md:mx-0">
+                  Stay connected with us on social media for the latest updates and special offers.
                 </p>
-                <form className="space-y-3" onSubmit={(e) => e.preventDefault()}>
-                  <input
-                    type="email"
-                    placeholder="Enter your email"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-600 bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
-                    aria-label="Email address"
-                  />
-                  <button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-orange-600 to-red-500 text-white px-4 py-3 rounded-lg font-semibold hover:from-orange-700 hover:to-red-600 transition-all duration-300 transform hover:-translate-y-0.5"
-                    aria-label="Subscribe"
-                  >
-                    Subscribe Now
-                  </button>
-                </form>
-              </div>
-
-              {/* Social Links */}
-              <div>
-                <h4 className="text-sm font-semibold mb-4 text-white">Follow Us</h4>
                 <div className="flex items-center gap-3 justify-center md:justify-start">
                   {socialLinks.map((social) => (
                     <a

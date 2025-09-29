@@ -11,8 +11,4 @@ export const defaultNavMenuData = [
     title: "About",
     path: "/about",
   },
-  {
-    title: "Contact",
-    path: "/contact",
-  },
 ];
