@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { MapPin, Save, X, Edit3 } from 'lucide-react';
+import { MapPin, Save, X } from 'lucide-react';
 import { useCreateDeliveryAddress, useUpdateDeliveryAddress, DeliveryAddress } from '@/hooks/delivery-address.hook';
 import { useNotification } from '@/components/ui/NotificationProvider';
 // import { useNotification } from '@/lib/auth/useAuth';
@@ -25,11 +25,9 @@ export default function DeliveryAddressForm({
   
   const [formData, setFormData] = useState({
     fields: '',
-    city: '',
-    country: '',
+    address_line_1: '',
+    address_line_2: '',
     zip_code: '',
-    road_no: '',
-    house_no: '',
     details: '',
   });
 
@@ -40,11 +38,9 @@ export default function DeliveryAddressForm({
     if (address) {
       setFormData({
         fields: address.fields || '',
-        city: address.city || '',
-        country: address.country || '',
+        address_line_1: address.address_line_1 || '',
+        address_line_2: address.address_line_2 || '',
         zip_code: address.zip_code || '',
-        road_no: address.road_no || '',
-        house_no: address.house_no || '',
         details: address.details || '',
       });
     }
@@ -72,7 +68,7 @@ export default function DeliveryAddressForm({
         result = await createAddress(formData);
       }
 
-      if (result?.success) {
+      if (result) {
         showNotification({
           type: 'success',
           title: 'Success',
@@ -113,7 +109,7 @@ export default function DeliveryAddressForm({
       {/* Form */}
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
         {/* Fields */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-6">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Area/Fields *
@@ -131,31 +127,30 @@ export default function DeliveryAddressForm({
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              City *
+              Address Line 1 *
             </label>
             <input
               type="text"
-              name="city"
-              value={formData.city}
+              name="address_line_1"
+              value={formData.address_line_1}
               onChange={handleInputChange}
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-              placeholder="e.g., Dhaka"
+              placeholder="e.g., House 10, Road 5, Dhaka"
             />
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Country *
+              Address Line 2
             </label>
             <input
               type="text"
-              name="country"
-              value={formData.country}
+              name="address_line_2"
+              value={formData.address_line_2}
               onChange={handleInputChange}
-              required
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-              placeholder="e.g., Bangladesh"
+              placeholder="e.g., Near the main gate, 2nd floor"
             />
           </div>
 
@@ -171,36 +166,6 @@ export default function DeliveryAddressForm({
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
               placeholder="e.g., 1200"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Road Number *
-            </label>
-            <input
-              type="text"
-              name="road_no"
-              value={formData.road_no}
-              onChange={handleInputChange}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-              placeholder="e.g., Road 5"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              House Number *
-            </label>
-            <input
-              type="text"
-              name="house_no"
-              value={formData.house_no}
-              onChange={handleInputChange}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-              placeholder="e.g., House 10"
             />
           </div>
         </div>

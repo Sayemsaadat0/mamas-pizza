@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { User, Shield, Calendar } from 'lucide-react'
+import { Shield, Calendar } from 'lucide-react';
 import ImageUpload from './ImageUpload'
 import { User as UserType } from '@/lib/auth/useAuth'
 

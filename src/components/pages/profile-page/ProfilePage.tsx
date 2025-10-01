@@ -29,7 +29,7 @@ const ProfilePage = () => {
   const [editingAddress, setEditingAddress] = useState<DeliveryAddress | null>(null)
   
   // Delivery address hooks
-  const { addresses, loading: addressesLoading, refetch: refetchAddresses } = useDeliveryAddresses()
+  const { addresses, loading: addressesLoading, fetchAddresses: refetchAddresses } = useDeliveryAddresses()
   const { deleteAddress } = useDeleteDeliveryAddress()
 
   // Initialize form data when user data is available
@@ -136,7 +136,7 @@ const ProfilePage = () => {
     if (window.confirm('Are you sure you want to delete this delivery address?')) {
       try {
         const result = await deleteAddress(address.id)
-        if (result?.success) {
+        if (result) {
           showNotification({
             type: 'success',
             title: 'Success',
@@ -147,7 +147,7 @@ const ProfilePage = () => {
           showNotification({
             type: 'error',
             title: 'Error',
-            message: result?.message || 'Failed to delete delivery address',
+            message: 'Failed to delete delivery address',
           })
         }
       } catch (error: any) {

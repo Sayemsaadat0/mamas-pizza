@@ -1,105 +1,263 @@
+"use client"
+
 import Image from "next/image"
+import { useState } from "react"
+import { useSearchPostCodes } from "@/hooks/post-codes.hook"
+import { useCreateGuestPostCode } from "@/hooks/post-codes.hook"
+import { 
+    Dialog, 
+    DialogContent, 
+    DialogDescription, 
+    DialogFooter, 
+    DialogHeader, 
+    DialogTitle 
+} from "@/components/ui/dialog"
+import { toast } from "sonner"
 
 const HeroSection = () => {
+    const [zipCode, setZipCode] = useState("")
+    const [isSearching, setIsSearching] = useState(false)
+    const [showDialog, setShowDialog] = useState(false)
+    const [showFoundAreasDialog, setShowFoundAreasDialog] = useState(false)
+    const [isSubmittingRequest, setIsSubmittingRequest] = useState(false)
+
+    // Hooks for post code functionality
+    const { searchPostCodes, postCodes } = useSearchPostCodes()
+    const { createGuestPostCode, loading: createLoading } = useCreateGuestPostCode()
+
+    const handleSearch = async () => {
+        if (!zipCode.trim()) {
+            toast.error("Please enter a zip code or address")
+            return
+        }
+
+        setIsSearching(true)
+        
+        try {
+            // Search for post codes
+            await searchPostCodes(zipCode.trim())
+            
+            // Check if any post codes were found
+            if (postCodes.length === 0) {
+                // No post codes found, show dialog
+                setShowDialog(true)
+            } else {
+                // Post codes found, show areas dialog
+                setShowFoundAreasDialog(true)
+            }
+        } catch (error) {
+            console.error("Search error:", error)
+            toast.error("Failed to search delivery areas. Please try again.")
+        } finally {
+            setIsSearching(false)
+        }
+    }
+
+    const handleRequestDelivery = async () => {
+        if (!zipCode.trim()) {
+            toast.error("Please enter a zip code")
+            return
+        }
+
+        setIsSubmittingRequest(true)
+        
+        try {
+            // Create guest post code request
+            await createGuestPostCode({ code: zipCode.trim() })
+            
+            toast.success("Thank you! We've received your request for delivery to this area. We'll notify you when we start delivering here.")
+            setShowDialog(false)
+            setZipCode("") // Clear the input
+        } catch (error) {
+            console.error("Request error:", error)
+            toast.error("Failed to submit request. Please try again.")
+        } finally {
+            setIsSubmittingRequest(false)
+        }
+    }
+
     return (
-        <div className="min-h-screen mt-40">
-            {/* Hero Section */}
-            <section className="ah-container py-8 sm:py-12 md:py-16 lg:py-20">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-center">
-                    {/* Left Content */}
-                    <div className="space-y-6 sm:space-y-8 text-center lg:text-left">
-                        {/* Small Top Text */}
-                        <div className="inline-flex items-center bg-orange-100 text-orange-800 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium">
-                            <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 bg-orange-500 rounded-full mr-2 animate-pulse"></span>
-                            Fast & Fresh Delivery
-                        </div>
-
-                        {/* Large Title */}
-                        <div className="space-y-3 sm:space-y-4">
-                            <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-gray-900 leading-tight">
-                                Delicious
-                                <span className="text-orange-600 block">Food</span>
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-500">
-                                    Delivered
-                                </span>
-                            </h1>
-                        </div>
-
-                        {/* Short Description */}
-                        <p className="text-base sm:text-lg md:text-xl text-gray-600 leading-relaxed max-w-lg mx-auto lg:mx-0">
-                            Get your favorite meals delivered hot and fresh to your doorstep in under 30 minutes.
-                            From local favorites to international cuisine, we&apos;ve got you covered.
-                        </p>
-
-                        {/* CTA Section */}
-                        <div className="flex flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
-                            <button className="group bg-gradient-to-r from-orange-600 to-red-500 text-white px-6 sm:px-8 py-3 rounded-full text-base sm:text-lg font-semibold transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center">
-                                Order Now
-                                <svg className="w-5 h-5 sm:w-7 sm:h-7 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                                </svg>
-                            </button>
-                            <button className="border-2 border-gray-300 text-gray-700 px-6 sm:px-8 py-3 rounded-full text-base sm:text-lg font-semibold transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center">
-                                View Menu
-                            </button>
-                        </div>
-
-                        {/* Stats - Mobile Only */}
-                        <div className="flex items-center justify-center lg:hidden space-x-6 pt-6">
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-gray-900">50K+</div>
-                                <div className="text-xs text-gray-600">Happy Customers</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-gray-900">25+</div>
-                                <div className="text-xs text-gray-600">Restaurant Partners</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-gray-900">4.9★</div>
-                                <div className="text-xs text-gray-600">Average Rating</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right Image */}
-                    <div className="relative w-full h-[400px] lg:h-[600px] xl:h-[700px] ">
-                        <div className="relative w-full h-full z-10 rounded-2xl sm:rounded-3xl overflow-hidden">
+        <div className="relative min-h-screen flex items-center justify-center">
+            {/* Background Image */}
+            <div className="absolute inset-0 z-0">
                             <Image
-                                src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
-                                alt="Delicious food spread"
+                    src="https://images.unsplash.com/photo-1595708684082-a173bb3a06c5?q=80&w=1164&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                    alt="Delicious pizza and food background"
                                 fill
                                 className="object-cover"
+                    priority
+                    sizes="100vw"
                             />
+                {/* Black overlay for better text readability */}
+                <div className="absolute inset-0 bg-black/60"></div>
                         </div>
 
-                        {/* Floating Card Top Right */}
-                        <div className="absolute z-10 top-2 right-2 sm:-top-6 sm:-right-6 bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-lg">
-                            <div className="flex items-center space-x-2">
-                                <div className="w-8 h-8 sm:w-12 sm:h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                                    <span className="text-sm sm:text-base">🍔</span>
-                                </div>
-                                <div className="">
-                                    <div className="font-semibold text-sm">Fast Delivery</div>
-                                    <div className="text-xs text-gray-600">30 mins</div>
-                                </div>
+            {/* Centered Search Content */}
+            <div className="relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="text-center">
+                    {/* Search Section */}
+                    <div className="bg-white/95 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-white/20">
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
+                                <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
                             </div>
-                        </div>
-
-                        {/* Floating Card Bottom Left */}
-                        <div className="absolute z-10 bottom-2 left-2 sm:-bottom-6 sm:-left-6 bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-lg">
-                            <div className="flex items-center space-x-2">
-                                <div className="w-8 h-8 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center">
-                                    <span className="text-sm sm:text-base">⭐</span>
-                                </div>
-                                <div className="">
-                                    <div className="font-semibold text-sm">Top Rated</div>
-                                    <div className="text-xs text-gray-600">4.9/5 stars</div>
-                                </div>
+                            <input
+                                type="text"
+                                placeholder="Enter your zip code or address..."
+                                value={zipCode}
+                                onChange={(e) => setZipCode(e.target.value)}
+                                className="w-full pl-20 pr-44 py-7 text-2xl border-0 rounded-2xl bg-gray-50 focus:bg-white focus:ring-4 focus:ring-orange-200 transition-all duration-300 shadow-inner"
+                                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                            />
+                            <button
+                                onClick={handleSearch}
+                                disabled={isSearching}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-10 py-5 rounded-xl font-bold text-xl hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isSearching ? (
+                                    <div className="flex items-center">
+                                        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                        Searching...
+                            </div>
+                                ) : (
+                                    "Search"
+                                )}
+                            </button>
+                            </div>
                             </div>
                         </div>
                     </div>
+
+            {/* Bottom Stats */}
+            <div className="absolute bottom-8 left-0 right-0 z-10">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto px-4">
+                    <div className="text-center space-y-2">
+                        <div className="text-3xl md:text-4xl font-black text-white">50K+</div>
+                        <div className="text-sm font-medium text-gray-200">Happy Customers</div>
+                    </div>
+                    <div className="text-center space-y-2">
+                        <div className="text-3xl md:text-4xl font-black text-orange-300">25+</div>
+                        <div className="text-sm font-medium text-gray-200">Restaurant Partners</div>
+                        </div>
+                    <div className="text-center space-y-2">
+                        <div className="text-3xl md:text-4xl font-black text-yellow-300">4.9★</div>
+                        <div className="text-sm font-medium text-gray-200">Average Rating</div>
+                                </div>
+                    <div className="text-center space-y-2">
+                        <div className="text-3xl md:text-4xl font-black text-pink-300">30min</div>
+                        <div className="text-sm font-medium text-gray-200">Delivery Time</div>
+                                </div>
+                            </div>
+                        </div>
+
+            {/* Delivery Area Not Available Dialog */}
+            <Dialog open={showDialog} onOpenChange={setShowDialog}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="text-center text-xl font-bold text-orange-600">
+                            📍 Delivery Not Available Yet
+                        </DialogTitle>
+                        <DialogDescription className="text-center text-gray-600">
+                            We&apos;re not currently delivering to <span className="font-semibold text-orange-600">{zipCode}</span> yet, 
+                            but we&apos;re expanding our delivery areas regularly!
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="py-4">
+                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                            <p className="text-sm text-orange-800">
+                                💡 Submit a request and we&apos;ll notify you as soon as we start delivering to your area. 
+                                We&apos;re always looking to expand our delivery network!
+                            </p>
+                        </div>
+                    </div>
+
+                    <DialogFooter className="flex gap-2">
+                        <button
+                            onClick={() => setShowDialog(false)}
+                            className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                        >
+                            Maybe Later
+                        </button>
+                        <button
+                            onClick={handleRequestDelivery}
+                            disabled={isSubmittingRequest || createLoading}
+                            className="flex-1 px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isSubmittingRequest || createLoading ? (
+                                <div className="flex items-center justify-center">
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                    Submitting...
+                                </div>
+                            ) : (
+                                "Request Delivery"
+                            )}
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Found Delivery Areas Dialog */}
+            <Dialog open={showFoundAreasDialog} onOpenChange={setShowFoundAreasDialog}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="text-center text-xl font-bold text-green-600">
+                            ✅ Great News! We Deliver to Your Area
+                        </DialogTitle>
+                        <DialogDescription className="text-center text-gray-600">
+                            Found {postCodes.length} delivery area(s) for {zipCode}
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="py-4">
+                        <div className="space-y-3 max-h-60 overflow-y-auto">
+                            {postCodes.map((area, index) => (
+                                <div key={area.id || index} className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h3 className="font-semibold text-gray-900 mb-2">
+                                                📍 {area.code}
+                                            </h3>
+                                            <div className="text-sm text-gray-600">
+                                                <div>✅ Delivery Available</div>
+                                            </div>
+                                </div>
+                                        <div className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
+                                            Available
+                                </div>
+                            </div>
+                        </div>
+                            ))}
+                        </div>
+                        
+                        <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <p className="text-sm text-blue-800">
+                                🎉 Perfect! You can now browse our menu and place your order.
+                            </p>
+                    </div>
                 </div>
-            </section>
+
+                    <DialogFooter className="flex gap-2">
+                        <button
+                            onClick={() => setShowFoundAreasDialog(false)}
+                            className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                        >
+                            Close
+                        </button>
+                        <button
+                            onClick={() => {
+                                setShowFoundAreasDialog(false)
+                            }}
+                            className="flex-1 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
+                        >
+                            Browse Menu
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

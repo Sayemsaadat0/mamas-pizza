@@ -19,6 +19,7 @@ const generateGuestId = (): string => {
 export const useGuestId = () => {
   const [guestId, setGuestId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [canOrder, setCanOrder] = useState<boolean>(false);
 
   // Memoized function to get or create guest ID
   const getOrCreateGuestId = useCallback(() => {
@@ -58,5 +59,7 @@ export const useGuestId = () => {
     guestId,
     isLoading,
     refreshGuestId: getOrCreateGuestId,
+    canOrder,
+    setCanOrder,
   };
 };

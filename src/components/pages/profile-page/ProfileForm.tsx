@@ -19,7 +19,6 @@ interface ProfileFormProps {
 const ProfileForm: React.FC<ProfileFormProps> = ({
   formData,
   isEditing,
-  loading,
   onInputChange,
   onSubmit,
   onImageChange,

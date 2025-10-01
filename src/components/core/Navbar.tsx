@@ -197,7 +197,7 @@ const DefaultNavMenuItem: React.FC<{ item: any; index: number }> = ({ item }) =>
 // -------------------------
 // Desktop Menu
 // -------------------------
-export const DefaultNavMenuList: React.FC = () => {
+export const DefaultNavMenuList: React.FC<{ isScrolled: boolean }> = ({ isScrolled }) => {
     const pathname = usePathname();
 
     return (
@@ -206,8 +206,12 @@ export const DefaultNavMenuList: React.FC = () => {
                 <div key={i.path}>
                     <Link
                         className={`font-semibold uppercase px-3 tracking-widest py-2 rounded-full transition-all duration-300 ${pathname === i.path
-                            ? 'text-orange-600 bg-orange-100'
-                            : 'text-gray-700 hover:text-orange-600 hover:bg-orange-50'
+                                ? isScrolled
+                                    ? 'text-orange-600 bg-orange-100'
+                                    : 'text-orange-600 bg-orange-100'
+                                : isScrolled
+                                    ? 'text-gray-700 hover:text-orange-600 hover:bg-orange-50'
+                                    : 'text-white hover:text-orange-600 hover:bg-orange-50'
                             }`}
                         href={i.path}
                     >
@@ -248,8 +252,8 @@ const Navbar: React.FC = () => {
             <ContactNav hide={hideContactNav} />
 
             {/* Main Nav */}
-            <div className={`w-full ${isScrolled ? 'bg-white shadow-lg border-b border-gray-100' : 'bg-transparent'} `}>
-                <nav className="flex relative justify-between ah-container items-center text-gray-800 py-5 md:py-3 px-4 sm:px-6 lg:px-8">
+            <div className={`w-full ${isScrolled ? 'bg-white shadow-lg border-b text-gray-800 border-gray-100' : 'bg-transparent text-white'} `}>
+                <nav className="flex relative justify-between ah-container items-center  py-5 md:py-3 px-4 sm:px-6 lg:px-8">
                     {/* Logo Section */}
                     <div className="flex items-center">
                         <Link href="/" className="flex items-center">
@@ -263,7 +267,7 @@ const Navbar: React.FC = () => {
                     <div className="flex items-center gap-2 sm:gap-3 md:gap-4 xl:gap-6 justify-end">
                         {/* Desktop Menu */}
                         <div className="hidden lg:flex">
-                            <DefaultNavMenuList />
+                            <DefaultNavMenuList isScrolled={isScrolled} />
                         </div>
 
                         {/* Actions */}
@@ -278,7 +282,7 @@ const Navbar: React.FC = () => {
                                     >
                                         <UserCircle size={18} className="text-gray-600 group-hover:text-orange-600" />
                                     </Link>
-                                    
+
                                     {/* Desktop Profile */}
                                     <div className="hidden md:flex items-center gap-2">
                                         <Link
@@ -305,7 +309,7 @@ const Navbar: React.FC = () => {
                                     >
                                         <LogIn size={18} className="text-gray-600 group-hover:text-orange-600" />
                                     </Link>
-                                    
+
                                     {/* Desktop Login */}
                                     <Link
                                         href="/login"

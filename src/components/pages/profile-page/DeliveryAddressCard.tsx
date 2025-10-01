@@ -58,18 +58,20 @@ export default function DeliveryAddressCard({
                 {address.fields}
               </p>
               <p className="text-gray-600">
-                {address.house_no}, {address.road_no}
+                {address.address_line_1}
               </p>
+              {address.address_line_2 && (
+                <p className="text-gray-600">
+                  {address.address_line_2}
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Location */}
+          {/* ZIP Code */}
           <div className="flex items-start gap-3">
             <Navigation className="w-5 h-5 text-gray-400 mt-1 flex-shrink-0" />
             <div>
-              <p className="text-gray-900 font-semibold">
-                {address.city}, {address.country}
-              </p>
               <p className="text-gray-600">
                 ZIP: {address.zip_code}
               </p>

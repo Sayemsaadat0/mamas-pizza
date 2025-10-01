@@ -7,15 +7,15 @@ import CartItems from "./components/CartItems";
 import OrderSummary from "./components/OrderSummary";
 import CheckoutModal from "./components/CheckoutModal";
 
-interface CartItem {
-  id: number;
-  name: string;
-  price: number;
-  image: string;
-  qty: number;
-  description: string;
-  color: string;
-}
+// interface CartItem {
+//   id: number;
+//   name: string;
+//   price: number;
+//   image: string;
+//   qty: number;
+//   description: string;
+//   color: string;
+// }
 
 export default function CartPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,8 +24,8 @@ export default function CartPage() {
   
   // Cart hooks
   const { cartItems, loading, error, grandTotal,  refetch, updateCartItemLocally, removeCartItemLocally } = useCart();
-  const { updateCartItem, loading: updateLoading } = useUpdateCartItem();
-  const { deleteCartItem, loading: deleteLoading } = useDeleteCartItem();
+  const { updateCartItem,  } = useUpdateCartItem();
+  const { deleteCartItem,  } = useDeleteCartItem();
 
   // Transform cart data to match CartItems component interface
   const cart = useMemo(() => {
@@ -71,7 +71,8 @@ export default function CartPage() {
         await updateCartItem(cartItemId, newQuantity);
         
         toast.success('Cart updated successfully');
-      } catch (error) {
+      } catch (error ) {
+        console.error('Error updating cart item:', error);
         // Revert the local change if API call fails
         const currentItem = cartItems.find(item => item.id === cartItemId);
         if (currentItem) {
@@ -119,9 +120,6 @@ export default function CartPage() {
   }, []);
 
   const removeItem = async (cartItemId: number) => {
-    // Store the item to restore if API call fails
-    const itemToRemove = cartItems.find(item => item.id === cartItemId);
-    
     try {
       // Set loading state
       setLoadingItems(prev => new Set(prev).add(cartItemId));
@@ -133,7 +131,8 @@ export default function CartPage() {
       await deleteCartItem(cartItemId);
       
       toast.success('Item removed from cart');
-    } catch (error) {
+    } catch (error ) {
+      console.error('Error removing item from cart:', error);
       // Revert the local change if API call fails - refetch to restore original state
       refetch();
       toast.error('Failed to remove item from cart');

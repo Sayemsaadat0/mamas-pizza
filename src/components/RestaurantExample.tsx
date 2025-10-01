@@ -5,7 +5,7 @@ import { useRestaurants, useCreateRestaurant, useUpdateRestaurant, useDeleteRest
 
 export default function RestaurantExample() {
   // Get all restaurants
-  const { restaurants, loading, error, refetch } = useRestaurants();
+  const { restaurants, loading, error, fetchRestaurants } = useRestaurants();
   
   // Create restaurant
   const { createRestaurant, loading: createLoading } = useCreateRestaurant();
@@ -19,30 +19,32 @@ export default function RestaurantExample() {
   // Create new restaurant
   const handleCreate = async () => {
     const newRestaurant = await createRestaurant({
-      name: "My New Restaurant",
-      shop_status: "open",
-      about: "Great food here!",
-      phone: "+1234567890",
-      email: "contact@restaurant.com",
-      address: "123 Main St"
+      privacy_policy: "This is our privacy policy content...",
+      terms: "These are our terms and conditions...",
+      refund_process: "Our refund process details...",
+      license: "Restaurant license information...",
+      isShopOpen: true,
+      shop_name: "Mama's Pizza Restaurant",
+      shop_address: "123 Main Street, City, State, ZIP Code",
+      shop_details: "We serve the best pizza in town with fresh ingredients and fast delivery."
     });
     
     if (newRestaurant) {
       console.log('Created:', newRestaurant);
-      refetch(); 
+      fetchRestaurants(); 
     }
   };
 
   // Update restaurant
   const handleUpdate = async (id: number) => {
     const updated = await updateRestaurant(id, {
-      name: "Updated Restaurant Name",
-      shop_status: "closed"
+      shop_name: "Updated Restaurant Name",
+      isShopOpen: false
     });
     
     if (updated) {
       console.log('Updated:', updated);
-      refetch(); // Refresh the list
+      fetchRestaurants(); // Refresh the list
     }
   };
 
@@ -52,7 +54,7 @@ export default function RestaurantExample() {
     
     if (result) {
       console.log('Deleted:', result);
-      refetch(); // Refresh the list
+      fetchRestaurants(); // Refresh the list
     }
   };
 
@@ -76,11 +78,10 @@ export default function RestaurantExample() {
       <div className="space-y-4">
         {restaurants.map((restaurant) => (
           <div key={restaurant.id} className="border p-4 rounded-lg">
-            <h3 className="text-lg font-semibold">{restaurant.name}</h3>
-            <p className="text-gray-600">Status: {restaurant.shop_status}</p>
-            <p className="text-gray-600">Phone: {restaurant.phone || 'N/A'}</p>
-            <p className="text-gray-600">Email: {restaurant.email || 'N/A'}</p>
-            <p className="text-gray-600">Address: {restaurant.address || 'N/A'}</p>
+            <h3 className="text-lg font-semibold">{restaurant.shop_name}</h3>
+            <p className="text-gray-600">Status: {restaurant.isShopOpen ? 'Open' : 'Closed'}</p>
+            <p className="text-gray-600">Address: {restaurant.shop_address}</p>
+            <p className="text-gray-600">Details: {restaurant.shop_details}</p>
             
             <div className="mt-3 space-x-2">
               <button 
@@ -105,7 +106,7 @@ export default function RestaurantExample() {
 
       {/* Refresh Button */}
       <button 
-        onClick={refetch}
+        onClick={fetchRestaurants}
         className="bg-gray-500 text-white px-4 py-2 rounded mt-4"
       >
         Refresh List

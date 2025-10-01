@@ -8,6 +8,7 @@ import { useGuest } from "@/lib/guest/GuestProvider";
 import MenuCard from "@/components/MenuCard";
 import { Utensils, Pizza, Coffee, Sandwich } from "lucide-react";
 import { toast } from "sonner";
+import { GUEST_CART_API, CART_API } from "@/app/api";
 
 // Icon mapping for categories
 const categoryIcons: { [key: string]: any } = {
@@ -63,7 +64,7 @@ const MenuSection: React.FC = () => {
             }
             
             console.log('Making guest cart API call...');
-            const response = await fetch(`${baseUrl}/api/v1/guest/cart`, {
+            const response = await fetch(GUEST_CART_API, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -112,7 +113,7 @@ const MenuSection: React.FC = () => {
             console.log('Token:', token);
             
             console.log('Making user cart API call...');
-            const response = await fetch(`${baseUrl}/api/v1/user/cart`, {
+            const response = await fetch(CART_API, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

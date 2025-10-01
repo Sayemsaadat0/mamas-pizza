@@ -428,7 +428,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"fields\": \"Residential Area\",\n    \"city\": \"Dhaka\",\n    \"country\": \"Bangladesh\",\n    \"zip_code\": \"1200\",\n    \"road_no\": \"Road 5\",\n    \"house_no\": \"House 10\",\n    \"details\": \"Near the main gate, 2nd floor\"\n}"
+							"raw": "{\n    \"fields\": \"Residential Area\",\n    \"address_line_1\": \"House 10, Road 5, Dhaka\",\n    \"address_line_2\": \"Near the main gate, 2nd floor\",\n    \"zip_code\": \"1200\",\n    \"details\": \"Please call before delivery\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/v1/delivery-addresses",
@@ -500,7 +500,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"city\": \"Chittagong\",\n    \"country\": \"Bangladesh\",\n    \"zip_code\": \"4000\",\n    \"road_no\": \"Road 10\",\n    \"house_no\": \"House 25\",\n    \"details\": \"Updated address details\"\n}"
+							"raw": "{\n    \"address_line_1\": \"House 25, Road 10, Chittagong\",\n    \"address_line_2\": \"Apartment 3B\",\n    \"zip_code\": \"4000\",\n    \"details\": \"Updated address details\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/v1/delivery-addresses/1",
@@ -959,11 +959,6 @@
 						"method": "GET",
 						"header": [
 							{
-								"key": "Authorization",
-								"value": "Bearer {{access_token}}",
-								"type": "text"
-							},
-							{
 								"key": "Accept",
 								"value": "application/json",
 								"type": "text"
@@ -980,7 +975,159 @@
 								"items"
 							]
 						},
-						"description": "Get all items with category details (token required)"
+						"description": "Get all items with category details (public endpoint, no authentication required)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Items by Category",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/items?category_id=1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"items"
+							],
+							"query": [
+								{
+									"key": "category_id",
+									"value": "1",
+									"description": "Filter items by category ID"
+								}
+							]
+						},
+						"description": "Get items filtered by category ID (public endpoint)"
+					},
+					"response": []
+				},
+				{
+					"name": "Search Items",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/items?search=pizza",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"items"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "pizza",
+									"description": "Search items by name only"
+								}
+							]
+						},
+						"description": "Search items by name only (public endpoint)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Items with Category and Search",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/items?category_id=1&search=margherita&per_page=10&page=1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"items"
+							],
+							"query": [
+								{
+									"key": "category_id",
+									"value": "1",
+									"description": "Filter by category ID"
+								},
+								{
+									"key": "search",
+									"value": "margherita",
+									"description": "Search by name only"
+								},
+								{
+									"key": "per_page",
+									"value": "10",
+									"description": "Number of items per page (default: 15)"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default: 1)"
+								}
+							]
+						},
+						"description": "Get items with both category filter and search (public endpoint)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Items - Page 2",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/items?page=2&per_page=5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"items"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "2",
+									"description": "Get page 2"
+								},
+								{
+									"key": "per_page",
+									"value": "5",
+									"description": "5 items per page"
+								}
+							]
+						},
+						"description": "Get page 2 with 5 items per page (public endpoint)"
 					},
 					"response": []
 				},
@@ -1266,8 +1413,2208 @@
 			"description": "Item management endpoints with thumbnail upload support (authentication required)"
 		},
 		{
-			"name": "Admin User Management",
+			"name": "User Cart Management (Authenticated)",
 			"item": [
+				{
+					"name": "Get My Cart Items",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/cart",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"user",
+								"cart"
+							]
+						},
+						"description": "Get all cart items for authenticated user with item details, category info, and calculated totals"
+					},
+					"response": []
+				},
+				{
+					"name": "Add Item to User Cart",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"item_id\": 1,\n    \"quantity\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/cart",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"user",
+								"cart"
+							]
+						},
+						"description": "Add item to authenticated user's cart or update quantity if item already exists (quantity 1-100)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Cart Item by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/cart/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"cart",
+								"1"
+							]
+						},
+						"description": "Get specific cart item by ID with full details and calculated total price"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Cart Item Quantity",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"quantity\": 3\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/cart/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"cart",
+								"1"
+							]
+						},
+						"description": "Update quantity of specific cart item (quantity 1-100)"
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Cart Item",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/cart/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"cart",
+								"1"
+							]
+						},
+						"description": "Remove specific item from cart"
+					},
+					"response": []
+				},
+				{
+					"name": "Clear Entire Cart",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/cart",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"cart"
+							]
+						},
+						"description": "Clear all items from user's cart"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Cart Summary",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/cart-summary",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"cart-summary"
+							]
+						},
+						"description": "Get cart summary with total items, total price, and unique item count"
+					},
+					"response": []
+				},
+				{
+					"name": "Add Multiple Items to Cart",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"item_id\": 2,\n    \"quantity\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/cart",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"cart"
+							]
+						},
+						"description": "Add another item to cart (different item ID)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Existing Cart Item",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"item_id\": 1,\n    \"quantity\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/cart",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"cart"
+							]
+						},
+						"description": "Add more quantity to existing cart item (will add to existing quantity)"
+					},
+					"response": []
+				}
+			],
+			"description": "User cart management endpoints for authenticated users (authentication required)"
+		},
+		{
+			"name": "Guest Cart Management (No Authentication)",
+			"item": [
+				{
+					"name": "Add Item to Guest Cart",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"guest_id\": \"guest_12345\",\n    \"item_id\": 1,\n    \"quantity\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/guest/cart",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"guest",
+								"cart"
+							]
+						},
+						"description": "Add item to guest cart or update quantity if item already exists (no authentication required)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Guest Cart",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/guest/cart?guest_id=guest_12345",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"guest",
+								"cart"
+							],
+							"query": [
+								{
+									"key": "guest_id",
+									"value": "guest_12345",
+									"description": "Guest ID to identify the cart"
+								}
+							]
+						},
+						"description": "Get all guest cart items with item details, category info, and calculated totals"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Guest Cart Item Quantity",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"guest_id\": \"guest_12345\",\n    \"quantity\": 3\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/guest/cart/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"guest",
+								"cart",
+								"1"
+							]
+						},
+						"description": "Update quantity of specific guest cart item (quantity 1-100)"
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Guest Cart Item",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/guest/cart/1?guest_id=guest_12345",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"guest",
+								"cart",
+								"1"
+							],
+							"query": [
+								{
+									"key": "guest_id",
+									"value": "guest_12345",
+									"description": "Guest ID to identify the cart owner"
+								}
+							]
+						},
+						"description": "Remove specific item from guest cart (no authentication required)"
+					},
+					"response": []
+				}
+		],
+		"description": "Guest cart management endpoints for non-authenticated users (no authentication required)"
+	},
+	{
+		"name": "Guest Order Management (No Authentication)",
+		"item": [
+			{
+				"name": "Create Guest Order",
+				"request": {
+					"method": "POST",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"type": "text"
+						},
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"body": {
+						"mode": "raw",
+						"raw": "{\n    \"guest_id\": \"guest_12345\",\n    \"delivery_type\": \"delivery\",\n    \"customer_name\": \"John Doe\",\n    \"customer_phone\": \"+1234567890\",\n    \"customer_email\": \"john@example.com\",\n    \"delivery_address\": {\n        \"fields\": \"Home\",\n        \"address_line_1\": \"123 Main Street\",\n        \"address_line_2\": \"Apt 4B\",\n        \"zip_code\": \"12345\",\n        \"details\": \"Ring doorbell twice\"\n    },\n    \"special_instructions\": \"Extra napkins please\",\n    \"payment_method\": \"stripe\",\n    \"tax_rate\": 8.5,\n    \"delivery_fee\": 5.00,\n    \"discount_amount\": 0\n}"
+					},
+					"url": {
+						"raw": "{{base_url}}/api/v1/guest/orders",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"guest",
+							"orders"
+						]
+					},
+					"description": "Create a new order for guest users without authentication. Requires guest_id, customer details, and delivery address passed from frontend."
+				},
+				"response": []
+			},
+			{
+				"name": "Create Guest Order - Pickup",
+				"request": {
+					"method": "POST",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"type": "text"
+						},
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"body": {
+						"mode": "raw",
+						"raw": "{\n    \"guest_id\": \"guest_12345\",\n    \"delivery_type\": \"pickup\",\n    \"customer_name\": \"Jane Smith\",\n    \"customer_phone\": \"+1987654321\",\n    \"customer_email\": \"jane@example.com\",\n    \"delivery_address\": {\n        \"fields\": \"Restaurant Pickup\",\n        \"address_line_1\": \"Restaurant Location\",\n        \"address_line_2\": \"\",\n        \"zip_code\": \"12345\",\n        \"details\": \"Will pickup at counter\"\n    },\n    \"special_instructions\": \"Please prepare extra sauces\",\n    \"payment_method\": \"cash\",\n    \"tax_rate\": 8.5,\n    \"delivery_fee\": 0,\n    \"discount_amount\": 2.50\n}"
+					},
+					"url": {
+						"raw": "{{base_url}}/api/v1/guest/orders",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"guest",
+							"orders"
+						]
+					},
+					"description": "Create a pickup order for guest users with cash payment and discount"
+				},
+				"response": []
+			},
+			{
+				"name": "Get My Guest Orders",
+				"request": {
+					"method": "GET",
+					"header": [
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"url": {
+						"raw": "{{base_url}}/api/v1/guest/orders?guest_id=guest_12345",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"guest",
+							"orders"
+						],
+						"query": [
+							{
+								"key": "guest_id",
+								"value": "guest_12345",
+								"description": "Guest ID to identify orders"
+							}
+						]
+					},
+					"description": "Get all orders for a guest user by guest_id (no authentication required)"
+				},
+				"response": []
+			},
+			{
+				"name": "Get Guest Order by Order Number",
+				"request": {
+					"method": "GET",
+					"header": [
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"url": {
+						"raw": "{{base_url}}/api/v1/guest/orders/ORD-20250930-0001?guest_id=guest_12345",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"guest",
+							"orders",
+							"ORD-20250930-0001"
+						],
+						"query": [
+							{
+								"key": "guest_id",
+								"value": "guest_12345",
+								"description": "Guest ID to verify ownership"
+							}
+						]
+					},
+					"description": "Get specific guest order by order number for tracking (no authentication required)"
+				},
+				"response": []
+			}
+		],
+		"description": "Guest order management endpoints for non-authenticated users (no authentication required)"
+	},
+	{
+		"name": "Order Management",
+		"item": [
+			{
+				"name": "Get My Orders",
+				"request": {
+					"method": "GET",
+					"header": [
+						{
+							"key": "Authorization",
+							"value": "Bearer {{access_token}}",
+							"type": "text"
+						},
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"url": {
+						"raw": "{{base_url}}/api/v1/orders",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"orders"
+						]
+					},
+					"description": "Get all orders for authenticated user with filtering options"
+				},
+				"response": []
+			},
+			{
+				"name": "Get My Orders - Filter by Status",
+				"request": {
+					"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders?status=pending&per_page=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "pending",
+									"description": "Filter by order status"
+								},
+								{
+									"key": "per_page",
+									"value": "10",
+									"description": "Number of orders per page"
+								}
+							]
+						},
+						"description": "Get orders filtered by status (pending, confirmed, preparing, ready, out_for_delivery, delivered, cancelled, refunded)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Order from Cart",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"delivery_address_id\": 1,\n    \"delivery_type\": \"delivery\",\n    \"special_instructions\": \"Please ring the doorbell twice\",\n    \"payment_method\": \"stripe\",\n    \"tax_rate\": 8.5,\n    \"delivery_fee\": 2.99,\n    \"discount_amount\": 0\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders"
+							]
+						},
+						"description": "Create a new order from cart items with delivery address and payment method"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Order - Pickup",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"delivery_address_id\": 1,\n    \"delivery_type\": \"pickup\",\n    \"special_instructions\": \"Please prepare extra napkins\",\n    \"payment_method\": \"cash\",\n    \"tax_rate\": 8.5,\n    \"delivery_fee\": 0,\n    \"discount_amount\": 5.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders"
+							]
+						},
+						"description": "Create a pickup order with cash payment and discount"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Order by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"1"
+							]
+						},
+						"description": "Get specific order details with items and delivery address"
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders/1/cancel",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"1",
+								"cancel"
+							]
+						},
+						"description": "Cancel an order (only if status is pending or confirmed)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Order Summary",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders/1/summary",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"1",
+								"summary"
+							]
+						},
+						"description": "Get order summary for payment processing (Stripe integration)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Payment Status - Stripe Success",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"payment_status\": \"paid\",\n    \"stripe_payment_intent_id\": \"pi_1234567890abcdef\",\n    \"stripe_charge_id\": \"ch_1234567890abcdef\",\n    \"payment_details\": {\n        \"payment_method\": \"card\",\n        \"card_brand\": \"visa\",\n        \"card_last4\": \"4242\",\n        \"amount\": 25.99\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders/1/payment-status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"1",
+								"payment-status"
+							]
+						},
+						"description": "Update payment status after successful Stripe payment"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Payment Status - Stripe Failed",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"payment_status\": \"failed\",\n    \"stripe_payment_intent_id\": \"pi_1234567890abcdef\",\n    \"payment_details\": {\n        \"error_code\": \"card_declined\",\n        \"error_message\": \"Your card was declined.\",\n        \"decline_code\": \"generic_decline\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders/1/payment-status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"1",
+								"payment-status"
+							]
+						},
+						"description": "Update payment status when Stripe payment fails"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Payment Status - Refund",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"payment_status\": \"refunded\",\n    \"stripe_refund_id\": \"re_1234567890abcdef\",\n    \"payment_details\": {\n        \"refund_amount\": 25.99,\n        \"refund_reason\": \"requested_by_customer\",\n        \"refund_status\": \"succeeded\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders/1/payment-status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"1",
+								"payment-status"
+							]
+						},
+						"description": "Update payment status when order is refunded"
+					},
+					"response": []
+				}
+			],
+			"description": "Order management endpoints for creating, viewing, and managing orders with Stripe payment integration (authentication required)"
+		},
+		{
+			"name": "Stripe Payment Integration",
+			"item": [
+				{
+					"name": "Create Stripe Checkout Session",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"order_id\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/payments/create-session",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"payments",
+								"create-session"
+							]
+						},
+						"description": "Create a Stripe Checkout session for an order. Returns session URL for payment processing."
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Payment Session",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"session_id\": \"cs_test_1234567890abcdef\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/payments/verify",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"payments",
+								"verify"
+							]
+						},
+						"description": "Verify payment session after redirect from Stripe Checkout (optional for immediate verification)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment Session Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/payments/session-status?session_id=cs_test_1234567890abcdef",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"payments",
+								"session-status"
+							],
+							"query": [
+								{
+									"key": "session_id",
+									"value": "cs_test_1234567890abcdef",
+									"description": "Stripe checkout session ID"
+								}
+							]
+						},
+						"description": "Get current status of a Stripe checkout session"
+					},
+					"response": []
+				},
+				{
+					"name": "Stripe Webhook (Test)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Stripe-Signature",
+								"value": "t=1234567890,v1=test_signature",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"evt_test_webhook\",\n    \"object\": \"event\",\n    \"api_version\": \"2020-08-27\",\n    \"created\": 1234567890,\n    \"data\": {\n        \"object\": {\n            \"id\": \"cs_test_1234567890abcdef\",\n            \"object\": \"checkout.session\",\n            \"payment_status\": \"paid\",\n            \"payment_intent\": \"pi_test_1234567890abcdef\",\n            \"amount_total\": 2599,\n            \"currency\": \"usd\",\n            \"customer_details\": {\n                \"email\": \"customer@example.com\",\n                \"name\": \"John Doe\"\n            },\n            \"metadata\": {\n                \"order_id\": \"1\",\n                \"order_number\": \"ORD-20250101-0001\",\n                \"user_id\": \"1\"\n            }\n        }\n    },\n    \"livemode\": false,\n    \"pending_webhooks\": 1,\n    \"request\": {\n        \"id\": \"req_test_1234567890abcdef\",\n        \"idempotency_key\": null\n    },\n    \"type\": \"checkout.session.completed\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/stripe/webhook",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"stripe",
+								"webhook"
+							]
+						},
+						"description": "Test Stripe webhook endpoint (public endpoint, no authentication required). This simulates a checkout.session.completed event."
+					},
+					"response": []
+				}
+			],
+			"description": "Stripe payment integration endpoints for creating checkout sessions, verifying payments, and handling webhooks"
+		},
+		{
+			"name": "Complete Payment Workflow",
+			"item": [
+				{
+					"name": "Step 1: Login User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.data.access_token) {",
+									"        pm.environment.set('access_token', response.data.access_token);",
+									"        pm.environment.set('user_id', response.data.user.id);",
+									"        pm.environment.set('user_role', response.data.user.role);",
+									"        pm.environment.set('user_name', response.data.user.name);",
+									"        pm.environment.set('user_email', response.data.user.email);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"sayem@gmail.com\",\n    \"password\": \"admin1234\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"login"
+							]
+						},
+						"description": "Step 1: Login to get authentication token"
+					},
+					"response": []
+				},
+				{
+					"name": "Step 2: Add Items to Cart",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"item_id\": 1,\n    \"quantity\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/cart",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"cart"
+							]
+						},
+						"description": "Step 2: Add items to cart for order"
+					},
+					"response": []
+				},
+				{
+					"name": "Step 3: Create Order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.data.id) {",
+									"        pm.environment.set('order_id', response.data.id);",
+									"        pm.environment.set('order_number', response.data.order_number);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"delivery_address_id\": 1,\n    \"delivery_type\": \"delivery\",\n    \"special_instructions\": \"Please ring the doorbell twice\",\n    \"payment_method\": \"stripe\",\n    \"tax_rate\": 8.5,\n    \"delivery_fee\": 2.99,\n    \"discount_amount\": 0\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders"
+							]
+						},
+						"description": "Step 3: Create order with payment_method = 'stripe' and payment_status = 'pending'"
+					},
+					"response": []
+				},
+				{
+					"name": "Step 4: Create Stripe Checkout Session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.data.session_id) {",
+									"        pm.environment.set('stripe_session_id', response.data.session_id);",
+									"        pm.environment.set('stripe_session_url', response.data.session_url);",
+									"        console.log('Stripe Checkout URL:', response.data.session_url);",
+									"        console.log('Copy this URL to browser to test payment');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"order_id\": {{order_id}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/payments/create-session",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"payments",
+								"create-session"
+							]
+						},
+						"description": "Step 4: Create Stripe checkout session for the order. Returns session URL for payment."
+					},
+					"response": []
+				},
+				{
+					"name": "Step 5: Verify Payment (After Stripe Redirect)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"session_id\": \"{{stripe_session_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/payments/verify",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"payments",
+								"verify"
+							]
+						},
+						"description": "Step 5: Verify payment after user returns from Stripe Checkout (optional - webhook handles this automatically)"
+					},
+					"response": []
+				},
+				{
+					"name": "Step 6: Check Order Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders/{{order_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"{{order_id}}"
+							]
+						},
+						"description": "Step 6: Check order status - payment_status should be 'paid' after successful payment"
+					},
+					"response": []
+				}
+		],
+		"description": "Complete payment workflow from login to successful payment verification"
+	},
+	{
+		"name": "Complete Guest User Workflow (No Authentication)",
+		"item": [
+			{
+				"name": "Step 1: Browse Items (Public)",
+				"request": {
+					"method": "GET",
+					"header": [
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"url": {
+						"raw": "{{base_url}}/api/v1/items",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"items"
+						]
+					},
+					"description": "Step 1: Browse available items (no authentication required)"
+				},
+				"response": []
+			},
+			{
+				"name": "Step 2: Add Item to Guest Cart",
+				"request": {
+					"method": "POST",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"type": "text"
+						},
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"body": {
+						"mode": "raw",
+						"raw": "{\n    \"guest_id\": \"guest_12345\",\n    \"item_id\": 1,\n    \"quantity\": 2\n}"
+					},
+					"url": {
+						"raw": "{{base_url}}/api/v1/guest/cart",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"guest",
+							"cart"
+						]
+					},
+					"description": "Step 2: Add items to guest cart using guest_id from frontend"
+				},
+				"response": []
+			},
+			{
+				"name": "Step 3: Add More Items to Guest Cart",
+				"request": {
+					"method": "POST",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"type": "text"
+						},
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"body": {
+						"mode": "raw",
+						"raw": "{\n    \"guest_id\": \"guest_12345\",\n    \"item_id\": 2,\n    \"quantity\": 1\n}"
+					},
+					"url": {
+						"raw": "{{base_url}}/api/v1/guest/cart",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"guest",
+							"cart"
+						]
+					},
+					"description": "Step 3: Add more items to guest cart"
+				},
+				"response": []
+			},
+			{
+				"name": "Step 4: View Guest Cart",
+				"request": {
+					"method": "GET",
+					"header": [
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"url": {
+						"raw": "{{base_url}}/api/v1/guest/cart?guest_id=guest_12345",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"guest",
+							"cart"
+						],
+						"query": [
+							{
+								"key": "guest_id",
+								"value": "guest_12345",
+								"description": "Guest ID to identify cart"
+							}
+						]
+					},
+					"description": "Step 4: View guest cart with all items and totals"
+				},
+				"response": []
+			},
+			{
+				"name": "Step 5: Create Guest Order",
+				"event": [
+					{
+						"listen": "test",
+						"script": {
+							"exec": [
+								"if (pm.response.code === 201) {",
+								"    const response = pm.response.json();",
+								"    if (response.success && response.data.id) {",
+								"        pm.environment.set('guest_order_id', response.data.id);",
+								"        pm.environment.set('guest_order_number', response.data.order_number);",
+								"    }",
+								"}"
+							],
+							"type": "text/javascript"
+						}
+					}
+				],
+				"request": {
+					"method": "POST",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"type": "text"
+						},
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"body": {
+						"mode": "raw",
+						"raw": "{\n    \"guest_id\": \"guest_12345\",\n    \"delivery_type\": \"delivery\",\n    \"customer_name\": \"John Doe\",\n    \"customer_phone\": \"+1234567890\",\n    \"customer_email\": \"john@example.com\",\n    \"delivery_address\": {\n        \"fields\": \"Home\",\n        \"address_line_1\": \"123 Main Street\",\n        \"address_line_2\": \"Apt 4B\",\n        \"zip_code\": \"12345\",\n        \"details\": \"Ring doorbell twice\"\n    },\n    \"special_instructions\": \"Extra napkins please\",\n    \"payment_method\": \"stripe\",\n    \"tax_rate\": 8.5,\n    \"delivery_fee\": 5.00,\n    \"discount_amount\": 0\n}"
+					},
+					"url": {
+						"raw": "{{base_url}}/api/v1/guest/orders",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"guest",
+							"orders"
+						]
+					},
+					"description": "Step 5: Create guest order with customer details and delivery address from frontend. Cart is automatically cleared after successful order creation."
+				},
+				"response": []
+			},
+			{
+				"name": "Step 6: View Guest Order by Order Number",
+				"request": {
+					"method": "GET",
+					"header": [
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"url": {
+						"raw": "{{base_url}}/api/v1/guest/orders/{{guest_order_number}}?guest_id=guest_12345",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"guest",
+							"orders",
+							"{{guest_order_number}}"
+						],
+						"query": [
+							{
+								"key": "guest_id",
+								"value": "guest_12345",
+								"description": "Guest ID to verify ownership"
+							}
+						]
+					},
+					"description": "Step 6: Track guest order using order number (for order tracking page)"
+				},
+				"response": []
+			},
+			{
+				"name": "Step 7: View All Guest Orders",
+				"request": {
+					"method": "GET",
+					"header": [
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"url": {
+						"raw": "{{base_url}}/api/v1/guest/orders?guest_id=guest_12345",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"guest",
+							"orders"
+						],
+						"query": [
+							{
+								"key": "guest_id",
+								"value": "guest_12345",
+								"description": "Guest ID to retrieve all orders"
+							}
+						]
+					},
+					"description": "Step 7: View all orders placed by this guest user"
+				},
+				"response": []
+			}
+		],
+		"description": "Complete workflow for guest users from browsing to order placement without authentication"
+	},
+		{
+			"name": "Post Codes Management",
+			"item": [
+				{
+					"name": "Get All Post Codes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/post-codes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"post-codes"
+							]
+						},
+						"description": "Get all post codes with delivery charges and status (public endpoint, no authentication required)"
+					},
+					"response": []
+				},
+				{
+					"name": "Search Post Codes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/post-codes?search=1000",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"post-codes"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "1000",
+									"description": "Search post codes by code (ignores hyphens and slashes)"
+								}
+							]
+						},
+						"description": "Search post codes by code. Ignores hyphens (-), slashes (/), and spaces in both search term and database values. Example: searching '100-0' will match '1000', '100-0', '100/0', '100 0', etc."
+					},
+					"response": []
+				},
+				{
+					"name": "Search Post Codes with Hyphens",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/post-codes?search=100-0",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"post-codes"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "100-0",
+									"description": "Search with hyphens - will match '1000', '100-0', '100/0', '100 0', etc."
+								}
+							]
+						},
+						"description": "Search post codes with hyphens. The search will ignore the hyphen and match codes like '1000', '100-0', '100/0', '100 0', etc."
+					},
+					"response": []
+				},
+				{
+					"name": "Search Post Codes with Slashes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/post-codes?search=100/0",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"post-codes"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "100/0",
+									"description": "Search with slashes - will match '1000', '100-0', '100/0', '100 0', etc."
+								}
+							]
+						},
+						"description": "Search post codes with slashes. The search will ignore the slash and match codes like '1000', '100-0', '100/0', '100 0', etc."
+					},
+					"response": []
+				},
+				{
+					"name": "Search Post Codes with Spaces",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/post-codes?search=e6 2",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"post-codes"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "e6 2",
+									"description": "Search with spaces - will match 'E6-2', 'E6/2', 'E6 2', 'e62', etc."
+								}
+							]
+						},
+						"description": "Search post codes with spaces. The search will ignore the space and match codes like 'E6-2', 'E6/2', 'E6 2', 'e62', etc. Perfect for searching 'E6-2' with 'e6 2'."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Post Code",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"code\": \"1000\",\n    \"deliver_charge\": 5.00,\n    \"status\": \"active\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/post-codes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"post-codes"
+							]
+						},
+						"description": "Create a new post code with delivery charge and status (admin role required)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Post Code by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/post-codes/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"post-codes",
+								"1"
+							]
+						},
+						"description": "Get a specific post code by ID (public endpoint, no authentication required)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Post Code",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"code\": \"1000\",\n    \"deliver_charge\": 7.50,\n    \"status\": \"inactive\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/post-codes/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"post-codes",
+								"1"
+							]
+						},
+						"description": "Update a post code by ID (admin role required)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Post Code",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/post-codes/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"post-codes",
+								"1"
+							]
+						},
+						"description": "Delete a post code by ID (admin role required)"
+					},
+					"response": []
+				}
+			],
+			"description": "Post codes management endpoints - GET operations are public (no authentication), POST/PUT/DELETE require admin role"
+		},
+		{
+			"name": "Guest Post Codes Management",
+			"item": [
+				{
+					"name": "Get All Guest Post Codes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/guest-post-codes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"guest-post-codes"
+							]
+						},
+						"description": "Get all guest post codes (token required)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Guest Post Code",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"code\": \"2000\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/guest-post-codes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"guest-post-codes"
+							]
+						},
+						"description": "Create a new guest post code (public endpoint, no authentication required)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Guest Post Code by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/guest-post-codes/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"guest-post-codes",
+								"1"
+							]
+						},
+						"description": "Get a specific guest post code by ID (token required)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Guest Post Code",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"code\": \"2001\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/guest-post-codes/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"guest-post-codes",
+								"1"
+							]
+						},
+						"description": "Update a guest post code by ID (authentication required)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Guest Post Code",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/guest-post-codes/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"guest-post-codes",
+								"1"
+							]
+						},
+						"description": "Delete a guest post code by ID (authentication required)"
+					},
+					"response": []
+				}
+			],
+			"description": "Guest post codes management endpoints - POST is public (no authentication), GET/UPDATE/DELETE require authentication"
+		},
+		{
+			"name": "Admin User Management",
+				"item": [
 				{
 					"name": "Create Admin User",
 					"request": {
@@ -1583,6 +3930,36 @@
 		{
 			"key": "user_password",
 			"value": "password123",
+			"type": "string"
+		},
+		{
+			"key": "order_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "order_number",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "stripe_session_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "stripe_session_url",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "guest_order_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "guest_order_number",
+			"value": "",
 			"type": "string"
 		}
 	]

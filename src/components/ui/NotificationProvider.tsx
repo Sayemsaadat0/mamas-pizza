@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import Notification, { NotificationType, NotificationProps } from './notification';
+import Notification, {  NotificationProps } from './notification';
 
 interface NotificationItem extends NotificationProps {
   id: string;

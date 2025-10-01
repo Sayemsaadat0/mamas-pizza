@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/auth/useAuth';
+import { CATEGORIES_API } from '@/app/api';
 
 export interface Category {
   id: string;
@@ -24,8 +25,7 @@ export function useCategories() {
     setError(null);
     
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/v1/categories`);
+      const response = await fetch(CATEGORIES_API);
       
       const responseData = await response.json();
       // Handle the API response structure: {success: true, message: "...", data: []}
@@ -61,8 +61,7 @@ export function useCreateCategory() {
     setError(null);
     
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/v1/categories`, {
+        const response = await fetch(CATEGORIES_API, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -97,8 +96,7 @@ export function useUpdateCategory() {
     setError(null);
     
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/v1/categories/${id}`, {
+        const response = await fetch(`${CATEGORIES_API}/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -133,8 +131,7 @@ export function useDeleteCategory() {
     setError(null);
     
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/v1/categories/${id}`, {
+        const response = await fetch(`${CATEGORIES_API}/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

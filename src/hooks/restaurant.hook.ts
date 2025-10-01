@@ -1,163 +1,269 @@
 "use client";
 
+import { useState, useCallback } from 'react';
 import { useAuth } from '@/lib/auth/useAuth';
-import { useState, useEffect, useCallback } from 'react';
-// import { useAuth } from '@/lib/auth/AuthContext';
+import { RESTAURANTS_API, getRestaurantById } from '@/app/api';
 
 export interface Restaurant {
   id: number;
-  name: string;
-  shop_status: 'open' | 'closed';
-  about: string | null;
-  phone: string | null;
-  email: string | null;
-  address: string | null;
-  privacy_policy: string | null;
-  refund_policy: string | null;
-  terms_of_service: string | null;
+  privacy_policy: string;
+  terms: string;
+  refund_process: string;
+  license: string;
+  isShopOpen: boolean;
+  shop_name: string;
+  shop_address: string;
+  shop_details: string;
   created_at: string;
   updated_at: string;
 }
 
-// GET restaurants
+export interface CreateRestaurantData {
+  privacy_policy: string;
+  terms: string;
+  refund_process: string;
+  license: string;
+  isShopOpen: boolean;
+  shop_name: string;
+  shop_address: string;
+  shop_details: string;
+}
+
+export interface UpdateRestaurantData {
+  privacy_policy?: string;
+  terms?: string;
+  refund_process?: string;
+  license?: string;
+  isShopOpen?: boolean;
+  shop_name?: string;
+  shop_address?: string;
+  shop_details?: string;
+}
+
+// GET all restaurants
 export function useRestaurants() {
-  const { token } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchRestaurants = useCallback(async () => {
-    if (!token) return;
-    
+    if (!isAuthenticated || !token) {
+      setError('User not authenticated');
+      return;
+    }
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/my-restaurants`, {
+      const response = await fetch(RESTAURANTS_API, {
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
         },
       });
-      
-      const data = await response.json();
-      setRestaurants(data.data || []);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch restaurants');
+      }
+
+      const result = await response.json();
+      setRestaurants(result.data || []);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated, token]);
 
-  useEffect(() => {
-    fetchRestaurants();
-  }, [token, fetchRestaurants]);
+  return {
+    restaurants,
+    loading,
+    error,
+    fetchRestaurants,
+  };
+}
 
-  return { restaurants, loading, error, refetch: fetchRestaurants };
+// GET restaurant by ID
+export function useRestaurant(restaurantId: string) {
+  const { token, isAuthenticated } = useAuth();
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchRestaurant = useCallback(async () => {
+    if (!isAuthenticated || !token) {
+      setError('User not authenticated');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(getRestaurantById(restaurantId), {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch restaurant');
+      }
+
+      const result = await response.json();
+      setRestaurant(result.data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated, token, restaurantId]);
+
+  return {
+    restaurant,
+    loading,
+    error,
+    fetchRestaurant,
+  };
 }
 
 // CREATE restaurant
 export function useCreateRestaurant() {
-  const { token } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createRestaurant = async (restaurantData: any) => {
-    if (!token) return null;
-    
+  const createRestaurant = async (restaurantData: CreateRestaurantData) => {
+    if (!isAuthenticated || !token) {
+      throw new Error('User not authenticated');
+    }
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/my-restaurants`, {
+      const response = await fetch(RESTAURANTS_API, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
         },
         body: JSON.stringify(restaurantData),
       });
-      
-      const data = await response.json();
-      return data.data;
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create restaurant');
+      }
+
+      const result = await response.json();
+      return result.data;
     } catch (err: any) {
       setError(err.message);
-      return null;
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  return { createRestaurant, loading, error };
+  return {
+    createRestaurant,
+    loading,
+    error,
+  };
 }
 
 // UPDATE restaurant
 export function useUpdateRestaurant() {
-  const { token } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const updateRestaurant = async (id: number, restaurantData: any) => {
-    if (!token) return null;
-    
+  const updateRestaurant = async (restaurantId: number, restaurantData: UpdateRestaurantData) => {
+    if (!isAuthenticated || !token) {
+      throw new Error('User not authenticated');
+    }
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/my-restaurants/${id}`, {
+      const response = await fetch(getRestaurantById(restaurantId.toString()), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
         },
         body: JSON.stringify(restaurantData),
       });
-      
-      const data = await response.json();
-      return data.data;
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update restaurant');
+      }
+
+      const result = await response.json();
+      return result.data;
     } catch (err: any) {
       setError(err.message);
-      return null;
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  return { updateRestaurant, loading, error };
+  return {
+    updateRestaurant,
+    loading,
+    error,
+  };
 }
 
 // DELETE restaurant
 export function useDeleteRestaurant() {
-  const { token } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const deleteRestaurant = async (id: number) => {
-    if (!token) return null;
-    
+  const deleteRestaurant = async (restaurantId: number) => {
+    if (!isAuthenticated || !token) {
+      throw new Error('User not authenticated');
+    }
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/my-restaurants/${id}`, {
+      const response = await fetch(getRestaurantById(restaurantId.toString()), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
         },
       });
-      
-      const data = await response.json();
-      return data;
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete restaurant');
+      }
+
+      return true;
     } catch (err: any) {
       setError(err.message);
-      return null;
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  return { deleteRestaurant, loading, error };
+  return {
+    deleteRestaurant,
+    loading,
+    error,
+  };
 }

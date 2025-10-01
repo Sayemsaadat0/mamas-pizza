@@ -1,188 +1,216 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useAuth } from '@/lib/auth/useAuth';
+import { DELIVERY_ADDRESSES_API, getDeliveryAddressById } from '@/app/api';
 
 export interface DeliveryAddress {
-  id: string;
+  id: number;
+  user_id: number;
   fields: string;
-  city: string;
-  country: string;
+  address_line_1: string;
+  address_line_2: string;
   zip_code: string;
-  road_no: string;
-  house_no: string;
   details: string;
   created_at: string;
   updated_at: string;
 }
 
-export interface DeliveryAddressResponse {
-  success: boolean;
-  data: DeliveryAddress[];
-  message?: string;
+export interface CreateDeliveryAddressData {
+  fields: string;
+  address_line_1: string;
+  address_line_2: string;
+  zip_code: string;
+  details: string;
+}
+
+export interface UpdateDeliveryAddressData {
+  fields?: string;
+  address_line_1?: string;
+  address_line_2?: string;
+  zip_code?: string;
+  details?: string;
 }
 
 // GET delivery addresses
 export function useDeliveryAddresses() {
-  const { token } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const [addresses, setAddresses] = useState<DeliveryAddress[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchAddresses = useCallback(async () => {
-    if (!token) return;
-    
+    if (!isAuthenticated || !token) {
+      setError('User not authenticated');
+      return;
+    }
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/v1/delivery-addresses`, {
+      const response = await fetch(DELIVERY_ADDRESSES_API, {
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
         },
       });
-      
-      const responseData = await response.json();
-      // Handle the API response structure: {success: true, message: "...", data: []}
-      if (responseData.success && Array.isArray(responseData.data)) {
-        setAddresses(responseData.data);
-      } else {
-        setAddresses([]);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch delivery addresses');
       }
+
+      const result = await response.json();
+      setAddresses(result.data || []);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated, token]);
 
-  useEffect(() => {
-    fetchAddresses();
-  }, [token, fetchAddresses]);
-
-  return { addresses, loading, error, refetch: fetchAddresses };
+  return {
+    addresses,
+    loading,
+    error,
+    fetchAddresses,
+  };
 }
 
 // CREATE delivery address
 export function useCreateDeliveryAddress() {
-  const { token } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createAddress = async (addressData: {
-    fields: string;
-    city: string;
-    country: string;
-    zip_code: string;
-    road_no: string;
-    house_no: string;
-    details: string;
-  }) => {
-    if (!token) return null;
-    
+  const createAddress = async (addressData: CreateDeliveryAddressData) => {
+    if (!isAuthenticated || !token) {
+      throw new Error('User not authenticated');
+    }
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/v1/delivery-addresses`, {
+      const response = await fetch(DELIVERY_ADDRESSES_API, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
         },
         body: JSON.stringify(addressData),
       });
-      
-      const data = await response.json();
-      return data;
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create delivery address');
+      }
+
+      const result = await response.json();
+      return result.data;
     } catch (err: any) {
       setError(err.message);
-      return null;
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  return { createAddress, loading, error };
+  return {
+    createAddress,
+    loading,
+    error,
+  };
 }
 
 // UPDATE delivery address
 export function useUpdateDeliveryAddress() {
-  const { token } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const updateAddress = async (id: string, addressData: {
-    fields?: string;
-    city?: string;
-    country?: string;
-    zip_code?: string;
-    road_no?: string;
-    house_no?: string;
-    details?: string;
-  }) => {
-    if (!token) return null;
-    
+  const updateAddress = async (addressId: number, addressData: UpdateDeliveryAddressData) => {
+    if (!isAuthenticated || !token) {
+      throw new Error('User not authenticated');
+    }
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/v1/delivery-addresses/${id}`, {
+      const response = await fetch(getDeliveryAddressById(addressId.toString()), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
         },
         body: JSON.stringify(addressData),
       });
-      
-      const data = await response.json();
-      return data;
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update delivery address');
+      }
+
+      const result = await response.json();
+      return result.data;
     } catch (err: any) {
       setError(err.message);
-      return null;
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  return { updateAddress, loading, error };
+  return {
+    updateAddress,
+    loading,
+    error,
+  };
 }
 
 // DELETE delivery address
 export function useDeleteDeliveryAddress() {
-  const { token } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const deleteAddress = async (id: string) => {
-    if (!token) return null;
-    
+  const deleteAddress = async (addressId: number) => {
+    if (!isAuthenticated || !token) {
+      throw new Error('User not authenticated');
+    }
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/v1/delivery-addresses/${id}`, {
+      const response = await fetch(getDeliveryAddressById(addressId.toString()), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
         },
       });
-      
-      const data = await response.json();
-      return data;
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete delivery address');
+      }
+
+      return true;
     } catch (err: any) {
       setError(err.message);
-      return null;
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  return { deleteAddress, loading, error };
+  return {
+    deleteAddress,
+    loading,
+    error,
+  };
 }
-

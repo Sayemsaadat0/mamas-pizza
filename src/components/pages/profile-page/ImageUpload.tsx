@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useRef } from 'react'
-import { Camera, Upload } from 'lucide-react'
+import { Camera } from 'lucide-react';
 import Image from 'next/image'
 
 interface ImageUploadProps {
@@ -48,7 +48,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     
     // Handle specific case: "http://localhost:8000storage/" -> "http://localhost:8000/storage/"
     if (imagePath.includes('://') && imagePath.includes('storage/')) {
-      return imagePath.replace(/(:\d+)(storage)/, '$1/$2')
+      return imagePath.replace(/(:\d+)(storage)/, '$1/$2');
     }
     
     // Default: prepend API URL

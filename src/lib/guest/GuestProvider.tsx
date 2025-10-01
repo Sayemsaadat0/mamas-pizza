@@ -7,6 +7,8 @@ interface GuestContextType {
   guestId: string | null;
   isLoading: boolean;
   refreshGuestId: () => string;
+  canOrder: boolean;
+  setCanOrder: (value: boolean) => void;
 }
 
 const GuestContext = createContext<GuestContextType | undefined>(undefined);

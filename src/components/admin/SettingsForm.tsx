@@ -10,7 +10,7 @@ const SettingsForm: React.FC = () => {
     const [isShopOpen, setIsShopOpen] = useState(true);
     
     // Get restaurants data
-    const { restaurants, loading, refetch } = useRestaurants();
+    const { restaurants, loading, fetchRestaurants } = useRestaurants();
     
     // Update restaurant hook
     const { updateRestaurant, loading: updateLoading } = useUpdateRestaurant();
@@ -18,8 +18,8 @@ const SettingsForm: React.FC = () => {
     // Set initial shop status based on API data
     useEffect(() => {
         if (restaurants && restaurants.length > 0) {
-            const currentStatus = restaurants[0].shop_status;
-            setIsShopOpen(currentStatus === 'open');
+            const currentStatus = restaurants[0].isShopOpen;
+            setIsShopOpen(currentStatus);
         }
     }, [restaurants]);
 
@@ -27,18 +27,18 @@ const SettingsForm: React.FC = () => {
         if (!restaurants || restaurants.length === 0) return;
         
         const restaurant = restaurants[0];
-        const newStatus = isShopOpen ? 'close' : 'open';
+        const newStatus = !isShopOpen;
         
         try {
             await updateRestaurant(restaurant.id, {
-                shop_status: newStatus
+                isShopOpen: newStatus
             });
             
             // Update local state
-            setIsShopOpen(!isShopOpen);
+            setIsShopOpen(newStatus);
             
             // Refresh data
-            refetch();
+            fetchRestaurants();
             
             console.log('Shop status changed:', newStatus);
         } catch (error) {

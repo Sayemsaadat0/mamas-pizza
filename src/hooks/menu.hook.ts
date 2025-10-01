@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/auth/useAuth";
+import { ITEMS_API } from "@/app/api";
 
 export interface MenuItem {
   id: number;
@@ -82,8 +83,6 @@ export function useMenus(params?: {
     setError(null);
 
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL;
-      
       // Build query string
       const searchParams = new URLSearchParams();
       if (queryParams?.category_id) {
@@ -100,7 +99,7 @@ export function useMenus(params?: {
       }
       
       const queryString = searchParams.toString();
-      const url = `${base}/api/v1/items${queryString ? `?${queryString}` : ''}`;
+        const url = `${ITEMS_API}${queryString ? `?${queryString}` : ''}`;
       
       const response = await fetch(url);
       const responseData = await response.json();
@@ -165,8 +164,7 @@ export function useCreateMenu() {
     setError(null);
 
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/v1/items`, {
+        const response = await fetch(ITEMS_API, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -213,8 +211,7 @@ export function useUpdateMenu() {
     setError(null);
 
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/v1/items/${id}`, {
+        const response = await fetch(`${ITEMS_API}/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -249,8 +246,7 @@ export function useDeleteMenu() {
     setError(null);
 
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${base}/api/v1/items/${id}`, {
+        const response = await fetch(`${ITEMS_API}/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

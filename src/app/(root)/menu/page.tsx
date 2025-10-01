@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { useCategories } from "@/hooks/category.hook";
 import { useMenus } from "@/hooks/menu.hook";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -52,14 +53,35 @@ const Menu = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50">
-      <div className="max-w-7xl mx-auto px-4 py-10 mt-40">
-        {/* --- Page Title --- */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
-            Our Menu
-          </h1>
-          <div className="w-24 h-1 bg-gradient-to-r from-orange-400 to-orange-600 mx-auto rounded-full"></div>
+      {/* Hero Section */}
+      <div className="relative h-[600px] flex items-center justify-center overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="https://images.unsplash.com/photo-1595708684082-a173bb3a06c5?q=80&w=1164&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+            alt="Menu background"
+            fill
+            className="object-cover"
+            priority
+            sizes="100vw"
+          />
+          {/* Black overlay */}
+          <div className="absolute inset-0 bg-black/60"></div>
         </div>
+
+        {/* Hero Content */}
+        <div className="relative z-10 text-center px-4">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white mb-4">
+            OUR MENUS
+          </h1>
+          <div className="w-32 h-1.5 bg-gradient-to-r from-orange-400 to-red-500 mx-auto rounded-full"></div>
+          <p className="text-xl sm:text-2xl text-gray-200 mt-6 max-w-2xl mx-auto">
+            Explore our delicious selection of handcrafted pizzas and more
+          </p>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 py-10">
 
         {/* --- Search --- */}
         <div className="flex justify-center mb-8">

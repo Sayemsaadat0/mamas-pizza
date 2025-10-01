@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { LOGIN_API, ME_API, REGISTER_API, updateUserProfile } from '@/app/api';
 
 export interface User {
   id: number;
@@ -25,7 +26,7 @@ interface AuthActions {
   setLoading: (loading: boolean) => void;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001';
+// API URLs are now imported from centralized api.ts file
 
 export const useAuth = create<AuthState & AuthActions>()(
   persist(
@@ -78,7 +79,7 @@ export const useAuth = create<AuthState & AuthActions>()(
 export const authAPI = {
   login: async (email: string, password: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/login`, {
+      const response = await fetch(LOGIN_API, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -112,7 +113,7 @@ export const authAPI = {
 
   register: async (name: string, email: string, password: string, password_confirmation: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/register`, {
+      const response = await fetch(REGISTER_API, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -146,7 +147,7 @@ export const authAPI = {
 
   fetchProfile: async (token: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/me`, {
+      const response = await fetch(ME_API, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -179,7 +180,7 @@ export const authAPI = {
         formData.append('user_image', data.user_image);
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/me/${userId}`, {
+      const response = await fetch(updateUserProfile(userId.toString()), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/auth/useAuth";
 import { useGuest } from "@/lib/guest/GuestProvider";
+import { CART_API, GUEST_CART_API } from "@/app/api";
 
 export interface CartItemData {
   id: number;
@@ -95,11 +96,10 @@ export function useCart() {
     setError(null);
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
       
       if (isAuthenticated) {
         // Fetch user cart
-        const response = await fetch(`${baseUrl}/api/v1/user/cart`, {
+        const response = await fetch(CART_API, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -129,7 +129,7 @@ export function useCart() {
           return;
         }
         
-        const response = await fetch(`${baseUrl}/api/v1/guest/cart?guest_id=${guestId}`);
+        const response = await fetch(`${GUEST_CART_API}?guest_id=${guestId}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch guest cart');
@@ -185,11 +185,10 @@ export function useUpdateCartItem() {
     setError(null);
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
       
       if (isAuthenticated) {
         // Update user cart item
-        const response = await fetch(`${baseUrl}/api/v1/cart/${cartItemId}`, {
+        const response = await fetch(`${CART_API}/${cartItemId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -209,7 +208,7 @@ export function useUpdateCartItem() {
           throw new Error('Guest ID not available');
         }
         
-        const response = await fetch(`${baseUrl}/api/v1/guest/cart/${cartItemId}`, {
+        const response = await fetch(`${GUEST_CART_API}/${cartItemId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
@@ -249,11 +248,10 @@ export function useDeleteCartItem() {
     setError(null);
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
       
       if (isAuthenticated) {
         // Delete user cart item
-        const response = await fetch(`${baseUrl}/api/v1/cart/${cartItemId}`, {
+        const response = await fetch(`${CART_API}/${cartItemId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -267,7 +265,7 @@ export function useDeleteCartItem() {
         return await response.json();
       } else {
         // Delete guest cart item - use same endpoint as user
-        const response = await fetch(`${baseUrl}/api/v1/cart/${cartItemId}`, {
+        const response = await fetch(`${CART_API}/${cartItemId}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json'
