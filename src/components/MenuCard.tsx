@@ -32,13 +32,13 @@ interface MenuCardProps {
 
 const MenuCard: React.FC<MenuCardProps> = ({ menu, index = 0, onAddToCart, isLoading = false }) => {
   const handleAddToCart = () => {
-    console.log('MenuCard: Add to Cart button clicked for menu:', menu);
-    console.log('MenuCard: onAddToCart function exists:', !!onAddToCart);
+    // console.log('MenuCard: Add to Cart button clicked for menu:', menu);
+    // console.log('MenuCard: onAddToCart function exists:', !!onAddToCart);
     if (onAddToCart) {
-      console.log('MenuCard: Calling onAddToCart function');
+      // console.log('MenuCard: Calling onAddToCart function');
       onAddToCart(menu);
     } else {
-      console.log('MenuCard: onAddToCart function is not provided');
+      // console.log('MenuCard: onAddToCart function is not provided');
     }
   };
 

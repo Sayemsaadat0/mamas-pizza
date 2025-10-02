@@ -35,11 +35,15 @@ export const ITEM_BY_ID_API = `${API_BASE_URL}/api/v1/items`;
 export const CREATE_USER_API = `${API_BASE_URL}/api/v1/create/user`;
 export const USERS_API = `${API_BASE_URL}/api/v1/users`;
 
-// ==================== CART APIs (Frontend) ====================
-// Note: These might need to be implemented based on your backend structure
+// ==================== ADMIN ORDER MANAGEMENT APIs ====================
+export const ADMIN_ORDERS_API = `${API_BASE_URL}/api/v1/admin/orders`;
+export const ADMIN_ORDER_BY_ID_API = `${API_BASE_URL}/api/v1/admin/orders`;
+
+// ==================== CART APIs ====================
 export const CART_API = `${API_BASE_URL}/api/v1/cart`;
 export const GUEST_CART_API = `${API_BASE_URL}/api/v1/guest/cart`;
 export const USER_CART_API = `${API_BASE_URL}/api/v1/user/cart`;
+export const CART_SUMMARY_API = `${API_BASE_URL}/api/v1/cart-summary`;
 
 // ==================== ORDER APIs ====================
 export const ORDERS_API = `${API_BASE_URL}/api/v1/orders`;
@@ -54,6 +58,11 @@ export const STRIPE_CREATE_SESSION_API = `${API_BASE_URL}/api/v1/payments/create
 export const STRIPE_VERIFY_PAYMENT_API = `${API_BASE_URL}/api/v1/payments/verify`;
 export const STRIPE_SESSION_STATUS_API = `${API_BASE_URL}/api/v1/payments/session-status`;
 export const STRIPE_WEBHOOK_API = `${API_BASE_URL}/api/v1/stripe/webhook`;
+
+// ==================== GUEST PAYMENT APIs ====================
+export const GUEST_STRIPE_CREATE_SESSION_API = `${API_BASE_URL}/api/v1/guest/payments/create-session`;
+export const GUEST_STRIPE_VERIFY_PAYMENT_API = `${API_BASE_URL}/api/v1/guest/payments/verify`;
+export const GUEST_STRIPE_SESSION_STATUS_API = `${API_BASE_URL}/api/v1/guest/payments/session-status`;
 
 // ==================== POST CODES APIs ====================
 export const POST_CODES_API = `${API_BASE_URL}/api/v1/post-codes`;
@@ -114,6 +123,14 @@ export const getGuestPostCodeById = (postCodeId: string) =>
 export const getGuestOrderByNumber = (orderNumber: string) => 
   `${GUEST_ORDER_API}/${orderNumber}`;
 
+// Helper function to get admin order by ID
+export const getAdminOrderById = (orderId: string) => 
+  `${ADMIN_ORDER_BY_ID_API}/${orderId}`;
+
+// Helper function to cancel admin order
+export const cancelAdminOrder = (orderId: string) => 
+  `${ADMIN_ORDER_BY_ID_API}/${orderId}/cancel`;
+
 // ==================== LEGACY COMPATIBILITY (for existing code) ====================
 // These maintain backward compatibility with existing code
 export const MENUS_API = ITEMS_API; // Items are menus in your system
@@ -128,6 +145,5 @@ export const DELIVERY_AREAS_API = DELIVERY_ADDRESSES_API; // Delivery areas uses
 export const DELIVERY_ADDRESS_API = DELIVERY_ADDRESSES_API; // Delivery address uses delivery addresses
 export const ADMIN_MENUS_API = ITEMS_API; // Admin menus uses items endpoint
 export const ADMIN_CATEGORIES_API = CATEGORIES_API; // Admin categories uses categories endpoint
-export const ADMIN_ORDERS_API = ORDERS_API; // Admin orders uses orders endpoint
 export const ADMIN_USERS_API = USERS_API; // Admin users uses users endpoint
 export const ADMIN_DASHBOARD_API = `${API_BASE_URL}/api/v1/admin/dashboard`; // Admin dashboard (to be implemented)

@@ -26,9 +26,9 @@ export interface GuestOrder {
   delivery_address: {
     fields: string;
     address_line_1: string;
-    address_line_2: string;
+    address_line_2?: string;
     zip_code: string;
-    details: string;
+    details?: string;
   };
   special_instructions?: string;
   payment_method: 'stripe' | 'cash' | 'card';
@@ -56,9 +56,9 @@ export interface CreateGuestOrderData {
   delivery_address: {
     fields: string;
     address_line_1: string;
-    address_line_2: string;
+    address_line_2?: string;
     zip_code: string;
-    details: string;
+    details?: string;
   };
   special_instructions?: string;
   payment_method: 'stripe' | 'cash' | 'card';

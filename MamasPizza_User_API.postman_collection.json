@@ -3131,6 +3131,445 @@
 		],
 		"description": "Complete workflow for guest users from browsing to order placement without authentication"
 	},
+	{
+		"name": "Guest Stripe Payment Integration",
+		"item": [
+			{
+				"name": "Create Guest Stripe Checkout Session",
+				"request": {
+					"method": "POST",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"type": "text"
+						},
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"body": {
+						"mode": "raw",
+						"raw": "{\n    \"order_id\": 1,\n    \"guest_id\": \"guest_12345\"\n}"
+					},
+					"url": {
+						"raw": "{{base_url}}/api/v1/guest/payments/create-session",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"guest",
+							"payments",
+							"create-session"
+						]
+					},
+					"description": "Create a Stripe Checkout session for a guest order. Returns session URL for payment processing."
+				},
+				"response": []
+			},
+			{
+				"name": "Verify Guest Payment Session",
+				"request": {
+					"method": "POST",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"type": "text"
+						},
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"body": {
+						"mode": "raw",
+						"raw": "{\n    \"session_id\": \"cs_test_1234567890abcdef\",\n    \"guest_id\": \"guest_12345\"\n}"
+					},
+					"url": {
+						"raw": "{{base_url}}/api/v1/guest/payments/verify",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"guest",
+							"payments",
+							"verify"
+						]
+					},
+					"description": "Verify payment session after redirect from Stripe Checkout (optional - webhook handles this automatically)"
+				},
+				"response": []
+			},
+			{
+				"name": "Get Guest Payment Session Status",
+				"request": {
+					"method": "GET",
+					"header": [
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"url": {
+						"raw": "{{base_url}}/api/v1/guest/payments/session-status?session_id=cs_test_1234567890abcdef&guest_id=guest_12345",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"guest",
+							"payments",
+							"session-status"
+						],
+						"query": [
+							{
+								"key": "session_id",
+								"value": "cs_test_1234567890abcdef",
+								"description": "Stripe checkout session ID"
+							},
+							{
+								"key": "guest_id",
+								"value": "guest_12345",
+								"description": "Guest ID to verify ownership"
+							}
+						]
+					},
+					"description": "Get current status of a guest Stripe checkout session"
+				},
+				"response": []
+			}
+		],
+		"description": "Guest Stripe payment integration endpoints for creating checkout sessions, verifying payments, and handling webhooks (no authentication required)"
+	},
+	{
+		"name": "Complete Guest Payment Workflow (No Authentication)",
+		"item": [
+			{
+				"name": "Step 1: Browse Items (Public)",
+				"request": {
+					"method": "GET",
+					"header": [
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"url": {
+						"raw": "{{base_url}}/api/v1/items",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"items"
+						]
+					},
+					"description": "Step 1: Browse available items (no authentication required)"
+				},
+				"response": []
+			},
+			{
+				"name": "Step 2: Add Item to Guest Cart",
+				"request": {
+					"method": "POST",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"type": "text"
+						},
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"body": {
+						"mode": "raw",
+						"raw": "{\n    \"guest_id\": \"guest_12345\",\n    \"item_id\": 1,\n    \"quantity\": 2\n}"
+					},
+					"url": {
+						"raw": "{{base_url}}/api/v1/guest/cart",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"guest",
+							"cart"
+						]
+					},
+					"description": "Step 2: Add items to guest cart using guest_id from frontend"
+				},
+				"response": []
+			},
+			{
+				"name": "Step 3: Add More Items to Guest Cart",
+				"request": {
+					"method": "POST",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"type": "text"
+						},
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"body": {
+						"mode": "raw",
+						"raw": "{\n    \"guest_id\": \"guest_12345\",\n    \"item_id\": 2,\n    \"quantity\": 1\n}"
+					},
+					"url": {
+						"raw": "{{base_url}}/api/v1/guest/cart",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"guest",
+							"cart"
+						]
+					},
+					"description": "Step 3: Add more items to guest cart"
+				},
+				"response": []
+			},
+			{
+				"name": "Step 4: View Guest Cart",
+				"request": {
+					"method": "GET",
+					"header": [
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"url": {
+						"raw": "{{base_url}}/api/v1/guest/cart?guest_id=guest_12345",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"guest",
+							"cart"
+						],
+						"query": [
+							{
+								"key": "guest_id",
+								"value": "guest_12345",
+								"description": "Guest ID to identify cart"
+							}
+						]
+					},
+					"description": "Step 4: View guest cart with all items and totals"
+				},
+				"response": []
+			},
+			{
+				"name": "Step 5: Create Guest Order with Stripe Payment",
+				"event": [
+					{
+						"listen": "test",
+						"script": {
+							"exec": [
+								"if (pm.response.code === 201) {",
+								"    const response = pm.response.json();",
+								"    if (response.success && response.data.id) {",
+								"        pm.environment.set('guest_order_id', response.data.id);",
+								"        pm.environment.set('guest_order_number', response.data.order_number);",
+								"    }",
+								"}"
+							],
+							"type": "text/javascript"
+						}
+					}
+				],
+				"request": {
+					"method": "POST",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"type": "text"
+						},
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"body": {
+						"mode": "raw",
+						"raw": "{\n    \"guest_id\": \"guest_12345\",\n    \"delivery_type\": \"delivery\",\n    \"customer_name\": \"John Doe\",\n    \"customer_phone\": \"+1234567890\",\n    \"customer_email\": \"john@example.com\",\n    \"delivery_address\": {\n        \"fields\": \"Home\",\n        \"address_line_1\": \"123 Main Street\",\n        \"address_line_2\": \"Apt 4B\",\n        \"zip_code\": \"12345\",\n        \"details\": \"Ring doorbell twice\"\n    },\n    \"special_instructions\": \"Extra napkins please\",\n    \"payment_method\": \"stripe\",\n    \"tax_rate\": 8.5,\n    \"delivery_fee\": 5.00,\n    \"discount_amount\": 0\n}"
+					},
+					"url": {
+						"raw": "{{base_url}}/api/v1/guest/orders",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"guest",
+							"orders"
+						]
+					},
+					"description": "Step 5: Create guest order with payment_method = 'stripe' and payment_status = 'pending'"
+				},
+				"response": []
+			},
+			{
+				"name": "Step 6: Create Guest Stripe Checkout Session",
+				"event": [
+					{
+						"listen": "test",
+						"script": {
+							"exec": [
+								"if (pm.response.code === 200) {",
+								"    const response = pm.response.json();",
+								"    if (response.success && response.data.session_id) {",
+								"        pm.environment.set('guest_stripe_session_id', response.data.session_id);",
+								"        pm.environment.set('guest_stripe_session_url', response.data.session_url);",
+								"        console.log('Guest Stripe Checkout URL:', response.data.session_url);",
+								"        console.log('Copy this URL to browser to test payment');",
+								"    }",
+								"}"
+							],
+							"type": "text/javascript"
+						}
+					}
+				],
+				"request": {
+					"method": "POST",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"type": "text"
+						},
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"body": {
+						"mode": "raw",
+						"raw": "{\n    \"order_id\": {{guest_order_id}},\n    \"guest_id\": \"guest_12345\"\n}"
+					},
+					"url": {
+						"raw": "{{base_url}}/api/v1/guest/payments/create-session",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"guest",
+							"payments",
+							"create-session"
+						]
+					},
+					"description": "Step 6: Create Stripe checkout session for the guest order. Returns session URL for payment."
+				},
+				"response": []
+			},
+			{
+				"name": "Step 7: Verify Guest Payment (After Stripe Redirect)",
+				"request": {
+					"method": "POST",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"type": "text"
+						},
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"body": {
+						"mode": "raw",
+						"raw": "{\n    \"session_id\": \"{{guest_stripe_session_id}}\",\n    \"guest_id\": \"guest_12345\"\n}"
+					},
+					"url": {
+						"raw": "{{base_url}}/api/v1/guest/payments/verify",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"guest",
+							"payments",
+							"verify"
+						]
+					},
+					"description": "Step 7: Verify payment after user returns from Stripe Checkout (optional - webhook handles this automatically)"
+				},
+				"response": []
+			},
+			{
+				"name": "Step 8: Check Guest Order Status",
+				"request": {
+					"method": "GET",
+					"header": [
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"url": {
+						"raw": "{{base_url}}/api/v1/guest/orders/{{guest_order_number}}?guest_id=guest_12345",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"guest",
+							"orders",
+							"{{guest_order_number}}"
+						],
+						"query": [
+							{
+								"key": "guest_id",
+								"value": "guest_12345",
+								"description": "Guest ID to verify ownership"
+							}
+						]
+					},
+					"description": "Step 8: Check guest order status - payment_status should be 'paid' after successful payment"
+				},
+				"response": []
+			}
+		],
+		"description": "Complete payment workflow for guest users from browsing to successful payment verification without authentication"
+	},
 		{
 			"name": "Post Codes Management",
 			"item": [
@@ -3610,10 +4049,380 @@
 					"response": []
 				}
 			],
-			"description": "Guest post codes management endpoints - POST is public (no authentication), GET/UPDATE/DELETE require authentication"
+		"description": "Guest post codes management endpoints - POST is public (no authentication), GET/UPDATE/DELETE require authentication"
+	},
+	{
+		"name": "Admin Orders Management",
+		"item": [
+			{
+				"name": "Get All Orders (Admin)",
+				"request": {
+					"method": "GET",
+					"header": [
+						{
+							"key": "Authorization",
+							"value": "Bearer {{admin_token}}",
+							"type": "text"
+						},
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"url": {
+						"raw": "{{base_url}}/api/v1/admin/orders",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"admin",
+							"orders"
+						]
+					},
+					"description": "Get all orders in the system with comprehensive filtering and summary statistics (admin role required)"
+				},
+				"response": []
+			},
+			{
+				"name": "Get All Orders with Filters",
+				"request": {
+					"method": "GET",
+					"header": [
+						{
+							"key": "Authorization",
+							"value": "Bearer {{admin_token}}",
+							"type": "text"
+						},
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"url": {
+						"raw": "{{base_url}}/api/v1/admin/orders?status=pending&payment_status=paid&user_type=authenticated&per_page=10",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"admin",
+							"orders"
+						],
+						"query": [
+							{
+								"key": "status",
+								"value": "pending",
+								"description": "Filter by order status (pending, completed, cancelled)"
+							},
+							{
+								"key": "payment_status",
+								"value": "paid",
+								"description": "Filter by payment status (pending, paid, failed, refunded)"
+							},
+							{
+								"key": "user_type",
+								"value": "authenticated",
+								"description": "Filter by user type (authenticated, guest)"
+							},
+							{
+								"key": "per_page",
+								"value": "10",
+								"description": "Number of orders per page"
+							}
+						]
+					},
+					"description": "Get all orders with various filters applied (admin role required)"
+				},
+				"response": []
+			},
+			{
+				"name": "Search Orders by Customer Info",
+				"request": {
+					"method": "GET",
+					"header": [
+						{
+							"key": "Authorization",
+							"value": "Bearer {{admin_token}}",
+							"type": "text"
+						},
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"url": {
+						"raw": "{{base_url}}/api/v1/admin/orders?search=john@example.com",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"admin",
+							"orders"
+						],
+						"query": [
+							{
+								"key": "search",
+								"value": "john@example.com",
+								"description": "Search by order number, customer name, or customer email"
+							}
+						]
+					},
+					"description": "Search orders by customer information (admin role required)"
+				},
+				"response": []
+			},
+			{
+				"name": "Get Orders by Date Range",
+				"request": {
+					"method": "GET",
+					"header": [
+						{
+							"key": "Authorization",
+							"value": "Bearer {{admin_token}}",
+							"type": "text"
+						},
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"url": {
+						"raw": "{{base_url}}/api/v1/admin/orders?date_from=2025-01-01&date_to=2025-12-31",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"admin",
+							"orders"
+						],
+						"query": [
+							{
+								"key": "date_from",
+								"value": "2025-01-01",
+								"description": "Start date (YYYY-MM-DD)"
+							},
+							{
+								"key": "date_to",
+								"value": "2025-12-31",
+								"description": "End date (YYYY-MM-DD)"
+							}
+						]
+					},
+					"description": "Get orders within a specific date range (admin role required)"
+				},
+				"response": []
+			},
+			{
+				"name": "Get Guest Orders Only",
+				"request": {
+					"method": "GET",
+					"header": [
+						{
+							"key": "Authorization",
+							"value": "Bearer {{admin_token}}",
+							"type": "text"
+						},
+						{
+							"key": "Accept",
+							"value": "application/json",
+							"type": "text"
+						}
+					],
+					"url": {
+						"raw": "{{base_url}}/api/v1/admin/orders?user_type=guest&payment_method=stripe",
+						"host": [
+							"{{base_url}}"
+						],
+						"path": [
+							"api",
+							"v1",
+							"admin",
+							"orders"
+						],
+						"query": [
+							{
+								"key": "user_type",
+								"value": "guest",
+								"description": "Filter for guest orders only"
+							},
+							{
+								"key": "payment_method",
+								"value": "stripe",
+								"description": "Filter by payment method (stripe, cash)"
+							}
+						]
+					},
+				"description": "Get only guest orders with Stripe payments (admin role required)"
+			},
+			"response": []
 		},
 		{
-			"name": "Admin User Management",
+			"name": "Get Single Order Details (Admin)",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{admin_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/v1/admin/orders/1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"admin",
+						"orders",
+						"1"
+					]
+				},
+				"description": "Get detailed information for a specific order (admin role required)"
+			},
+			"response": []
+		},
+		{
+			"name": "Update Order (Admin)",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{admin_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"status\": \"preparing\",\n    \"payment_status\": \"paid\",\n    \"special_instructions\": \"Updated instructions\",\n    \"estimated_delivery_time\": \"2025-10-01T12:00:00Z\",\n    \"delivery_fee\": 5.00,\n    \"discount_amount\": 2.00,\n    \"notes\": \"Order is being prepared\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/admin/orders/1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"admin",
+						"orders",
+						"1"
+					]
+				},
+				"description": "Update order details including status, payment status, and other fields (admin role required)"
+			},
+			"response": []
+		},
+		{
+			"name": "Cancel Order (Admin)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{admin_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"cancellation_reason\": \"Customer requested cancellation\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/admin/orders/1/cancel",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"admin",
+						"orders",
+						"1",
+						"cancel"
+					]
+				},
+				"description": "Cancel an order with optional cancellation reason (admin role required)"
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Order (Admin)",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{admin_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/v1/admin/orders/1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"admin",
+						"orders",
+						"1"
+					]
+				},
+				"description": "Delete an order (only pending, unpaid orders can be deleted) (admin role required)"
+			},
+			"response": []
+		}
+	],
+	"description": "Admin-only endpoints for viewing and managing all orders in the system (admin role required)"
+},
+	{
+		"name": "Admin User Management",
 				"item": [
 				{
 					"name": "Create Admin User",

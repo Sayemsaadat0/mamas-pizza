@@ -56,16 +56,15 @@ export default function OrderSummary({ summary, onCheckout }: OrderSummaryProps)
             <span>Discount</span>
             <span className="text-gray-600 font-semibold">{summary.discount.toFixed(0)} USD</span>
           </div>
-          <div className="flex justify-between text-base sm:text-lg text-gray-600">
-            <span>Delivery fee</span>
-            <span className="font-semibold">{summary.delivery.toFixed(2)} USD</span>
-          </div>
           
           <div className="border-t-2 border-orange-200 pt-3 sm:pt-4 mt-3 sm:mt-4">
             <div className="flex justify-between text-xl sm:text-2xl font-bold text-gray-900">
-              <span>Total</span>
-              <span>${summary.total.toFixed(0)} USD</span>
+              <span>Subtotal</span>
+              <span>${summary.total.toFixed(2)}</span>
             </div>
+            <p className="text-sm text-gray-600 mt-2">
+              * Delivery fee and taxes will be calculated at checkout
+            </p>
           </div>
         </div>
 

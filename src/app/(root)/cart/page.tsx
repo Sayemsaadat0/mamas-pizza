@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import { useCart, useUpdateCartItem, useDeleteCartItem } from "@/hooks/cart.hook";
+import { useCart, useUpdateCartItem, useDeleteCartItem, useDeleteGuestCartItem } from "@/hooks/cart.hook";
+import { useAuth } from "@/lib/auth/useAuth";
 import { toast } from "sonner";
 import CartItems from "./components/CartItems";
 import OrderSummary from "./components/OrderSummary";
@@ -22,10 +23,14 @@ export default function CartPage() {
   const [loadingItems, setLoadingItems] = useState<Set<number>>(new Set());
   const [quantityInputs, setQuantityInputs] = useState<{ [key: number]: string }>({});
   
+  // Auth hook
+  const { isAuthenticated } = useAuth();
+  
   // Cart hooks
   const { cartItems, loading, error, grandTotal,  refetch, updateCartItemLocally, removeCartItemLocally } = useCart();
   const { updateCartItem,  } = useUpdateCartItem();
   const { deleteCartItem,  } = useDeleteCartItem();
+  const { deleteGuestCartItem,  } = useDeleteGuestCartItem();
 
   // Transform cart data to match CartItems component interface
   const cart = useMemo(() => {
@@ -43,7 +48,7 @@ export default function CartPage() {
   const summary = useMemo(() => {
     const subtotal = grandTotal;
     const discount = 0; // No discount applied
-    const delivery = 8.99;
+    const delivery = 0; // Delivery fee will be calculated by backend
     const total = subtotal - discount + delivery;
     return { subtotal, discount, delivery, total };
   }, [grandTotal]);
@@ -127,8 +132,12 @@ export default function CartPage() {
       // Update UI immediately for better UX
       removeCartItemLocally(cartItemId);
       
-      // Make API call
-      await deleteCartItem(cartItemId);
+      // Make API call based on authentication status
+      if (isAuthenticated) {
+        await deleteCartItem(cartItemId);
+      } else {
+        await deleteGuestCartItem(cartItemId);
+      }
       
       toast.success('Item removed from cart');
     } catch (error ) {
@@ -150,9 +159,15 @@ export default function CartPage() {
     setIsModalOpen(true);
   };
 
-  const handleConfirmOrder = () => {
+  const handleConfirmOrder = (guestData?: any) => {
     // Handle order confirmation logic here
-    console.log("Order confirmed:", { cart, summary });
+    const orderData = {
+      cart,
+      summary,
+      guestData,
+      isAuthenticated
+    };
+    console.log("Order confirmed:", orderData);
     setIsModalOpen(false);
     // You can add navigation to success page or other logic
   };

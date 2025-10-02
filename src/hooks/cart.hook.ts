@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/auth/useAuth";
 import { useGuest } from "@/lib/guest/GuestProvider";
-import { CART_API, GUEST_CART_API } from "@/app/api";
+import { CART_API, GUEST_CART_API, CART_SUMMARY_API } from "@/app/api";
 
 export interface CartItemData {
   id: number;
@@ -253,7 +253,7 @@ export function useDeleteCartItem() {
         // Delete user cart item
         const response = await fetch(`${CART_API}/${cartItemId}`, {
           method: 'DELETE',
-          headers: {
+        headers: {
             'Authorization': `Bearer ${token}`
           }
         });
@@ -264,17 +264,20 @@ export function useDeleteCartItem() {
         
         return await response.json();
       } else {
-        // Delete guest cart item - use same endpoint as user
-        const response = await fetch(`${CART_API}/${cartItemId}`, {
+        // Delete guest cart item using guest cart endpoint
+        if (!guestId) {
+          throw new Error('Guest ID is required');
+        }
+        
+        const response = await fetch(`${GUEST_CART_API}/${cartItemId}?guest_id=${guestId}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ guest_id: guestId })
+          }
         });
         
         if (!response.ok) {
-          throw new Error('Failed to delete cart item');
+          throw new Error('Failed to delete guest cart item');
         }
         
         return await response.json();
@@ -288,4 +291,106 @@ export function useDeleteCartItem() {
   };
 
   return { deleteCartItem, loading, error };
+}
+
+// DELETE guest cart item (dedicated hook for guest users)
+export function useDeleteGuestCartItem() {
+  const { guestId } = useGuest();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const deleteGuestCartItem = async (cartItemId: number) => {
+    if (!guestId) {
+      throw new Error('Guest ID is required');
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`${GUEST_CART_API}/${cartItemId}?guest_id=${guestId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete guest cart item');
+      }
+      
+      return await response.json();
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { deleteGuestCartItem, loading, error };
+}
+
+// GET cart summary
+export function useCartSummary() {
+  const { token, isAuthenticated } = useAuth();
+  const { guestId } = useGuest();
+  const [summary, setSummary] = useState<{
+    total_items: number;
+    subtotal: number;
+    delivery_fee: number;
+    tax_amount: number;
+    total_amount: number;
+  } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchCartSummary = useCallback(async () => {
+    if (!isAuthenticated && !guestId) {
+      setError('User not authenticated and no guest ID');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const headers: Record<string, string> = {
+        'Accept': 'application/json',
+      };
+
+      if (isAuthenticated && token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const params = new URLSearchParams();
+      if (guestId) {
+        params.append('guest_id', guestId);
+      }
+
+      const url = `${CART_SUMMARY_API}${params.toString() ? `?${params.toString()}` : ''}`;
+      
+      const response = await fetch(url, { headers });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch cart summary');
+      }
+
+      const result = await response.json();
+      setSummary(result.data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated, token, guestId]);
+
+  return {
+    summary,
+    loading,
+    error,
+    fetchCartSummary,
+  };
 }
