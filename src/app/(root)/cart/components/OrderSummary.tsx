@@ -10,12 +10,14 @@ interface OrderSummaryProps {
     total: number;
   };
   onCheckout: () => void;
+  isFormValid?: boolean;
+  isLoading?: boolean;
 }
 
-export default function OrderSummary({ summary, onCheckout }: OrderSummaryProps) {
+export default function OrderSummary({ summary, onCheckout, isFormValid = true, isLoading = false }: OrderSummaryProps) {
 
   return (
-    <div className="space-y-6 sm:space-y-8 sticky top-4 lg:top-8">
+    <div className="space-y-6 sm:space-y-8 sticky top-4 lg:top-[130px]">
       {/* Order Summary Card */}
       <div className="bg-white/90 backdrop-blur-sm p-5 rounded-xl sm:rounded-2xl shadow-xl border border-orange-100 ">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">Order Summary</h2>
@@ -60,9 +62,17 @@ export default function OrderSummary({ summary, onCheckout }: OrderSummaryProps)
         {/* Checkout Button */}
         <button
           onClick={onCheckout}
-          className="w-full mt-6 sm:mt-8 bg-gradient-to-r from-orange-600 to-red-500 text-white py-2.5 sm:py-4 px-4 sm:px-8 rounded-lg sm:rounded-xl font-semibold text-base sm:text-xl hover:from-orange-700 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+          disabled={!isFormValid || isLoading}
+          className="w-full mt-6 sm:mt-8 bg-gradient-to-r from-orange-600 to-red-500 text-white py-2.5 sm:py-4 px-4 sm:px-8 rounded-lg sm:rounded-xl font-semibold text-base sm:text-xl hover:from-orange-700 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
         >
-          Checkout Now
+          {isLoading ? (
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              {isLoading ? "Processing..." : "Checkout Now"}
+            </div>
+          ) : (
+            "Checkout Now"
+          )}
         </button>
       </div>
 

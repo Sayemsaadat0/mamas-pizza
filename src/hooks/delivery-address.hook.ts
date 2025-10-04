@@ -10,7 +10,7 @@ export interface DeliveryAddress {
   fields: string;
   address_line_1: string;
   address_line_2: string;
-  zip_code: string;
+  post_code: string;
   details: string;
   created_at: string;
   updated_at: string;
@@ -20,7 +20,7 @@ export interface CreateDeliveryAddressData {
   fields: string;
   address_line_1: string;
   address_line_2: string;
-  zip_code: string;
+  post_code: string;
   details: string;
 }
 
@@ -28,7 +28,7 @@ export interface UpdateDeliveryAddressData {
   fields?: string;
   address_line_1?: string;
   address_line_2?: string;
-  zip_code?: string;
+  post_code?: string;
   details?: string;
 }
 

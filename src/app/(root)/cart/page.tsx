@@ -2,11 +2,15 @@
 
 import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import Image from "next/image";
+import { User, MapPin, MessageSquare } from "lucide-react";
 import { useCart, useUpdateCartItem, useDeleteCartItem, useDeleteGuestCartItem } from "@/hooks/cart.hook";
 import { useAuth } from "@/lib/auth/useAuth";
+import { useCreateOrder } from "@/hooks/order.hook";
+import { useCreateGuestOrder } from "@/hooks/guest-order.hook";
+import { useCreateGuestStripeSession } from "@/hooks/guest-payment.hook";
+import { useGuest } from "@/lib/guest/GuestProvider";
 import { toast } from "sonner";
 import OrderSummary from "./components/OrderSummary";
-import CheckoutModal from "./components/CheckoutModal";
 
 // interface CartItem {
 //   id: number;
@@ -18,19 +22,65 @@ import CheckoutModal from "./components/CheckoutModal";
 //   color: string;
 // }
 
+export interface GuestOrderData {
+  customer_name: string;
+  customer_phone: string;
+  customer_email: string;
+  delivery_address: {
+    address_line_1: string;
+    address_line_2?: string;
+    post_code: string;
+    details?: string;
+  };
+  special_instructions: string;
+}
+
+interface GuestOrderFormErrors {
+  customer_name?: string;
+  customer_phone?: string;
+  customer_email?: string;
+  delivery_address?: {
+    address_line_1?: string;
+    address_line_2?: string;
+    post_code?: string;
+    details?: string;
+  };
+  special_instructions?: string;
+}
+
 export default function CartPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadingItems, setLoadingItems] = useState<Set<number>>(new Set());
   const [quantityInputs, setQuantityInputs] = useState<{ [key: number]: string }>({});
   
+  // Guest form state
+  const [guestFormData, setGuestFormData] = useState<GuestOrderData>({
+    customer_name: "",
+    customer_phone: "",
+    customer_email: "",
+    delivery_address: {
+      address_line_1: "",
+      address_line_2: "",
+      post_code: "",
+      details: "",
+    },
+    special_instructions: "",
+  });
+  const [guestFormErrors, setGuestFormErrors] = useState<GuestOrderFormErrors>({});
+  
   // Auth hook
   const { isAuthenticated } = useAuth();
+  const { guestId } = useGuest();
   
   // Cart hooks
   const { cartItems, loading, error, grandTotal,  refetch, updateCartItemLocally, removeCartItemLocally } = useCart();
   const { updateCartItem,  } = useUpdateCartItem();
   const { deleteCartItem,  } = useDeleteCartItem();
   const { deleteGuestCartItem,  } = useDeleteGuestCartItem();
+  
+  // Order creation hooks
+  const { createOrder, loading: createOrderLoading } = useCreateOrder();
+  const { createGuestOrder, loading: createGuestOrderLoading } = useCreateGuestOrder();
+  const { createSession, loading: createSessionLoading } = useCreateGuestStripeSession();
 
   // Transform cart data to match CartItems component interface
   const cart = useMemo(() => {
@@ -52,6 +102,75 @@ export default function CartPage() {
     const total = subtotal - discount + delivery;
     return { subtotal, discount, delivery, total };
   }, [grandTotal]);
+
+  // Guest form handlers
+  const handleGuestInputChange = (field: string, value: string) => {
+    if (field.includes('.')) {
+      const [parent, child] = field.split('.');
+      setGuestFormData(prev => ({
+        ...prev,
+        [parent]: {
+          ...(prev[parent as keyof GuestOrderData] as any),
+          [child]: value
+        }
+      }));
+    } else {
+      setGuestFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+    
+    // Clear error when user starts typing
+    if (guestFormErrors[field as keyof GuestOrderData]) {
+      setGuestFormErrors(prev => ({
+        ...prev,
+        [field]: undefined
+      }));
+    }
+  };
+
+  const validateGuestForm = (): boolean => {
+    const newErrors: GuestOrderFormErrors = {};
+
+    if (!guestFormData.customer_name.trim()) {
+      newErrors.customer_name = "Customer name is required";
+    }
+
+    if (!guestFormData.customer_phone.trim()) {
+      newErrors.customer_phone = "Phone number is required";
+    } else if (!/^\+?[\d\s\-\(\)]+$/.test(guestFormData.customer_phone)) {
+      newErrors.customer_phone = "Please enter a valid phone number";
+    }
+
+    if (!guestFormData.customer_email.trim()) {
+      newErrors.customer_email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestFormData.customer_email)) {
+      newErrors.customer_email = "Please enter a valid email address";
+    }
+
+    if (!guestFormData.delivery_address.address_line_1.trim()) {
+      newErrors.delivery_address = { ...newErrors.delivery_address, address_line_1: "Address line 1 is required" };
+    }
+
+    if (!guestFormData.delivery_address.post_code.trim()) {
+      newErrors.delivery_address = { ...newErrors.delivery_address, post_code: "ZIP code is required" };
+    }
+
+    setGuestFormErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const isGuestFormValid = useMemo(() => {
+    if (isAuthenticated) return true;
+    return Boolean(
+      guestFormData.customer_name.trim() &&
+      guestFormData.customer_phone.trim() &&
+      guestFormData.customer_email.trim() &&
+      guestFormData.delivery_address.address_line_1.trim() &&
+      guestFormData.delivery_address.post_code.trim()
+    );
+  }, [isAuthenticated, guestFormData]);
 
   // Debounce timer ref
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -155,21 +274,84 @@ export default function CartPage() {
     }
   };
 
-  const handleCheckout = () => {
-    setIsModalOpen(true);
-  };
+  const handleCheckout = async () => {
+    // Validate guest form if not authenticated
+    if (!isAuthenticated && !validateGuestForm()) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
 
-  const handleConfirmOrder = (guestData?: any) => {
-    // Handle order confirmation logic here
-    const orderData = {
-      cart,
-      summary,
-      guestData,
-      isAuthenticated
-    };
-    console.log("Order confirmed:", orderData);
-    setIsModalOpen(false);
-    // You can add navigation to success page or other logic
+    try {
+      if (isAuthenticated) {
+        // Create order for authenticated user
+        const orderData = {
+          delivery_address_id: 1, // TODO: Get from user's delivery addresses
+          delivery_type: "delivery" as const,
+          payment_method: "stripe" as const,
+          tax_rate: 0,
+          delivery_fee: 0,
+          discount_amount: 0,
+          special_instructions: "",
+        };
+        
+        await createOrder(orderData);
+        toast.success("Order created successfully!");
+        // TODO: Navigate to payment or success page
+      } else {
+        // Create order for guest user
+        if (!guestId) {
+          toast.error("Guest ID not found. Please refresh and try again.");
+          return;
+        }
+
+        const guestOrderData = {
+          guest_id: guestId,
+          delivery_type: "delivery" as const,
+          customer_name: guestFormData.customer_name,
+          customer_phone: guestFormData.customer_phone,
+          customer_email: guestFormData.customer_email,
+          delivery_address: {
+            fields: "Delivery Address", // Default field name
+            address_line_1: guestFormData.delivery_address.address_line_1,
+            address_line_2: guestFormData.delivery_address.address_line_2,
+            post_code: guestFormData.delivery_address.post_code,
+            details: guestFormData.delivery_address.details,
+          },
+          special_instructions: guestFormData.special_instructions || "",
+          payment_method: "stripe" as const,
+          tax_rate: 0,
+          delivery_fee: 0,
+          discount_amount: 0,
+        };
+
+        const orderResult = await createGuestOrder(guestOrderData);
+        toast.success("Order created successfully!");
+        
+        // Create payment session for guest order
+        try {
+          const paymentData: { order_id: number; guest_id: string } = {
+            order_id: orderResult.id,
+            guest_id: guestId,
+          };
+          
+          const sessionResult = await createSession(paymentData);
+          
+          if (sessionResult.session_url) {
+            toast.success("Redirecting to payment...");
+            // Navigate to Stripe checkout session
+            window.location.href = sessionResult.session_url;
+          } else {
+            toast.error("Payment session creation failed");
+          }
+        } catch (paymentError: any) {
+          console.error("Error creating payment session:", paymentError);
+          toast.error("Order created but payment session failed. Please contact support.");
+        }
+      }
+    } catch (error: any) {
+      console.error("Error creating order:", error);
+      toast.error(error.message || "Failed to create order. Please try again.");
+    }
   };
 
   // Loading state
@@ -296,113 +478,276 @@ export default function CartPage() {
     
       <div className="ah-container px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-12">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8">
-            {/* Left Side - Cart Items (3/5 width on desktop) */}
-            <div className="lg:col-span-3 order-2 lg:order-1">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Your Cart Items</h2>
-              <div className="space-y-3 sm:space-y-4">
-                {cart.map((item) => (
-                  <div key={item.id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4">
-                    <div className="flex items-center space-x-3 sm:space-x-4 mb-3">
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden flex-shrink-0">
-                        <Image
-                          src={item.image}
-                          alt={item.name}
-                          width={64}
-                          height={64}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm sm:text-lg font-medium text-gray-900 truncate">{item.name}</h4>
-                        <p className="text-xs sm:text-sm text-gray-500">${item.price.toFixed(2)} each</p>
-                      </div>
-                      <div className="text-sm sm:text-lg font-semibold text-orange-600">
-                        ${(item.price * item.qty).toFixed(2)}
-                      </div>
-                    </div>
-                    
-                    {/* Quantity Controls */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1 sm:gap-2 border-2 border-orange-200 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white shadow-sm">
-                        <button
-                          onClick={() => updateQty(item.id, -1)}
-                          disabled={loadingItems.has(item.id)}
-                          className="w-5 h-5 sm:w-6 sm:h-6 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                          aria-label="Decrease quantity"
-                        >
-                          {loadingItems.has(item.id) ? (
-                            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
-                          ) : (
-                            <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                            </svg>
-                          )}
-                        </button>
-                        <input
-                          type="number"
-                          min="1"
-                          value={quantityInputs[item.id] !== undefined ? quantityInputs[item.id] : item.qty}
-                          onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
-                          onBlur={() => handleQuantityInputBlur(item.id)}
-                          className="min-w-6 sm:min-w-8 max-w-[60px] sm:max-w-[80px] text-center font-semibold text-xs sm:text-sm text-gray-900 bg-transparent border-none outline-none"
-                          disabled={loadingItems.has(item.id)}
-                        />
-                        <button
-                          onClick={() => updateQty(item.id, +1)}
-                          disabled={loadingItems.has(item.id)}
-                          className="w-5 h-5 sm:w-6 sm:h-6 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                          aria-label="Increase quantity"
-                        >
-                          {loadingItems.has(item.id) ? (
-                            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
-                          ) : (
-                            <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
-                          )}
-                        </button>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+            {/* Left Side - Cart Items and Guest Form (7/12 width on desktop) */}
+            <div className="lg:col-span-7 order-1 space-y-6">
+              {/* Cart Items */}
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Your Cart Items</h2>
+                <div className="space-y-3 sm:space-y-4">
+                  {cart.map((item) => (
+                    <div key={item.id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4">
+                      <div className="flex items-center space-x-3 sm:space-x-4 mb-3">
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden flex-shrink-0">
+                          <Image
+                            src={item.image}
+                            alt={item.name}
+                            width={64}
+                            height={64}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm sm:text-lg font-medium text-gray-900 truncate">{item.name}</h4>
+                          <p className="text-xs sm:text-sm text-gray-500">${item.price.toFixed(2)} each</p>
+                        </div>
+                        <div className="text-sm sm:text-lg font-semibold text-orange-600">
+                          ${(item.price * item.qty).toFixed(2)}
+                        </div>
                       </div>
                       
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        disabled={loadingItems.has(item.id)}
-                        className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                        aria-label="Remove item"
-                      >
-                        {loadingItems.has(item.id) ? (
-                          <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
-                        ) : (
-                          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
+                      {/* Quantity Controls */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1 sm:gap-2 border-2 border-orange-200 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white shadow-sm">
+                          <button
+                            onClick={() => updateQty(item.id, -1)}
+                            disabled={loadingItems.has(item.id)}
+                            className="w-5 h-5 sm:w-6 sm:h-6 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            aria-label="Decrease quantity"
+                          >
+                            {loadingItems.has(item.id) ? (
+                              <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
+                            ) : (
+                              <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                              </svg>
+                            )}
+                          </button>
+                          <input
+                            type="number"
+                            min="1"
+                            value={quantityInputs[item.id] !== undefined ? quantityInputs[item.id] : item.qty}
+                            onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
+                            onBlur={() => handleQuantityInputBlur(item.id)}
+                            className="min-w-6 sm:min-w-8 max-w-[60px] sm:max-w-[80px] text-center font-semibold text-xs sm:text-sm text-gray-900 bg-transparent border-none outline-none"
+                            disabled={loadingItems.has(item.id)}
+                          />
+                          <button
+                            onClick={() => updateQty(item.id, +1)}
+                            disabled={loadingItems.has(item.id)}
+                            className="w-5 h-5 sm:w-6 sm:h-6 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            aria-label="Increase quantity"
+                          >
+                            {loadingItems.has(item.id) ? (
+                              <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
+                            ) : (
+                              <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                        
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          disabled={loadingItems.has(item.id)}
+                          className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                          aria-label="Remove item"
+                        >
+                          {loadingItems.has(item.id) ? (
+                            <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
+                          ) : (
+                            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Guest Form - Only show if not authenticated */}
+              {!isAuthenticated && (
+                <div className="bg-white/90 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-orange-100">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-6">Delivery Information</h3>
+                  
+                  <div className="space-y-6">
+                    {/* Customer Information */}
+                    <div className="space-y-4">
+                      <h4 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <User className="w-5 h-5 text-orange-600" />
+                        Customer Information
+                      </h4>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Full Name *
+                          </label>
+                          <input
+                            type="text"
+                            value={guestFormData.customer_name}
+                            onChange={(e) => handleGuestInputChange('customer_name', e.target.value)}
+                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
+                              guestFormErrors.customer_name ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                            placeholder="Enter your full name"
+                          />
+                          {guestFormErrors.customer_name && (
+                            <p className="text-red-500 text-sm mt-1">{guestFormErrors.customer_name}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Phone Number *
+                          </label>
+                          <input
+                            type="tel"
+                            value={guestFormData.customer_phone}
+                            onChange={(e) => handleGuestInputChange('customer_phone', e.target.value)}
+                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
+                              guestFormErrors.customer_phone ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                            placeholder="+1234567890"
+                          />
+                          {guestFormErrors.customer_phone && (
+                            <p className="text-red-500 text-sm mt-1">{guestFormErrors.customer_phone}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Email Address *
+                        </label>
+                        <input
+                          type="email"
+                          value={guestFormData.customer_email}
+                          onChange={(e) => handleGuestInputChange('customer_email', e.target.value)}
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
+                            guestFormErrors.customer_email ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          placeholder="john@example.com"
+                        />
+                        {guestFormErrors.customer_email && (
+                          <p className="text-red-500 text-sm mt-1">{guestFormErrors.customer_email}</p>
                         )}
-                      </button>
+                      </div>
+                    </div>
+
+                    {/* Delivery Address */}
+                    <div className="space-y-4">
+                      <h4 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <MapPin className="w-5 h-5 text-orange-600" />
+                        Delivery Address
+                      </h4>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Address Line 1 *
+                        </label>
+                        <input
+                          type="text"
+                          value={guestFormData.delivery_address.address_line_1}
+                          onChange={(e) => handleGuestInputChange('delivery_address.address_line_1', e.target.value)}
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
+                            guestFormErrors.delivery_address?.address_line_1 ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          placeholder="123 Main Street"
+                        />
+                        {guestFormErrors.delivery_address?.address_line_1 && (
+                          <p className="text-red-500 text-sm mt-1">{guestFormErrors.delivery_address.address_line_1}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Address Line 2
+                        </label>
+                        <input
+                          type="text"
+                          value={guestFormData.delivery_address.address_line_2}
+                          onChange={(e) => handleGuestInputChange('delivery_address.address_line_2', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                          placeholder="Apt 4B, Suite 200"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            ZIP Code *
+                          </label>
+                          <input
+                            type="text"
+                            value={guestFormData.delivery_address.post_code}
+                            onChange={(e) => handleGuestInputChange('delivery_address.post_code', e.target.value)}
+                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
+                              guestFormErrors.delivery_address?.post_code ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                            placeholder="12345"
+                          />
+                          {guestFormErrors.delivery_address?.post_code && (
+                            <p className="text-red-500 text-sm mt-1">{guestFormErrors.delivery_address.post_code}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Additional Details
+                          </label>
+                          <input
+                            type="text"
+                            value={guestFormData.delivery_address.details}
+                            onChange={(e) => handleGuestInputChange('delivery_address.details', e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                            placeholder="Ring doorbell twice"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Special Instructions */}
+                    <div className="space-y-4">
+                      <h4 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <MessageSquare className="w-5 h-5 text-orange-600" />
+                        Special Instructions
+                      </h4>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Additional Notes
+                        </label>
+                        <textarea
+                          value={guestFormData.special_instructions}
+                          onChange={(e) => handleGuestInputChange('special_instructions', e.target.value)}
+                          rows={3}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors resize-none"
+                          placeholder="Extra napkins please, or any other special requests..."
+                        />
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </div>
 
-            {/* Right Side - Order Summary (2/5 width on desktop) */}
-            <div className="lg:col-span-2 order-1 lg:order-2">
+            {/* Right Side - Order Summary (5/12 width on desktop) */}
+            <div className="lg:col-span-5 order-2 lg:order-2">
               <OrderSummary 
                 summary={summary} 
                 onCheckout={handleCheckout}
+                isFormValid={isGuestFormValid}
+                isLoading={Boolean(createOrderLoading || createGuestOrderLoading || createSessionLoading)}
               />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Checkout Modal */}
-      <CheckoutModal 
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        cart={cart}
-        summary={summary}
-        onConfirmOrder={handleConfirmOrder}
-      />
     </main>
   );
 }

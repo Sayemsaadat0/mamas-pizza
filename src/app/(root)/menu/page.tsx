@@ -6,19 +6,26 @@ import Image from "next/image";
 import { useCategories } from "@/hooks/category.hook";
 import { useMenus } from "@/hooks/menu.hook";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useAuth } from "@/lib/auth/useAuth";
+import { useGuest } from "@/lib/guest/GuestProvider";
 import MenuCard from "@/components/MenuCard";
+import { toast } from "sonner";
+import { GUEST_CART_API, CART_API } from "@/app/api";
 
 const Menu = () => {
   // --- State ---
   const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [loadingItems, setLoadingItems] = useState<Set<number>>(new Set());
   const perPage = 6; // items per page
 
   const debouncedSearch = useDebounce(search, 500);
 
   // --- Hooks ---
   const { categories, loading: catLoading } = useCategories();
+  const { token, isAuthenticated } = useAuth();
+  const { guestId } = useGuest();
   const { menus, loading: menuLoading, pagination } = useMenus({
     category_id: categoryId,
     per_page: perPage,
@@ -46,9 +53,122 @@ const Menu = () => {
     if (pagination?.has_next_page) setPage(prev => prev + 1);
   };
 
+  // Guest cart function
+  const handleGuestAddtoCart = async (menu: any) => {
+    console.log('handleGuestAddtoCart called with menu:', menu);
+    
+    // Set loading state
+    setLoadingItems(prev => new Set(prev).add(menu.id));
+    
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      console.log('Base URL:', baseUrl);
+      
+      if (!guestId) {
+        console.error('Guest ID not available');
+        toast.error('Guest ID not available');
+        return;
+      }
+      
+      console.log('Making guest cart API call...');
+      const response = await fetch(GUEST_CART_API, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          guest_id: guestId,
+          item_id: menu.id,
+          quantity: 1
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Guest cart updated:', data);
+        toast.success(`${menu.name} added to cart!`, {
+          description: "Item added to your guest cart",
+          duration: 3000,
+        });
+      } else {
+        console.error('Failed to add to guest cart');
+        toast.error('Failed to add item to cart');
+      }
+    } catch (error) {
+      console.error('Error adding to guest cart:', error);
+      toast.error('Error adding item to cart');
+    } finally {
+      // Remove loading state
+      setLoadingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(menu.id);
+        return newSet;
+      });
+    }
+  };
+
+  // Authenticated user cart function
+  const handleAddtoCart = async (menu: any) => {
+    console.log('handleAddtoCart called with menu:', menu);
+    
+    // Set loading state
+    setLoadingItems(prev => new Set(prev).add(menu.id));
+    
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      console.log('Base URL:', baseUrl);
+      console.log('Token:', token);
+      
+      console.log('Making user cart API call...');
+      const response = await fetch(CART_API, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          item_id: menu.id,
+          quantity: 1
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('User cart updated:', data);
+        toast.success(`${menu.name} added to cart!`, {
+          description: "Item added to your cart",
+          duration: 3000,
+        });
+      } else {
+        console.error('Failed to add to user cart');
+        toast.error('Failed to add item to cart');
+      }
+    } catch (error) {
+      console.error('Error adding to user cart:', error);
+      toast.error('Error adding item to cart');
+    } finally {
+      // Remove loading state
+      setLoadingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(menu.id);
+        return newSet;
+      });
+    }
+  };
+
+  // Main cart handler that checks authentication
   const handleAddToCart = (menu: any) => {
-    // Add to cart logic here
-    console.log('Adding to cart:', menu);
+    console.log('handleAddToCart called with menu:', menu);
+    console.log('isAuthenticated:', isAuthenticated);
+    console.log('guestId:', guestId);
+    
+    if (isAuthenticated) {
+      console.log('Calling handleAddtoCart for authenticated user');
+      handleAddtoCart(menu);
+    } else {
+      console.log('Calling handleGuestAddtoCart for guest user');
+      handleGuestAddtoCart(menu);
+    }
   };
 
   return (
@@ -151,6 +271,7 @@ const Menu = () => {
                  menu={menu}
                  index={index}
                  onAddToCart={handleAddToCart}
+                 isLoading={loadingItems.has(menu.id)}
                />
              ))}
            </motion.div>

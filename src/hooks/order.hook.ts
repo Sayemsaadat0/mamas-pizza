@@ -48,7 +48,7 @@ export interface Order {
     fields: string;
     address_line_1: string;
     address_line_2: string;
-    zip_code: string;
+    post_code: string;
     details: string;
   };
 }

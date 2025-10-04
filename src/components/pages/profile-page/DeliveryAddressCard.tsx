@@ -73,7 +73,7 @@ export default function DeliveryAddressCard({
             <Navigation className="w-5 h-5 text-gray-400 mt-1 flex-shrink-0" />
             <div>
               <p className="text-gray-600">
-                ZIP: {address.zip_code}
+                ZIP: {address.post_code}
               </p>
             </div>
           </div>

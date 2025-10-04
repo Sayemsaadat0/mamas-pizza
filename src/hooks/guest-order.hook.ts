@@ -27,7 +27,7 @@ export interface GuestOrder {
     fields: string;
     address_line_1: string;
     address_line_2?: string;
-    zip_code: string;
+    post_code: string;
     details?: string;
   };
   special_instructions?: string;
@@ -57,7 +57,7 @@ export interface CreateGuestOrderData {
     fields: string;
     address_line_1: string;
     address_line_2?: string;
-    zip_code: string;
+    post_code: string;
     details?: string;
   };
   special_instructions?: string;
@@ -155,6 +155,13 @@ export function useGuestOrder(orderNumber: string, guestId: string) {
       
       const queryString = searchParams.toString();
       const url = `${getGuestOrderByNumber(orderNumber)}?${queryString}`;
+      
+      console.log('Guest Order API Call:', {
+        orderNumber,
+        guestId,
+        url,
+        fullUrl: url
+      });
       
       const response = await fetch(url, {
         headers: {

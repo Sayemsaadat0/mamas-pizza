@@ -1,5 +1,5 @@
 // Get API URL with fallback
-const API_BASE_URL =
+export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8001";
 
 // ==================== AUTHENTICATION APIs ====================
@@ -116,7 +116,7 @@ export const getPostCodeById = (postCodeId: string) =>
   `${POST_CODE_BY_ID_API}/${postCodeId}`;
 
 export const getPostCodeByCode = (code: string) => 
-  `${POST_CODES_API}/isCodeMatched/${code}`;
+  `${POST_CODES_API}/isCodeMatched/?code=${code}`;
 
 // Helper function to get specific guest post code
 export const getGuestPostCodeById = (postCodeId: string) => 

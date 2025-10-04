@@ -428,7 +428,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"fields\": \"Residential Area\",\n    \"address_line_1\": \"House 10, Road 5, Dhaka\",\n    \"address_line_2\": \"Near the main gate, 2nd floor\",\n    \"zip_code\": \"1200\",\n    \"details\": \"Please call before delivery\"\n}"
+							"raw": "{\n    \"fields\": \"Residential Area\",\n    \"address_line_1\": \"House 10, Road 5, Dhaka\",\n    \"address_line_2\": \"Near the main gate, 2nd floor\",\n    \"post_code\": \"1200\",\n    \"details\": \"Please call before delivery\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/v1/delivery-addresses",
@@ -500,7 +500,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"address_line_1\": \"House 25, Road 10, Chittagong\",\n    \"address_line_2\": \"Apartment 3B\",\n    \"zip_code\": \"4000\",\n    \"details\": \"Updated address details\"\n}"
+							"raw": "{\n    \"address_line_1\": \"House 25, Road 10, Chittagong\",\n    \"address_line_2\": \"Apartment 3B\",\n    \"post_code\": \"4000\",\n    \"details\": \"Updated address details\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/v1/delivery-addresses/1",
@@ -1907,7 +1907,7 @@
 					],
 					"body": {
 						"mode": "raw",
-						"raw": "{\n    \"guest_id\": \"guest_12345\",\n    \"delivery_type\": \"delivery\",\n    \"customer_name\": \"John Doe\",\n    \"customer_phone\": \"+1234567890\",\n    \"customer_email\": \"john@example.com\",\n    \"delivery_address\": {\n        \"fields\": \"Home\",\n        \"address_line_1\": \"123 Main Street\",\n        \"address_line_2\": \"Apt 4B\",\n        \"zip_code\": \"12345\",\n        \"details\": \"Ring doorbell twice\"\n    },\n    \"special_instructions\": \"Extra napkins please\",\n    \"payment_method\": \"stripe\",\n    \"tax_rate\": 8.5,\n    \"delivery_fee\": 5.00,\n    \"discount_amount\": 0\n}"
+						"raw": "{\n    \"guest_id\": \"guest_12345\",\n    \"delivery_type\": \"delivery\",\n    \"customer_name\": \"John Doe\",\n    \"customer_phone\": \"+1234567890\",\n    \"customer_email\": \"john@example.com\",\n    \"delivery_address\": {\n        \"fields\": \"Home\",\n        \"address_line_1\": \"123 Main Street\",\n        \"address_line_2\": \"Apt 4B\",\n        \"post_code\": \"12345\",\n        \"details\": \"Ring doorbell twice\"\n    },\n    \"special_instructions\": \"Extra napkins please\",\n    \"payment_method\": \"stripe\",\n    \"tax_rate\": 8.5,\n    \"delivery_fee\": 5.00,\n    \"discount_amount\": 0\n}"
 					},
 					"url": {
 						"raw": "{{base_url}}/api/v1/guest/orders",
@@ -1943,7 +1943,7 @@
 					],
 					"body": {
 						"mode": "raw",
-						"raw": "{\n    \"guest_id\": \"guest_12345\",\n    \"delivery_type\": \"pickup\",\n    \"customer_name\": \"Jane Smith\",\n    \"customer_phone\": \"+1987654321\",\n    \"customer_email\": \"jane@example.com\",\n    \"delivery_address\": {\n        \"fields\": \"Restaurant Pickup\",\n        \"address_line_1\": \"Restaurant Location\",\n        \"address_line_2\": \"\",\n        \"zip_code\": \"12345\",\n        \"details\": \"Will pickup at counter\"\n    },\n    \"special_instructions\": \"Please prepare extra sauces\",\n    \"payment_method\": \"cash\",\n    \"tax_rate\": 8.5,\n    \"delivery_fee\": 0,\n    \"discount_amount\": 2.50\n}"
+						"raw": "{\n    \"guest_id\": \"guest_12345\",\n    \"delivery_type\": \"pickup\",\n    \"customer_name\": \"Jane Smith\",\n    \"customer_phone\": \"+1987654321\",\n    \"customer_email\": \"jane@example.com\",\n    \"delivery_address\": {\n        \"fields\": \"Restaurant Pickup\",\n        \"address_line_1\": \"Restaurant Location\",\n        \"address_line_2\": \"\",\n        \"post_code\": \"12345\",\n        \"details\": \"Will pickup at counter\"\n    },\n    \"special_instructions\": \"Please prepare extra sauces\",\n    \"payment_method\": \"cash\",\n    \"tax_rate\": 8.5,\n    \"delivery_fee\": 0,\n    \"discount_amount\": 2.50\n}"
 					},
 					"url": {
 						"raw": "{{base_url}}/api/v1/guest/orders",
@@ -3041,7 +3041,7 @@
 					],
 					"body": {
 						"mode": "raw",
-						"raw": "{\n    \"guest_id\": \"guest_12345\",\n    \"delivery_type\": \"delivery\",\n    \"customer_name\": \"John Doe\",\n    \"customer_phone\": \"+1234567890\",\n    \"customer_email\": \"john@example.com\",\n    \"delivery_address\": {\n        \"fields\": \"Home\",\n        \"address_line_1\": \"123 Main Street\",\n        \"address_line_2\": \"Apt 4B\",\n        \"zip_code\": \"12345\",\n        \"details\": \"Ring doorbell twice\"\n    },\n    \"special_instructions\": \"Extra napkins please\",\n    \"payment_method\": \"stripe\",\n    \"tax_rate\": 8.5,\n    \"delivery_fee\": 5.00,\n    \"discount_amount\": 0\n}"
+						"raw": "{\n    \"guest_id\": \"guest_12345\",\n    \"delivery_type\": \"delivery\",\n    \"customer_name\": \"John Doe\",\n    \"customer_phone\": \"+1234567890\",\n    \"customer_email\": \"john@example.com\",\n    \"delivery_address\": {\n        \"fields\": \"Home\",\n        \"address_line_1\": \"123 Main Street\",\n        \"address_line_2\": \"Apt 4B\",\n        \"post_code\": \"12345\",\n        \"details\": \"Ring doorbell twice\"\n    },\n    \"special_instructions\": \"Extra napkins please\",\n    \"payment_method\": \"stripe\",\n    \"tax_rate\": 8.5,\n    \"delivery_fee\": 5.00,\n    \"discount_amount\": 0\n}"
 					},
 					"url": {
 						"raw": "{{base_url}}/api/v1/guest/orders",
@@ -3421,7 +3421,7 @@
 					],
 					"body": {
 						"mode": "raw",
-						"raw": "{\n    \"guest_id\": \"guest_12345\",\n    \"delivery_type\": \"delivery\",\n    \"customer_name\": \"John Doe\",\n    \"customer_phone\": \"+1234567890\",\n    \"customer_email\": \"john@example.com\",\n    \"delivery_address\": {\n        \"fields\": \"Home\",\n        \"address_line_1\": \"123 Main Street\",\n        \"address_line_2\": \"Apt 4B\",\n        \"zip_code\": \"12345\",\n        \"details\": \"Ring doorbell twice\"\n    },\n    \"special_instructions\": \"Extra napkins please\",\n    \"payment_method\": \"stripe\",\n    \"tax_rate\": 8.5,\n    \"delivery_fee\": 5.00,\n    \"discount_amount\": 0\n}"
+						"raw": "{\n    \"guest_id\": \"guest_12345\",\n    \"delivery_type\": \"delivery\",\n    \"customer_name\": \"John Doe\",\n    \"customer_phone\": \"+1234567890\",\n    \"customer_email\": \"john@example.com\",\n    \"delivery_address\": {\n        \"fields\": \"Home\",\n        \"address_line_1\": \"123 Main Street\",\n        \"address_line_2\": \"Apt 4B\",\n        \"post_code\": \"12345\",\n        \"details\": \"Ring doorbell twice\"\n    },\n    \"special_instructions\": \"Extra napkins please\",\n    \"payment_method\": \"stripe\",\n    \"tax_rate\": 8.5,\n    \"delivery_fee\": 5.00,\n    \"discount_amount\": 0\n}"
 					},
 					"url": {
 						"raw": "{{base_url}}/api/v1/guest/orders",

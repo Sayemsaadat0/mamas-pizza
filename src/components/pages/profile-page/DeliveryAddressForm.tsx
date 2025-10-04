@@ -27,7 +27,7 @@ export default function DeliveryAddressForm({
     fields: '',
     address_line_1: '',
     address_line_2: '',
-    zip_code: '',
+    post_code: '',
     details: '',
   });
 
@@ -40,7 +40,7 @@ export default function DeliveryAddressForm({
         fields: address.fields || '',
         address_line_1: address.address_line_1 || '',
         address_line_2: address.address_line_2 || '',
-        zip_code: address.zip_code || '',
+        post_code: address.post_code || '',
         details: address.details || '',
       });
     }
@@ -160,8 +160,8 @@ export default function DeliveryAddressForm({
             </label>
             <input
               type="text"
-              name="zip_code"
-              value={formData.zip_code}
+              name="post_code"
+              value={formData.post_code}
               onChange={handleInputChange}
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
