@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
-import { Truck, Clock, MapPin } from "lucide-react";
+import React from "react";
 
 interface OrderSummaryProps {
   summary: {
@@ -14,37 +13,12 @@ interface OrderSummaryProps {
 }
 
 export default function OrderSummary({ summary, onCheckout }: OrderSummaryProps) {
-  const [voucherCode, setVoucherCode] = useState("");
-
-  const handleApplyVoucher = () => {
-    // Handle voucher application logic here
-    console.log("Applying voucher:", voucherCode);
-  };
 
   return (
-    <div className="space-y-6 sm:space-y-8 ">
+    <div className="space-y-6 sm:space-y-8 sticky top-4 lg:top-8">
       {/* Order Summary Card */}
       <div className="bg-white/90 backdrop-blur-sm p-5 rounded-xl sm:rounded-2xl shadow-xl border border-orange-100 ">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">Order Summary</h2>
-        
-        {/* Discount Voucher */}
-        <div className="mb-6 sm:mb-8 ">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <input
-              type="text"
-              placeholder="Discount voucher"
-              value={voucherCode}
-              onChange={(e) => setVoucherCode(e.target.value)}
-              className="flex-1 px-3 sm:px-4 py-2 sm:py-3 border-2 border-orange-200 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base sm:text-lg transition-all duration-300"
-            />
-            <button
-              onClick={handleApplyVoucher}
-              className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-orange-600 to-red-500 text-white rounded-lg sm:rounded-xl hover:from-orange-700 hover:to-red-600 transition-all duration-300 font-semibold text-base sm:text-lg shadow-lg hover:shadow-xl"
-            >
-              Apply
-            </button>
-          </div>
-        </div>
 
         {/* Summary Details */}
         <div className="space-y-3 sm:space-y-4">
@@ -86,35 +60,12 @@ export default function OrderSummary({ summary, onCheckout }: OrderSummaryProps)
         {/* Checkout Button */}
         <button
           onClick={onCheckout}
-          className="w-full mt-6 sm:mt-8 bg-gradient-to-r from-orange-600 to-red-500 text-white py-3 sm:py-4 px-6 sm:px-8 rounded-lg sm:rounded-xl font-bold text-lg sm:text-xl hover:from-orange-700 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+          className="w-full mt-6 sm:mt-8 bg-gradient-to-r from-orange-600 to-red-500 text-white py-2.5 sm:py-4 px-4 sm:px-8 rounded-lg sm:rounded-xl font-semibold text-base sm:text-xl hover:from-orange-700 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
         >
           Checkout Now
         </button>
       </div>
 
-      {/* Delivery Information */}
-      <div className="bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-orange-100 p-6 sm:p-8">
-        <h3 className="font-bold text-xl sm:text-2xl text-gray-900 mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
-          <Truck size={20} className="sm:w-6 sm:h-6 text-orange-600" />
-          Delivery Information
-        </h3>
-        <div className="space-y-3 sm:space-y-4">
-          <div className="flex items-center gap-3 sm:gap-4 text-sm sm:text-lg">
-            <Clock size={16} className="sm:w-5 sm:h-5 text-orange-500" />
-            <span className="text-gray-700">Estimated delivery: 25-35 minutes</span>
-          </div>
-          <div className="flex items-center gap-3 sm:gap-4 text-sm sm:text-lg">
-            <MapPin size={16} className="sm:w-5 sm:h-5 text-orange-500" />
-            <span className="text-gray-700">Free delivery on orders over $50</span>
-          </div>
-        </div>
-        <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg sm:rounded-xl border border-orange-200">
-          <p className="text-sm sm:text-base text-orange-800">
-            <strong>Payment for delivery:</strong> Delivery charges are calculated based on your location and order weight. 
-            Payment is collected at checkout along with your order total.
-          </p>
-        </div>
-      </div>
     </div>
   );
 }

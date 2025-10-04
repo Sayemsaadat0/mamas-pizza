@@ -82,17 +82,17 @@ export default function CartItems({
               </div>
               
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1 border-2 border-orange-200 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 bg-white shadow-sm">
+                <div className="flex items-center gap-1 border-2 border-orange-200 rounded-md sm:rounded-lg px-1.5 sm:px-3 py-1 sm:py-1.5 bg-white shadow-sm">
                   <button
                     onClick={() => onUpdateQty(item.id, -1)}
                     disabled={loadingItems.has(item.id)}
-                    className="w-6 h-6 sm:w-7 sm:h-7 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-5 h-5 sm:w-7 sm:h-7 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label="Decrease quantity"
                   >
                     {loadingItems.has(item.id) ? (
-                      <div className="w-3 h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
+                      <div className="w-2.5 h-2.5 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
                     ) : (
-                      <Minus size={14} className="sm:w-4 sm:h-4" />
+                      <Minus size={12} className="sm:w-4 sm:h-4" />
                     )}
                   </button>
                   <input
@@ -101,19 +101,19 @@ export default function CartItems({
                     value={quantityInputs[item.id] !== undefined ? quantityInputs[item.id] : item.qty}
                     onChange={(e) => onQuantityInputChange?.(item.id, e.target.value)}
                     onBlur={() => onQuantityInputBlur?.(item.id)}
-                    className="min-w-6 sm:min-w-8 max-w-[100px] text-center font-bold text-sm sm:text-base text-gray-900 bg-transparent border-none outline-none"
+                    className="min-w-5 sm:min-w-8 max-w-[80px] text-center font-semibold text-xs sm:text-base text-gray-900 bg-transparent border-none outline-none"
                     disabled={loadingItems.has(item.id)}
                   />
                   <button
                     onClick={() => onUpdateQty(item.id, +1)}
                     disabled={loadingItems.has(item.id)}
-                    className="w-6 h-6 sm:w-7 sm:h-7 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-5 h-5 sm:w-7 sm:h-7 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label="Increase quantity"
                   >
                     {loadingItems.has(item.id) ? (
-                      <div className="w-3 h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
+                      <div className="w-2.5 h-2.5 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
                     ) : (
-                      <Plus size={14} className="sm:w-4 sm:h-4" />
+                      <Plus size={12} className="sm:w-4 sm:h-4" />
                     )}
                   </button>
                 </div>
@@ -125,13 +125,13 @@ export default function CartItems({
                   <button
                     onClick={() => onRemoveItem(item.id)}
                     disabled={loadingItems.has(item.id)}
-                    className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md sm:rounded-lg transition-all duration-300 group/remove disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-1 sm:p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md sm:rounded-lg transition-all duration-300 group/remove disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label="Remove item"
                   >
                     {loadingItems.has(item.id) ? (
-                      <div className="w-4 h-4 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
+                      <div className="w-3 h-3 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
                     ) : (
-                      <Trash2 size={16} className="sm:w-5 sm:h-5 group-hover/remove:scale-110" />
+                      <Trash2 size={14} className="sm:w-5 sm:h-5 group-hover/remove:scale-110" />
                     )}
                   </button>
                 </div>

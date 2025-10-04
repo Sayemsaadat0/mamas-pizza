@@ -186,7 +186,7 @@ const MenuSection: React.FC = () => {
                 {/* Tabs */}
                 <div className="mb-16">
                     {/* Mobile Scrollable Tabs */}
-                    <div className="flex overflow-x-auto gap-4 py-8 md:flex-wrap md:justify-center scrollbar-hide">
+                    <div className="flex overflow-x-auto gap-4 py-8 px-5 md:flex-wrap md:justify-center scrollbar-hide">
                         {menuTabs.map((tab) => {
                             const IconComponent = tab.icon;
                             const isActive = activeTab === tab.name;

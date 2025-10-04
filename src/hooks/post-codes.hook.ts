@@ -80,7 +80,7 @@ export function useSearchPostCodes() {
 
     try {
       const searchParams = new URLSearchParams();
-      searchParams.append('search', searchTerm);
+      searchParams.append('matchWith', searchTerm);
       
       const url = `${POST_CODES_API}?${searchParams.toString()}`;
       

@@ -16,6 +16,19 @@ const LoginPage = () => {
     const { setUser, setLoading, loading, user, isAuthenticated } = useAuth()
     const router = useRouter()
 
+    // Load email from localStorage on component mount
+    useEffect(() => {
+        const savedEmail = localStorage.getItem('loginEmail');
+        if (savedEmail) {
+            setFormData(prev => ({
+                ...prev,
+                email: savedEmail
+            }));
+            // Clear the saved email after using it
+            localStorage.removeItem('loginEmail');
+        }
+    }, []);
+
     // Redirect if already authenticated
     useEffect(() => {
         if (isAuthenticated && user) {
@@ -118,7 +131,7 @@ const LoginPage = () => {
                                         required
                                         value={formData.email}
                                         onChange={handleInputChange}
-                                        placeholder="Enter your email"
+                                        placeholder={formData.email ? "" : "Enter your email"}
                                         className="w-full rounded-2xl border-2 border-gray-200 bg-white pl-12 pr-6 py-4 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
                                     />
                                 </div>

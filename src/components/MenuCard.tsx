@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { useOrderStore } from "@/lib/stores/orderStore";
 
 interface MenuItem {
   id: number;
@@ -31,7 +32,13 @@ interface MenuCardProps {
 }
 
 const MenuCard: React.FC<MenuCardProps> = ({ menu, index = 0, onAddToCart, isLoading = false }) => {
+  const { canOrder } = useOrderStore();
+
   const handleAddToCart = () => {
+    if (!canOrder) {
+      return; // Don't proceed if canOrder is false
+    }
+    
     // console.log('MenuCard: Add to Cart button clicked for menu:', menu);
     // console.log('MenuCard: onAddToCart function exists:', !!onAddToCart);
     if (onAddToCart) {
@@ -82,10 +89,12 @@ const MenuCard: React.FC<MenuCardProps> = ({ menu, index = 0, onAddToCart, isLoa
         
         <button 
           onClick={handleAddToCart}
-          disabled={isLoading}
+          disabled={isLoading || !canOrder}
           className={`w-full py-2.5 rounded-lg font-semibold transition-all duration-200 shadow-md ${
             isLoading 
               ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+              : !canOrder
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
               : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 hover:shadow-lg'
           }`}
         >
@@ -94,6 +103,8 @@ const MenuCard: React.FC<MenuCardProps> = ({ menu, index = 0, onAddToCart, isLoa
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               Adding...
             </div>
+          ) : !canOrder ? (
+            'Delivery Not Available'
           ) : (
             'Add to Cart'
           )}

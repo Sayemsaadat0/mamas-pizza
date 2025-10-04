@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import Image from "next/image";
 import { useCart, useUpdateCartItem, useDeleteCartItem, useDeleteGuestCartItem } from "@/hooks/cart.hook";
 import { useAuth } from "@/lib/auth/useAuth";
 import { toast } from "sonner";
-import CartItems from "./components/CartItems";
 import OrderSummary from "./components/OrderSummary";
 import CheckoutModal from "./components/CheckoutModal";
 
@@ -175,11 +175,32 @@ export default function CartPage() {
   // Loading state
   if (loading) {
     return (
-      <main className="min-h-screen mt-20 bg-gray-50">
-        <div className="bg-white border-b border-gray-200">
-          <div className="ah-container px-4 sm:px-6 lg:px-8">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900">Shopping Cart</h1>
-            <p className="mt-2 text-sm sm:text-base lg:text-lg xl:text-xl text-gray-600">Review your items and proceed to checkout</p>
+      <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50">
+        {/* Hero Section */}
+        <div className="relative h-[600px] flex items-center justify-center overflow-hidden">
+          {/* Background Image */}
+          <div className="absolute inset-0 z-0">
+            <Image
+              src="https://images.unsplash.com/photo-1595708684082-a173bb3a06c5?q=80&w=1164&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+              alt="Shopping cart background"
+              fill
+              className="object-cover"
+              priority
+              sizes="100vw"
+            />
+            {/* Black overlay */}
+            <div className="absolute inset-0 bg-black/60"></div>
+          </div>
+
+          {/* Hero Content */}
+          <div className="relative z-10 text-center px-4">
+            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white mb-4">
+              YOUR CART
+            </h1>
+            <div className="w-32 h-1.5 bg-gradient-to-r from-orange-400 to-red-500 mx-auto rounded-full"></div>
+            <p className="text-xl sm:text-2xl text-gray-200 mt-6 max-w-2xl mx-auto">
+              Review your delicious selections and proceed to checkout
+            </p>
           </div>
         </div>
         
@@ -198,11 +219,32 @@ export default function CartPage() {
   // Error state
   if (error) {
     return (
-      <main className="min-h-screen bg-gray-50">
-        <div className="bg-white border-b border-gray-200">
-          <div className="ah-container px-4 sm:px-6 lg:px-8">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900">Shopping Cart</h1>
-            <p className="mt-2 text-sm sm:text-base lg:text-lg xl:text-xl text-gray-600">Review your items and proceed to checkout</p>
+      <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50">
+        {/* Hero Section */}
+        <div className="relative h-[600px] flex items-center justify-center overflow-hidden">
+          {/* Background Image */}
+          <div className="absolute inset-0 z-0">
+            <Image
+              src="https://images.unsplash.com/photo-1595708684082-a173bb3a06c5?q=80&w=1164&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+              alt="Shopping cart background"
+              fill
+              className="object-cover"
+              priority
+              sizes="100vw"
+            />
+            {/* Black overlay */}
+            <div className="absolute inset-0 bg-black/60"></div>
+          </div>
+
+          {/* Hero Content */}
+          <div className="relative z-10 text-center px-4">
+            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white mb-4">
+              YOUR CART
+            </h1>
+            <div className="w-32 h-1.5 bg-gradient-to-r from-orange-400 to-red-500 mx-auto rounded-full"></div>
+            <p className="text-xl sm:text-2xl text-gray-200 mt-6 max-w-2xl mx-auto">
+              Review your delicious selections and proceed to checkout
+            </p>
           </div>
         </div>
         
@@ -223,29 +265,132 @@ export default function CartPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 mt-32">
+    <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50">
+      {/* Hero Section */}
+      <div className="relative h-[600px] flex items-center justify-center overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="https://images.unsplash.com/photo-1595708684082-a173bb3a06c5?q=80&w=1164&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+            alt="Shopping cart background"
+            fill
+            className="object-cover"
+            priority
+            sizes="100vw"
+          />
+          {/* Black overlay */}
+          <div className="absolute inset-0 bg-black/60"></div>
+        </div>
+
+        {/* Hero Content */}
+        <div className="relative z-10 text-center px-4">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white mb-4">
+            YOUR CART
+          </h1>
+          <div className="w-32 h-1.5 bg-gradient-to-r from-orange-400 to-red-500 mx-auto rounded-full"></div>
+          <p className="text-xl sm:text-2xl text-gray-200 mt-6 max-w-2xl mx-auto">
+            Review your delicious selections and proceed to checkout
+          </p>
+        </div>
+      </div>
     
       <div className="ah-container px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-12">
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-          {/* Left Side - Cart Items */}
-          <div className="xl:col-span-2 order-2 xl:order-1">
-            <CartItems 
-              cart={cart} 
-              onUpdateQty={updateQty} 
-              onRemoveItem={removeItem}
-              loadingItems={loadingItems}
-              quantityInputs={quantityInputs}
-              onQuantityInputChange={handleQuantityInputChange}
-              onQuantityInputBlur={handleQuantityInputBlur}
-            />
-          </div>
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8">
+            {/* Left Side - Cart Items (3/5 width on desktop) */}
+            <div className="lg:col-span-3 order-2 lg:order-1">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Your Cart Items</h2>
+              <div className="space-y-3 sm:space-y-4">
+                {cart.map((item) => (
+                  <div key={item.id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4">
+                    <div className="flex items-center space-x-3 sm:space-x-4 mb-3">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden flex-shrink-0">
+                        <Image
+                          src={item.image}
+                          alt={item.name}
+                          width={64}
+                          height={64}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm sm:text-lg font-medium text-gray-900 truncate">{item.name}</h4>
+                        <p className="text-xs sm:text-sm text-gray-500">${item.price.toFixed(2)} each</p>
+                      </div>
+                      <div className="text-sm sm:text-lg font-semibold text-orange-600">
+                        ${(item.price * item.qty).toFixed(2)}
+                      </div>
+                    </div>
+                    
+                    {/* Quantity Controls */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1 sm:gap-2 border-2 border-orange-200 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white shadow-sm">
+                        <button
+                          onClick={() => updateQty(item.id, -1)}
+                          disabled={loadingItems.has(item.id)}
+                          className="w-5 h-5 sm:w-6 sm:h-6 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          aria-label="Decrease quantity"
+                        >
+                          {loadingItems.has(item.id) ? (
+                            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
+                          ) : (
+                            <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                            </svg>
+                          )}
+                        </button>
+                        <input
+                          type="number"
+                          min="1"
+                          value={quantityInputs[item.id] !== undefined ? quantityInputs[item.id] : item.qty}
+                          onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
+                          onBlur={() => handleQuantityInputBlur(item.id)}
+                          className="min-w-6 sm:min-w-8 max-w-[60px] sm:max-w-[80px] text-center font-semibold text-xs sm:text-sm text-gray-900 bg-transparent border-none outline-none"
+                          disabled={loadingItems.has(item.id)}
+                        />
+                        <button
+                          onClick={() => updateQty(item.id, +1)}
+                          disabled={loadingItems.has(item.id)}
+                          className="w-5 h-5 sm:w-6 sm:h-6 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          aria-label="Increase quantity"
+                        >
+                          {loadingItems.has(item.id) ? (
+                            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
+                          ) : (
+                            <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                      
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        disabled={loadingItems.has(item.id)}
+                        className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label="Remove item"
+                      >
+                        {loadingItems.has(item.id) ? (
+                          <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
+                        ) : (
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-          {/* Right Side - Order Summary */}
-          <div className="xl:col-span-1 order-1 xl:order-2">
-            <OrderSummary 
-              summary={summary} 
-              onCheckout={handleCheckout}
-            />
+            {/* Right Side - Order Summary (2/5 width on desktop) */}
+            <div className="lg:col-span-2 order-1 lg:order-2">
+              <OrderSummary 
+                summary={summary} 
+                onCheckout={handleCheckout}
+              />
+            </div>
           </div>
         </div>
       </div>

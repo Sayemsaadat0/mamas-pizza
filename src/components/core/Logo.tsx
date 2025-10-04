@@ -5,7 +5,7 @@ import React from 'react';
 
 const Logo = () => {
     return (
-        <div className='w-[60px] sm:w-[80px] md:w-[100px]  overflow-hidden'>
+        <div className='w-[80px] sm:w-[80px] md:w-[100px]  overflow-hidden'>
             <Image
                 className="object-contain w-full h-auto"
                 src={'/Logo.png'}

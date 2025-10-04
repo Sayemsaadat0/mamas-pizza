@@ -200,6 +200,7 @@ const DefaultNavMenuItem: React.FC<{ item: any; index: number }> = ({ item }) =>
 export const DefaultNavMenuList: React.FC<{ isScrolled: boolean }> = ({ isScrolled }) => {
     const pathname = usePathname();
 
+
     return (
         <div className="flex flex-col pl-7 py-16 lg:gap-6 lg:pl-0 lg:py-0 lg:flex-row lg:items-center whitespace-nowrap">
             {defaultNavMenuData.map((i) => (
@@ -253,7 +254,7 @@ const Navbar: React.FC = () => {
 
             {/* Main Nav */}
             <div className={`w-full ${isScrolled ? 'bg-white shadow-lg border-b text-gray-800 border-gray-100' : 'bg-transparent text-white'} `}>
-                <nav className="flex relative justify-between ah-container items-center  py-5 md:py-3 px-4 sm:px-6 lg:px-8">
+                <nav className="flex relative justify-between ah-container items-center   md:py-3 px-4 sm:px-6 lg:px-8">
                     {/* Logo Section */}
                     <div className="flex items-center">
                         <Link href="/" className="flex items-center">
@@ -327,10 +328,6 @@ const Navbar: React.FC = () => {
                                 className="relative p-2 rounded-full bg-orange-600 hover:bg-orange-700 transition-colors group"
                             >
                                 <ShoppingCart size={18} className="text-white sm:w-5 sm:h-5" />
-                                {/* Badge */}
-                                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center shadow-md">
-                                    3
-                                </span>
                             </Link>
 
                             {/* CTA - Hidden on very small screens */}
