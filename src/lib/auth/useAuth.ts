@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { LOGIN_API, ME_API, REGISTER_API, updateUserProfile } from '@/app/api';
+import { DeliveryAddress } from '@/hooks/delivery-address.hook';
 
 export interface User {
   id: number;
   name: string;
+  delivery_address?: DeliveryAddress | null;
   email: string;
   role: 'admin' | 'staff' | 'user';
   user_image?: string | null;

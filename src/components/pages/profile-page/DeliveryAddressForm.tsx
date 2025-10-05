@@ -1,219 +1,339 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { MapPin, Save, X } from 'lucide-react';
-import { useCreateDeliveryAddress, useUpdateDeliveryAddress, DeliveryAddress } from '@/hooks/delivery-address.hook';
+import { useState, useEffect } from 'react';
+import { useDeliveryAddresses, useCreateDeliveryAddress, useUpdateDeliveryAddress, DeliveryAddress, CreateDeliveryAddressData } from '@/hooks/delivery-address.hook';
+import { useMeAPI } from '@/hooks/useMeAPI.hook';
+import { useAuth } from '@/lib/auth/useAuth';
 import { useNotification } from '@/components/ui/NotificationProvider';
-// import { useNotification } from '@/lib/auth/useAuth';
+import { MapPin, Home, Hash, MessageSquare, Save, Edit3, X } from 'lucide-react';
 
-interface DeliveryAddressFormProps {
-  address?: DeliveryAddress | null;
-  onSuccess?: () => void;
-  onCancel?: () => void;
-  isEditing?: boolean;
-}
-
-export default function DeliveryAddressForm({ 
-  address, 
-  onSuccess, 
-  onCancel, 
-  isEditing = false 
-}: DeliveryAddressFormProps) {
+const DeliveryAddressForm = () => {
+  const { isAuthenticated } = useAuth();
   const { showNotification } = useNotification();
+  const { refetch: refetchMe, loading: meLoading } = useMeAPI();
+  const { addresses, loading: fetchLoading, fetchAddresses } = useDeliveryAddresses();
   const { createAddress, loading: createLoading } = useCreateDeliveryAddress();
   const { updateAddress, loading: updateLoading } = useUpdateDeliveryAddress();
-  
+
   const [formData, setFormData] = useState({
-    fields: '',
     address_line_1: '',
     address_line_2: '',
     post_code: '',
-    details: '',
+    details: ''
   });
 
-  const loading = createLoading || updateLoading;
+  const [existingAddress, setExistingAddress] = useState<DeliveryAddress | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
-  // Initialize form data when address is provided
+  // Fetch existing delivery address on component mount
   useEffect(() => {
-    if (address) {
-      setFormData({
-        fields: address.fields || '',
-        address_line_1: address.address_line_1 || '',
-        address_line_2: address.address_line_2 || '',
-        post_code: address.post_code || '',
-        details: address.details || '',
-      });
+    if (isAuthenticated) {
+      fetchAddresses();
     }
-  }, [address]);
+  }, [isAuthenticated, fetchAddresses]);
+
+  // Set form data when addresses are fetched
+  useEffect(() => {
+    if (addresses && addresses.length > 0) {
+      const firstAddress = addresses[0];
+      setExistingAddress(firstAddress);
+      setFormData({
+        address_line_1: firstAddress.address_line_1 || '',
+        address_line_2: firstAddress.address_line_2 || '',
+        post_code: firstAddress.post_code || '',
+        details: firstAddress.details || ''
+      });
+    } else {
+      // Reset form if no addresses found
+      setExistingAddress(null);
+      setFormData({
+        address_line_1: '',
+        address_line_2: '',
+        post_code: '',
+        details: ''
+      });
+      setIsEditing(true); // Allow editing for new addresses
+    }
+  }, [addresses]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value,
+      [name]: value
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    try {
-      let result;
-      
-      if (isEditing && address) {
-        // Update existing address
-        result = await updateAddress(address.id, formData);
-      } else {
-        // Create new address
-        result = await createAddress(formData);
-      }
+    if (!isAuthenticated) {
+      showNotification({
+        type: 'error',
+        title: 'Authentication Required',
+        message: 'Please log in to save your delivery address',
+      });
+      return;
+    }
 
-      if (result) {
+    // Basic validation
+    if (!formData.address_line_1.trim() || !formData.post_code.trim()) {
+      showNotification({
+        type: 'error',
+        title: 'Validation Error',
+        message: 'Address line 1 and post code are required',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      if (existingAddress) {
+        // Update existing address
+        await updateAddress(existingAddress.id, formData);
         showNotification({
           type: 'success',
           title: 'Success',
-          message: isEditing 
-            ? 'Delivery address updated successfully' 
-            : 'Delivery address created successfully',
+          message: 'Delivery address updated successfully!',
         });
-        onSuccess?.();
       } else {
+        // Create new address
+        const addressData: CreateDeliveryAddressData = {
+          address_line_1: formData.address_line_1.trim(),
+          address_line_2: formData.address_line_2.trim(),
+          post_code: formData.post_code.trim(),
+          details: formData.details.trim()
+        };
+        await createAddress(addressData);
         showNotification({
-          type: 'error',
-          title: 'Error',
-          message: result?.message || 'Failed to save delivery address',
+          type: 'success',
+          title: 'Success',
+          message: 'Delivery address created successfully!',
         });
       }
+      
+      // Refresh addresses and user data after successful operation
+      await Promise.all([
+        fetchAddresses(),
+        refetchMe()
+      ]);
+      setIsEditing(false);
     } catch (error: any) {
-      console.error('Error saving delivery address:', error);
       showNotification({
         type: 'error',
         title: 'Error',
         message: error.message || 'Failed to save delivery address',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4">
-        <div className="flex items-center gap-3">
-          <MapPin className="w-6 h-6 text-white" />
-          <h3 className="text-xl font-bold text-white">
-            {isEditing ? 'Edit Delivery Address' : 'Add Delivery Address'}
-          </h3>
-        </div>
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    // Reset form data to original values
+    if (existingAddress) {
+      setFormData({
+        address_line_1: existingAddress.address_line_1 || '',
+        address_line_2: existingAddress.address_line_2 || '',
+        post_code: existingAddress.post_code || '',
+        details: existingAddress.details || ''
+      });
+    }
+  };
+
+  const isLoading = fetchLoading || createLoading || updateLoading || isSubmitting || meLoading;
+
+  if (!isAuthenticated) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+        <p className="text-gray-600">Please log in to manage your delivery address.</p>
       </div>
+    );
+  }
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="p-6 space-y-6">
-        {/* Fields */}
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Area/Fields *
-            </label>
-            <input
-              type="text"
-              name="fields"
-              value={formData.fields}
-              onChange={handleInputChange}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-              placeholder="e.g., Residential Area, Downtown"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Address Line 1 *
-            </label>
-            <input
-              type="text"
-              name="address_line_1"
-              value={formData.address_line_1}
-              onChange={handleInputChange}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-              placeholder="e.g., House 10, Road 5, Dhaka"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Address Line 2
-            </label>
-            <input
-              type="text"
-              name="address_line_2"
-              value={formData.address_line_2}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-              placeholder="e.g., Near the main gate, 2nd floor"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              ZIP Code *
-            </label>
-            <input
-              type="text"
-              name="post_code"
-              value={formData.post_code}
-              onChange={handleInputChange}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-              placeholder="e.g., 1200"
-            />
-          </div>
-        </div>
-
-        {/* Details */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Additional Details
-          </label>
-          <textarea
-            name="details"
-            value={formData.details}
-            onChange={handleInputChange}
-            rows={3}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors resize-none"
-            placeholder="e.g., Near the main gate, 2nd floor, Landmark details..."
-          />
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-4 pt-4">
+  return (
+    <div className="bg-white rounded-2xl shadow-lg p-6">
+      {/* Header with Actions */}
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-xl font-bold text-gray-900">Delivery Address</h3>
+        
+        {existingAddress && !isEditing ? (
           <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white px-6 py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+            onClick={handleEdit}
+            className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
           >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Save className="w-5 h-5" />
-            )}
-            {isEditing ? 'Update Address' : 'Save Address'}
+            <Edit3 size={16} />
+            Edit Address
           </button>
-
-          {onCancel && (
+        ) : existingAddress && isEditing ? (
+          <div className="flex gap-2">
             <button
-              type="button"
-              onClick={onCancel}
-              disabled={loading}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2"
+              onClick={handleCancel}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X size={16} />
               Cancel
             </button>
-          )}
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50"
+            >
+              <Save size={16} />
+              {isLoading ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        ) : null}
+      </div>
+
+      <p className="text-sm text-gray-600 mb-6">
+        {existingAddress 
+          ? 'Manage your delivery address information below.' 
+          : 'Add your delivery address information below.'
+        }
+      </p>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Address Line 1 */}
+        <div>
+          <label htmlFor="address_line_1" className="block text-sm font-semibold text-gray-700 mb-2">
+            Address Line 1 *
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <MapPin size={20} className="text-gray-400" />
+            </div>
+            <input
+              id="address_line_1"
+              name="address_line_1"
+              type="text"
+              value={formData.address_line_1}
+              onChange={handleInputChange}
+              placeholder="e.g., House 10, Road 5, Dhaka"
+              disabled={!isEditing || isLoading}
+              className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${
+                isEditing 
+                  ? 'border-gray-200 bg-white' 
+                  : 'border-gray-100 bg-gray-50'
+              }`}
+              required
+            />
+          </div>
         </div>
+
+        {/* Address Line 2 */}
+        <div>
+          <label htmlFor="address_line_2" className="block text-sm font-semibold text-gray-700 mb-2">
+            Address Line 2
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Home size={20} className="text-gray-400" />
+            </div>
+            <input
+              id="address_line_2"
+              name="address_line_2"
+              type="text"
+              value={formData.address_line_2}
+              onChange={handleInputChange}
+              placeholder="e.g., Near the main gate, 2nd floor"
+              disabled={!isEditing || isLoading}
+              className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${
+                isEditing 
+                  ? 'border-gray-200 bg-white' 
+                  : 'border-gray-100 bg-gray-50'
+              }`}
+            />
+          </div>
+        </div>
+
+        {/* Post Code */}
+        <div>
+          <label htmlFor="post_code" className="block text-sm font-semibold text-gray-700 mb-2">
+            Post Code *
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Hash size={20} className="text-gray-400" />
+            </div>
+            <input
+              id="post_code"
+              name="post_code"
+              type="text"
+              value={formData.post_code}
+              onChange={handleInputChange}
+              placeholder="e.g., 1200"
+              disabled={!isEditing || isLoading}
+              className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${
+                isEditing 
+                  ? 'border-gray-200 bg-white' 
+                  : 'border-gray-100 bg-gray-50'
+              }`}
+              required
+            />
+          </div>
+        </div>
+
+        {/* Delivery Instructions */}
+        <div>
+          <label htmlFor="details" className="block text-sm font-semibold text-gray-700 mb-2">
+            Delivery Instructions
+          </label>
+          <div className="relative">
+            <div className="absolute top-3 left-4 pointer-events-none">
+              <MessageSquare size={20} className="text-gray-400" />
+            </div>
+            <textarea
+              id="details"
+              name="details"
+              value={formData.details}
+              onChange={handleInputChange}
+              placeholder="e.g., Please call before delivery"
+              rows={3}
+              disabled={!isEditing || isLoading}
+              className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 resize-none ${
+                isEditing 
+                  ? 'border-gray-200 bg-white' 
+                  : 'border-gray-100 bg-gray-50'
+              }`}
+            />
+          </div>
+        </div>
+
+        {/* Submit Button for new addresses */}
+        {!existingAddress && (
+          <div className="pt-4">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full flex items-center justify-center gap-2 bg-orange-500 text-white py-3 px-6 rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold"
+            >
+              <Save size={20} />
+              {isLoading ? 'Creating Address...' : 'Save Address'}
+            </button>
+          </div>
+        )}
       </form>
+
+      {existingAddress && !isEditing && (
+        <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-xl">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <p className="text-sm font-medium text-green-800">
+              You have an existing delivery address saved
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
 
+export default DeliveryAddressForm;

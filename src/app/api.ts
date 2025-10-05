@@ -1,6 +1,6 @@
 // Get API URL with fallback
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8001";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // ==================== AUTHENTICATION APIs ====================
 export const LOGIN_API = `${API_BASE_URL}/api/v1/login`;
@@ -17,7 +17,7 @@ export const CHANGE_PASSWORD_API = `${API_BASE_URL}/api/v1/change-password`;
 // ==================== DELIVERY ADDRESS APIs ====================
 export const DELIVERY_ADDRESSES_API = `${API_BASE_URL}/api/v1/delivery-addresses`;
 export const DELIVERY_ADDRESS_BY_ID_API = `${API_BASE_URL}/api/v1/delivery-addresses`;
-export const USER_DELIVERY_ADDRESSES_API = `${API_BASE_URL}/api/v1/users`; // GET with user_id/delivery-addresses
+export const GET_ALL_USERS_API = `${API_BASE_URL}/api/v1/users`; // GET with user_id/delivery-addresses
 
 // ==================== RESTAURANT MANAGEMENT APIs ====================
 export const RESTAURANTS_API = `${API_BASE_URL}/api/v1/restaurants`;
@@ -40,7 +40,7 @@ export const ADMIN_ORDERS_API = `${API_BASE_URL}/api/v1/admin/orders`;
 export const ADMIN_ORDER_BY_ID_API = `${API_BASE_URL}/api/v1/admin/orders`;
 
 // ==================== CART APIs ====================
-export const CART_API = `${API_BASE_URL}/api/v1/cart`;
+// export const CART_API = `${API_BASE_URL}/api/v1/cart`;
 export const GUEST_CART_API = `${API_BASE_URL}/api/v1/guest/cart`;
 export const USER_CART_API = `${API_BASE_URL}/api/v1/user/cart`;
 export const CART_SUMMARY_API = `${API_BASE_URL}/api/v1/cart-summary`;
@@ -73,7 +73,7 @@ export const GUEST_POST_CODE_BY_ID_API = `${API_BASE_URL}/api/v1/guest-post-code
 // ==================== HELPER FUNCTIONS ====================
 // Helper function to get delivery addresses for a specific user
 export const getUserDeliveryAddresses = (userId: string) => 
-  `${USER_DELIVERY_ADDRESSES_API}/${userId}/delivery-addresses`;
+  `${GET_ALL_USERS_API}/${userId}/delivery-addresses`;
 
 // Helper function to get specific delivery address
 export const getDeliveryAddressById = (addressId: string) => 
@@ -137,9 +137,9 @@ export const cancelAdminOrder = (orderId: string) =>
 // ==================== LEGACY COMPATIBILITY (for existing code) ====================
 // These maintain backward compatibility with existing code
 export const MENUS_API = ITEMS_API; // Items are menus in your system
-export const ADD_TO_CART_API = CART_API; // Add to cart uses cart endpoint
-export const REMOVE_FROM_CART_API = CART_API; // Remove from cart uses cart endpoint
-export const UPDATE_CART_API = CART_API; // Update cart uses cart endpoint
+export const ADD_TO_CART_API = USER_CART_API; // Add to cart uses cart endpoint
+export const REMOVE_FROM_CART_API = USER_CART_API; // Remove from cart uses cart endpoint
+export const UPDATE_CART_API = USER_CART_API; // Update cart uses cart endpoint
 export const CREATE_ORDER_API = ORDERS_API; // Create order uses orders endpoint
 export const ORDER_DETAILS_API = ORDERS_API; // Order details uses orders endpoint
 export const USER_PROFILE_API = ME_API; // User profile uses me endpoint

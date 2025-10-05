@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth/useAuth";
 import { useCreateOrder } from "@/hooks/order.hook";
 import { useCreateGuestOrder } from "@/hooks/guest-order.hook";
 import { useCreateGuestStripeSession } from "@/hooks/guest-payment.hook";
+import { usePaymentWorkflow } from "@/hooks/stripe-payment.hook";
 import { useGuest } from "@/lib/guest/GuestProvider";
 import { toast } from "sonner";
 import OrderSummary from "./components/OrderSummary";
@@ -68,7 +69,7 @@ export default function CartPage() {
   const [guestFormErrors, setGuestFormErrors] = useState<GuestOrderFormErrors>({});
   
   // Auth hook
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated  , user} = useAuth();
   const { guestId } = useGuest();
   
   // Cart hooks
@@ -81,6 +82,7 @@ export default function CartPage() {
   const { createOrder, loading: createOrderLoading } = useCreateOrder();
   const { createGuestOrder, loading: createGuestOrderLoading } = useCreateGuestOrder();
   const { createSession, loading: createSessionLoading } = useCreateGuestStripeSession();
+  const { startPayment, loading: paymentLoading } = usePaymentWorkflow();
 
   // Transform cart data to match CartItems component interface
   const cart = useMemo(() => {
@@ -285,7 +287,7 @@ export default function CartPage() {
       if (isAuthenticated) {
         // Create order for authenticated user
         const orderData = {
-          delivery_address_id: 1, // TODO: Get from user's delivery addresses
+          delivery_address_id: user?.delivery_address?.id || null,
           delivery_type: "delivery" as const,
           payment_method: "stripe" as const,
           tax_rate: 0,
@@ -294,9 +296,17 @@ export default function CartPage() {
           special_instructions: "",
         };
         
-        await createOrder(orderData);
+        const orderResult = await createOrder(orderData);
         toast.success("Order created successfully!");
-        // TODO: Navigate to payment or success page
+        
+        // Create Stripe payment session for authenticated user
+        try {
+          await startPayment(orderResult.id);
+          // startPayment will redirect to Stripe checkout automatically
+        } catch (paymentError: any) {
+          console.error("Error creating payment session:", paymentError);
+          toast.error(paymentError.message || "Failed to create payment session");
+        }
       } else {
         // Create order for guest user
         if (!guestId) {
@@ -741,7 +751,7 @@ export default function CartPage() {
                 summary={summary} 
                 onCheckout={handleCheckout}
                 isFormValid={isGuestFormValid}
-                isLoading={Boolean(createOrderLoading || createGuestOrderLoading || createSessionLoading)}
+                isLoading={Boolean(createOrderLoading || createGuestOrderLoading || createSessionLoading || paymentLoading)}
               />
             </div>
           </div>

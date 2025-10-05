@@ -1,5 +1,7 @@
 "use client";
 
+import { useAuth } from "@/lib/auth/useAuth";
+import Link from "next/link";
 import React from "react";
 
 interface OrderSummaryProps {
@@ -15,6 +17,7 @@ interface OrderSummaryProps {
 }
 
 export default function OrderSummary({ summary, onCheckout, isFormValid = true, isLoading = false }: OrderSummaryProps) {
+  const { user } = useAuth();
 
   return (
     <div className="space-y-6 sm:space-y-8 sticky top-4 lg:top-[130px]">
@@ -32,7 +35,7 @@ export default function OrderSummary({ summary, onCheckout, isFormValid = true, 
             <span>Discount</span>
             <span className="text-gray-600 font-semibold">{summary.discount.toFixed(0)} USD</span>
           </div>
-          
+
           <div className="border-t-2 border-orange-200 pt-3 sm:pt-4 mt-3 sm:mt-4">
             <div className="flex justify-between text-xl sm:text-2xl font-bold text-gray-900">
               <span>Subtotal</span>
@@ -44,25 +47,21 @@ export default function OrderSummary({ summary, onCheckout, isFormValid = true, 
           </div>
         </div>
 
-        {/* Warranty Information */}
-        <div className="mt-6 sm:mt-8 p-3 sm:p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg sm:rounded-xl border border-orange-200">
-          <div className="flex items-start gap-2 sm:gap-3">
-            <div className="w-5 h-5 sm:w-6 sm:h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-1">
-              <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
+        
+        {
+          user && !user.delivery_address && (
+            <div className="p-3 sm:p-4 mt-2 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg sm:rounded-xl border border-orange-200">
+              <p>Please add a delivery address to your profile</p>
+              <Link href="/profile" className="text-orange-600 hover:underline font-semibold">
+                Add Address
+              </Link>
             </div>
-            <div className="text-sm sm:text-base text-gray-700">
-              {" 90 Day Limited Warranty against manufacturer's defects"}
-              <button className="text-orange-600 hover:underline font-semibold">Details</button>
-            </div>
-          </div>
-        </div>
-
+          )
+        }
         {/* Checkout Button */}
         <button
           onClick={onCheckout}
-          disabled={!isFormValid || isLoading}
+          disabled={!isFormValid || isLoading || !user?.delivery_address}
           className="w-full mt-6 sm:mt-8 bg-gradient-to-r from-orange-600 to-red-500 text-white py-2.5 sm:py-4 px-4 sm:px-8 rounded-lg sm:rounded-xl font-semibold text-base sm:text-xl hover:from-orange-700 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
         >
           {isLoading ? (

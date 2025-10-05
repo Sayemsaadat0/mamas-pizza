@@ -6,13 +6,32 @@ const GUEST_ID_KEY = 'mamas_guest_id';
 
 // Generate 16-digit guest ID with uppercase letters and numbers
 const generateGuestId = (): string => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const numbers = '0123456789';
   let result = '';
-  
-  for (let i = 0; i < 16; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+
+  // First, ensure 3 numeric values are included
+  let numericPart = '';
+  for (let i = 0; i < 3; i++) {
+    numericPart += numbers.charAt(Math.floor(Math.random() * numbers.length));
   }
-  
+
+  // Fill the rest (13 chars) with uppercase letters and numbers
+  const chars = letters + numbers;
+  let rest = '';
+  for (let i = 0; i < 13; i++) {
+    rest += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+
+  // Combine and shuffle to randomize numeric positions
+  const combined = (numericPart + rest).split('');
+  for (let i = combined.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [combined[i], combined[j]] = [combined[j], combined[i]];
+  }
+
+  result = combined.join('').toUpperCase();
+
   return result;
 };
 

@@ -54,7 +54,7 @@ export interface Order {
 }
 
 export interface CreateOrderData {
-  delivery_address_id: number;
+  delivery_address_id: number | null;
   delivery_type: 'delivery' | 'pickup';
   special_instructions?: string;
   payment_method: 'stripe' | 'cash' | 'card';

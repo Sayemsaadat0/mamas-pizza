@@ -232,6 +232,7 @@ const Navbar: React.FC = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const { user, isAuthenticated, clearUser } = useAuth();
     const router = useRouter();
+    console.log(user);
 
     useEffect(() => {
         const handleScroll = () => {

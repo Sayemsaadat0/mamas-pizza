@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/auth/useAuth";
 import { useGuest } from "@/lib/guest/GuestProvider";
-import { CART_API, GUEST_CART_API, CART_SUMMARY_API } from "@/app/api";
+import { USER_CART_API, GUEST_CART_API, CART_SUMMARY_API } from "@/app/api";
 
 export interface CartItemData {
   id: number;
@@ -99,7 +99,7 @@ export function useCart() {
       
       if (isAuthenticated) {
         // Fetch user cart
-        const response = await fetch(CART_API, {
+        const response = await fetch(USER_CART_API, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -188,7 +188,7 @@ export function useUpdateCartItem() {
       
       if (isAuthenticated) {
         // Update user cart item
-        const response = await fetch(`${CART_API}/${cartItemId}`, {
+        const response = await fetch(`${USER_CART_API}/${cartItemId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -251,7 +251,7 @@ export function useDeleteCartItem() {
       
       if (isAuthenticated) {
         // Delete user cart item
-        const response = await fetch(`${CART_API}/${cartItemId}`, {
+        const response = await fetch(`${USER_CART_API}/${cartItemId}`, {
           method: 'DELETE',
         headers: {
             'Authorization': `Bearer ${token}`

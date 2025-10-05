@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner"
 
 const HeroSection = () => {
-    const [zipCode, setZipCode] = useState("")
+    const [postCode, setpostCode] = useState("")
     const [isSearching, setIsSearching] = useState(false)
     const [showDialog, setShowDialog] = useState(false)
     const [isSubmittingRequest, setIsSubmittingRequest] = useState(false)
@@ -28,10 +28,23 @@ const HeroSection = () => {
     // Hooks for post code functionality
     const { createGuestPostCode, loading: createLoading } = useCreateGuestPostCode()
 
+    // Handle input change with character limit
+    const handlePostCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value
+        if (value.length <= 7) {
+            setpostCode(value)
+        }
+    }
+
 
     const handleSearch = async () => {
-        if (!zipCode.trim()) {
+        if (!postCode.trim()) {
             toast.error("Please enter a zip code or address")
+            return
+        }
+
+        if (postCode.length > 7) {
+            toast.error("Post code must be 7 characters or less")
             return
         }
 
@@ -39,7 +52,7 @@ const HeroSection = () => {
 
         try {
             // Call the new API to check if postal code matches
-            const response = await fetch(getPostCodeByCode(zipCode.trim()), {
+            const response = await fetch(getPostCodeByCode(postCode.trim()), {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
@@ -99,8 +112,13 @@ const HeroSection = () => {
     }
 
     const handleRequestDelivery = async () => {
-        if (!zipCode.trim()) {
+        if (!postCode.trim()) {
             toast.error("Please enter a zip code")
+            return
+        }
+
+        if (postCode.length > 7) {
+            toast.error("Post code must be 7 characters or less")
             return
         }
 
@@ -108,11 +126,11 @@ const HeroSection = () => {
 
         try {
             // Create guest post code request
-            await createGuestPostCode({ code: zipCode.trim() })
+            await createGuestPostCode({ code: postCode.trim() })
 
             toast.success("Thank you! We've received your request for delivery to this area. We'll notify you when we start delivering here.")
             setShowDialog(false)
-            setZipCode("") // Clear the input
+            setpostCode("") // Clear the input
         } catch (error) {
             console.error("Request error:", error)
             toast.error("Failed to submit request. Please try again.")
@@ -157,9 +175,10 @@ const HeroSection = () => {
                             </div>
                             <input
                                 type="text"
-                                placeholder="Enter your zip code or address..."
-                                value={zipCode}
-                                onChange={(e) => setZipCode(e.target.value)}
+                                placeholder="Enter your Post Code..."
+                                value={postCode}
+                                onChange={handlePostCodeChange}
+                                maxLength={7}
                                 className="w-full pl-20 pr-44 py-7 text-2xl border-2 border-gray-200 rounded-2xl bg-gray-50 focus:bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-200 transition-all duration-300 shadow-inner"
                                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                             />
@@ -191,11 +210,16 @@ const HeroSection = () => {
                                 <input
                                     type="text"
                                     placeholder="Enter zip code or address..."
-                                    value={zipCode}
-                                    onChange={(e) => setZipCode(e.target.value)}
-                                    className="w-full pl-10 pr-3 py-3 text-base border-2 border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all duration-300 shadow-inner"
+                                    value={postCode}
+                                    onChange={handlePostCodeChange}
+                                    maxLength={7}
+                                    className="w-full pl-10 pr-12 py-3 text-base border-2 border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all duration-300 shadow-inner"
                                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                                 />
+                                {/* Character counter for mobile */}
+                                <div className="absolute top-2 right-3 text-xs text-gray-400">
+                                    {postCode.length}/7
+                                </div>
                             </div>
                             <button
                                 onClick={handleSearch}
@@ -246,7 +270,7 @@ const HeroSection = () => {
                             📍 Delivery Not Available Yet
                         </DialogTitle>
                         <DialogDescription className="text-center text-sm sm:text-base text-gray-600">
-                            We&apos;re not currently delivering to <span className="font-semibold text-orange-600">{zipCode}</span> yet,
+                            We&apos;re not currently delivering to <span className="font-semibold text-orange-600">{postCode}</span> yet,
                             but we&apos;re expanding our delivery areas regularly!
                         </DialogDescription>
                     </DialogHeader>

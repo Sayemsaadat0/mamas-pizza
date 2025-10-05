@@ -23,8 +23,9 @@ import {
 import Link from 'next/link';
 import { useGuest } from '@/lib/guest/GuestProvider';
 import { useGuestId } from '@/lib/guest/useGuestId';
+import { useAuth } from '@/lib/auth/useAuth';
 import { toast } from 'sonner';
-import { GUEST_STRIPE_VERIFY_PAYMENT_API, REGISTER_API } from '@/app/api';
+import { GUEST_STRIPE_VERIFY_PAYMENT_API, STRIPE_VERIFY_PAYMENT_API, REGISTER_API } from '@/app/api';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface PaymentVerificationResult {
@@ -53,6 +54,7 @@ function PaymentSuccessContent() {
   const router = useRouter();
   const { guestId } = useGuest();
   const { guestId: guestIdFromHook } = useGuestId();
+  const { isAuthenticated, token } = useAuth();
 
   const [verificationResult, setVerificationResult] = useState<PaymentVerificationResult | null>(null);
   const [isVerifying, setIsVerifying] = useState(true);
@@ -81,17 +83,37 @@ function PaymentSuccessContent() {
 
   useEffect(() => {
     const verifyPayment = async () => {
-      if (!sessionId || !guestId) {
+      if (!sessionId) {
         setVerificationResult({
           success: false,
-          message: 'Missing session ID or guest ID'
+          message: 'Missing session ID'
         });
         setIsVerifying(false);
         return;
       }
 
-      // Create cache key based on session ID and guest ID
-      const cacheKey = `payment_verification_${sessionId}_${guestId}`;
+      // Check authentication status
+      if (isAuthenticated && !token) {
+        setVerificationResult({
+          success: false,
+          message: 'User not authenticated'
+        });
+        setIsVerifying(false);
+        return;
+      }
+
+      if (!isAuthenticated && !guestId) {
+        setVerificationResult({
+          success: false,
+          message: 'Missing guest ID'
+        });
+        setIsVerifying(false);
+        return;
+      }
+
+      // Create cache key based on session ID and user type
+      const userIdentifier = isAuthenticated ? 'authenticated' : guestId;
+      const cacheKey = `payment_verification_${sessionId}_${userIdentifier}`;
 
       // Check if we have cached data first
       try {
@@ -127,18 +149,37 @@ function PaymentSuccessContent() {
 
       // No valid cache found, make API call
       try {
-        const response = await fetch(GUEST_STRIPE_VERIFY_PAYMENT_API, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify({ session_id: sessionId, guest_id: guestId }),
-        });
+        let response;
+        
+        if (isAuthenticated) {
+          // Authenticated user verification
+          response = await fetch(STRIPE_VERIFY_PAYMENT_API, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify({ session_id: sessionId }),
+          });
+        } else {
+          // Guest user verification
+          response = await fetch(GUEST_STRIPE_VERIFY_PAYMENT_API, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify({ session_id: sessionId, guest_id: guestId }),
+          });
+        }
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to verify guest payment');
+          const errorMessage = isAuthenticated 
+            ? errorData.message || 'Failed to verify payment' 
+            : errorData.message || 'Failed to verify guest payment';
+          throw new Error(errorMessage);
         }
 
         const result = await response.json();
@@ -167,7 +208,7 @@ function PaymentSuccessContent() {
     };
 
     verifyPayment();
-  }, [sessionId, guestId]);
+  }, [sessionId, guestId, isAuthenticated, token]);
 
   const copyToClipboard = async (text: string, field: string) => {
     try {
@@ -430,7 +471,8 @@ function PaymentSuccessContent() {
                 </div>
               </div>
 
-              {/* Signup Section */}
+              {/* Signup Section - Only for guest users */}
+              {!isAuthenticated && (
               <div className="bg-gradient-to-br from-orange-50 via-white to-red-50 rounded-2xl shadow-xl border border-orange-200 overflow-hidden">
                 <div className="bg-gradient-to-r from-orange-500 to-red-500 px-6 py-4">
                   <h3 className="text-xl font-bold text-white flex items-center gap-2">
@@ -526,6 +568,7 @@ function PaymentSuccessContent() {
                   </div>
                 </div>
               </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center">

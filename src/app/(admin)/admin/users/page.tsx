@@ -8,201 +8,154 @@ import {
     Eye,
     User,
     Mail,
-    Phone,
-    Calendar
+    Calendar,
+    Loader2
 } from 'lucide-react';
-
-// Mock data for users
-const mockUsers = [
-    {
-        id: 1,
-        name: 'John Doe',
-        email: 'john@example.com',
-        phone: '+1 (555) 123-4567',
-        role: 'Customer',
-        status: 'Active',
-        joinDate: '2024-01-15',
-        orders: 12,
-        avatar: null
-    },
-    {
-        id: 2,
-        name: 'Jane Smith',
-        email: 'jane@example.com',
-        phone: '+1 (555) 987-6543',
-        role: 'Admin',
-        status: 'Active',
-        joinDate: '2024-01-10',
-        orders: 0,
-        avatar: null
-    },
-    {
-        id: 3,
-        name: 'Mike Johnson',
-        email: 'mike@example.com',
-        phone: '+1 (555) 456-7890',
-        role: 'Customer',
-        status: 'Inactive',
-        joinDate: '2024-01-05',
-        orders: 5,
-        avatar: null
-    },
-    {
-        id: 4,
-        name: 'Sarah Wilson',
-        email: 'sarah@example.com',
-        phone: '+1 (555) 321-0987',
-        role: 'Customer',
-        status: 'Active',
-        joinDate: '2024-01-20',
-        orders: 8,
-        avatar: null
-    },
-];
+import { useUsers } from '@/hooks/users.hook';
 
 const UsersPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterRole, setFilterRole] = useState('All');
-    const [filterStatus, setFilterStatus] = useState('All');
+    // Note: Status filter removed as API doesn't provide status field
+    const [currentPage, setCurrentPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
 
-    const filteredUsers = mockUsers.filter(user => {
-        const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            user.email.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesRole = filterRole === 'All' || user.role === filterRole;
-        const matchesStatus = filterStatus === 'All' || user.status === filterStatus;
-        
-        return matchesSearch && matchesRole && matchesStatus;
+    // Use the users hook with parameters
+    const { users, loading, error, pagination, refetch } = useUsers({
+        role: filterRole === 'All' ? undefined : filterRole,
+        search: searchQuery || undefined,
+        per_page: perPage,
+        page: currentPage,
     });
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'Active':
-                return 'bg-green-100 text-green-800';
-            case 'Inactive':
-                return 'bg-red-100 text-red-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
-        }
-    };
+    // Since the API doesn't provide status field, we'll show all users
+    const filteredUsers = users;
+
 
     const getRoleColor = (role: string) => {
-        switch (role) {
-            case 'Admin':
+        switch (role.toLowerCase()) {
+            case 'admin':
                 return 'bg-purple-100 text-purple-800';
-            case 'Customer':
+            case 'user':
                 return 'bg-blue-100 text-blue-800';
+            case 'staff':
+                return 'bg-orange-100 text-orange-800';
             default:
                 return 'bg-gray-100 text-gray-800';
         }
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-3">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Users Management</h1>
-                    <p className="text-gray-600">Manage your users and their permissions</p>
+                    <h1 className="text-lg font-bold text-gray-900">Users</h1>
+                    <p className="text-xs text-gray-600">Manage users and permissions</p>
                 </div>
-                <button className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors">
-                    <Plus size={20} />
-                    Add New User
+                <button className="flex items-center gap-1 bg-orange-500 text-white px-3 py-1.5 rounded text-sm hover:bg-orange-600 transition-colors">
+                    <Plus size={14} />
+                    Add User
                 </button>
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <div className="grid grid-cols-4 gap-2">
+                <div className="bg-white p-2 rounded shadow-sm border border-gray-200">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm font-medium text-gray-600">Total Users</p>
-                            <p className="text-2xl font-bold text-gray-900">{mockUsers.length}</p>
+                            <p className="text-xs text-gray-600">Total</p>
+                            <p className="text-lg font-bold text-gray-900">
+                                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : pagination?.total_items || 0}
+                            </p>
                         </div>
-                        <User className="w-8 h-8 text-orange-500" />
+                        <User className="w-4 h-4 text-orange-500" />
                     </div>
                 </div>
                 
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <div className="bg-white p-2 rounded shadow-sm border border-gray-200">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm font-medium text-gray-600">Active Users</p>
-                            <p className="text-2xl font-bold text-green-600">
-                                {mockUsers.filter(u => u.status === 'Active').length}
+                            <p className="text-xs text-gray-600">Address</p>
+                            <p className="text-lg font-bold text-green-600">
+                                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : users.filter(u => u.delivery_address).length}
                             </p>
                         </div>
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-gray-600">Admins</p>
-                            <p className="text-2xl font-bold text-purple-600">
-                                {mockUsers.filter(u => u.role === 'Admin').length}
-                            </p>
-                        </div>
-                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                            <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                        <div className="w-4 h-4 bg-green-100 rounded-full flex items-center justify-center">
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
                         </div>
                     </div>
                 </div>
                 
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <div className="bg-white p-2 rounded shadow-sm border border-gray-200">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm font-medium text-gray-600">New This Month</p>
-                            <p className="text-2xl font-bold text-blue-600">
-                                {mockUsers.filter(u => new Date(u.joinDate) > new Date('2024-01-01')).length}
+                            <p className="text-xs text-gray-600">Admins</p>
+                            <p className="text-lg font-bold text-purple-600">
+                                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : users.filter(u => u.role === 'admin').length}
                             </p>
                         </div>
-                        <Calendar className="w-8 h-8 text-blue-500" />
+                        <div className="w-4 h-4 bg-purple-100 rounded-full flex items-center justify-center">
+                            <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="bg-white p-2 rounded shadow-sm border border-gray-200">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-xs text-gray-600">Staff</p>
+                            <p className="text-lg font-bold text-blue-600">
+                                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : users.filter(u => u.role === 'staff').length}
+                            </p>
+                        </div>
+                        <Calendar className="w-4 h-4 text-blue-500" />
                     </div>
                 </div>
             </div>
 
             {/* Filters and Search */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <div className="flex flex-col lg:flex-row gap-4">
+            <div className="bg-white p-2 rounded shadow-sm border border-gray-200">
+                <div className="flex gap-2">
                     {/* Search */}
                     <div className="flex-1">
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={12} />
                             <input
                                 type="text"
-                                placeholder="Search users..."
+                                placeholder="Search..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                className="w-full pl-7 pr-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-transparent"
                             />
                         </div>
                     </div>
 
                     {/* Role Filter */}
-                    <div className="lg:w-48">
+                    <div className="w-20">
                         <select
                             value={filterRole}
                             onChange={(e) => setFilterRole(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                            className="w-full px-1 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-transparent"
                         >
-                            <option value="All">All Roles</option>
-                            <option value="Admin">Admin</option>
-                            <option value="Customer">Customer</option>
+                            <option value="All">All</option>
+                            <option value="admin">Admin</option>
+                            <option value="user">User</option>
+                            <option value="staff">Staff</option>
                         </select>
                     </div>
 
-                    {/* Status Filter */}
-                    <div className="lg:w-48">
+                    {/* Per Page Selector */}
+                    <div className="w-16">
                         <select
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                            value={perPage}
+                            onChange={(e) => setPerPage(Number(e.target.value))}
+                            className="w-full px-1 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-transparent"
                         >
-                            <option value="All">All Status</option>
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
+                            <option value={5}>5</option>
+                            <option value={10}>10</option>
+                            <option value={25}>25</option>
+                            <option value={50}>50</option>
                         </select>
                     </div>
                 </div>
@@ -210,111 +163,161 @@ const UsersPage: React.FC = () => {
 
             {/* Users Table */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                {loading ? (
+                    <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+                        <span className="ml-2 text-gray-600 text-sm">Loading users...</span>
+                    </div>
+                ) : error ? (
+                    <div className="flex items-center justify-center py-8">
+                        <div className="text-center">
+                            <p className="text-red-600 mb-2 text-sm">Error loading users</p>
+                            <p className="text-gray-500 text-xs">{error}</p>
+                            <button 
+                                onClick={() => refetch()}
+                                className="mt-3 px-3 py-1.5 bg-orange-500 text-white rounded text-sm hover:bg-orange-600 transition-colors"
+                            >
+                                Try Again
+                            </button>
+                        </div>
+                    </div>
+                ) : (
                 <div className="overflow-x-auto">
-                    <table className="w-full">
+                        <table className="w-full text-xs">
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     User
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Contact
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Role
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Status
+                                    <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Address
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Orders
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Join Date
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Actions
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredUsers.map((user) => (
+                            <tbody className="bg-white divide-y divide-gray-100">
+                                {filteredUsers.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={6} className="px-2 py-6 text-center text-gray-500 text-xs">
+                                            No users found
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    filteredUsers.map((user) => (
                                 <tr key={user.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                            <td className="px-2 py-1.5">
                                         <div className="flex items-center">
-                                            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                                                <User className="w-5 h-5 text-orange-600" />
+                                                    <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
+                                                        <User className="w-3 h-3 text-orange-600" />
                                             </div>
-                                            <div className="ml-4">
-                                                <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                                                <div className="text-sm text-gray-500">ID: {user.id}</div>
+                                                    <div className="ml-2">
+                                                        <div className="text-xs font-medium text-gray-900 truncate max-w-[120px]">{user.name}</div>
+                                                        <div className="text-xs text-gray-500">#{user.id}</div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm text-gray-900 flex items-center gap-1">
-                                            <Mail size={14} className="text-gray-400" />
-                                            {user.email}
-                                        </div>
-                                        <div className="text-sm text-gray-500 flex items-center gap-1">
-                                            <Phone size={14} className="text-gray-400" />
-                                            {user.phone}
+                                            <td className="px-2 py-1.5">
+                                                <div className="text-xs text-gray-900 flex items-center gap-1">
+                                                    <Mail size={10} className="text-gray-400" />
+                                                    <span className="truncate max-w-[140px]">{user.email}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(user.role)}`}>
+                                            <td className="px-2 py-1.5">
+                                                <span className={`inline-flex px-1.5 py-0.5 text-xs font-semibold rounded ${getRoleColor(user.role)}`}>
                                             {user.role}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(user.status)}`}>
-                                            {user.status}
-                                        </span>
+                                            <td className="px-2 py-1.5">
+                                                {user.delivery_address ? (
+                                                    <div className="text-xs text-gray-900">
+                                                        <div className="font-medium truncate max-w-[100px]">{user.delivery_address.city}</div>
+                                                        <div className="text-gray-500 truncate max-w-[100px]">{user.delivery_address.details}</div>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-gray-400 text-xs">No address</span>
+                                                )}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {user.orders}
+                                            <td className="px-2 py-1.5 text-xs text-gray-500">
+                                                {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {new Date(user.joinDate).toLocaleDateString()}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <div className="flex items-center gap-2">
-                                            <button className="text-blue-600 hover:text-blue-900 p-1">
-                                                <Eye size={16} />
+                                            <td className="px-2 py-1.5">
+                                                <div className="flex items-center gap-0.5">
+                                                    <button className="text-blue-600 hover:text-blue-900 p-0.5">
+                                                        <Eye size={12} />
                                             </button>
-                                            <button className="text-orange-600 hover:text-orange-900 p-1">
-                                                <Edit size={16} />
+                                                    <button className="text-orange-600 hover:text-orange-900 p-0.5">
+                                                        <Edit size={12} />
                                             </button>
-                                            <button className="text-red-600 hover:text-red-900 p-1">
-                                                <Trash2 size={16} />
+                                                    <button className="text-red-600 hover:text-red-900 p-0.5">
+                                                        <Trash2 size={12} />
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
+                                    ))
+                                )}
                         </tbody>
                     </table>
                 </div>
+                )}
             </div>
 
             {/* Pagination */}
+            {pagination && (
             <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-700">
-                    Showing <span className="font-medium">1</span> to <span className="font-medium">{filteredUsers.length}</span> of{' '}
-                    <span className="font-medium">{mockUsers.length}</span> results
+                        Showing <span className="font-medium">{pagination.from}</span> to{' '}
+                        <span className="font-medium">{pagination.to}</span> of{' '}
+                        <span className="font-medium">{pagination.total_items}</span> results
                 </div>
                 <div className="flex items-center gap-2">
-                    <button className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+                        <button 
+                            onClick={() => setCurrentPage(currentPage - 1)}
+                            disabled={!pagination.has_prev_page}
+                            className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
                         Previous
                     </button>
-                    <button className="px-3 py-1 text-sm bg-orange-500 text-white rounded-md">
-                        1
+                        
+                        {/* Page numbers */}
+                        {Array.from({ length: Math.min(5, pagination.total_pages) }, (_, i) => {
+                            const pageNum = i + 1;
+                            return (
+                                <button
+                                    key={pageNum}
+                                    onClick={() => setCurrentPage(pageNum)}
+                                    className={`px-3 py-1 text-sm rounded-md ${
+                                        pageNum === pagination.current_page
+                                            ? 'bg-orange-500 text-white'
+                                            : 'border border-gray-300 hover:bg-gray-50'
+                                    }`}
+                                >
+                                    {pageNum}
                     </button>
-                    <button className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+                            );
+                        })}
+                        
+                        <button 
+                            onClick={() => setCurrentPage(currentPage + 1)}
+                            disabled={!pagination.has_next_page}
+                            className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
                         Next
                     </button>
                 </div>
             </div>
+            )}
         </div>
     );
 };

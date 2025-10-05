@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/auth/useAuth";
 import { useGuest } from "@/lib/guest/GuestProvider";
 import MenuCard from "@/components/MenuCard";
 import { toast } from "sonner";
-import { GUEST_CART_API, CART_API } from "@/app/api";
+import { GUEST_CART_API, USER_CART_API } from "@/app/api";
 
 const Menu = () => {
   // --- State ---
@@ -24,7 +24,8 @@ const Menu = () => {
 
   // --- Hooks ---
   const { categories, loading: catLoading } = useCategories();
-  const { token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated , user} = useAuth();
+  console.log(user);
   const { guestId } = useGuest();
   const { menus, loading: menuLoading, pagination } = useMenus({
     category_id: categoryId,
@@ -55,14 +56,11 @@ const Menu = () => {
 
   // Guest cart function
   const handleGuestAddtoCart = async (menu: any) => {
-    console.log('handleGuestAddtoCart called with menu:', menu);
-    
+
     // Set loading state
     setLoadingItems(prev => new Set(prev).add(menu.id));
     
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-      console.log('Base URL:', baseUrl);
       
       if (!guestId) {
         console.error('Guest ID not available');
@@ -84,15 +82,16 @@ const Menu = () => {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        console.log('Guest cart updated:', data);
+        await response.json();
         toast.success(`${menu.name} added to cart!`, {
           description: "Item added to your guest cart",
           duration: 3000,
         });
       } else {
-        console.error('Failed to add to guest cart');
-        toast.error('Failed to add item to cart');
+        console.error('Failed to add to guest cart:', response.status, response.statusText);
+        const errorData = await response.text();
+        console.error('Error response:', errorData);
+        toast.error(`Failed to add item to cart (${response.status})`);
       }
     } catch (error) {
       console.error('Error adding to guest cart:', error);
@@ -109,18 +108,13 @@ const Menu = () => {
 
   // Authenticated user cart function
   const handleAddtoCart = async (menu: any) => {
-    console.log('handleAddtoCart called with menu:', menu);
     
     // Set loading state
     setLoadingItems(prev => new Set(prev).add(menu.id));
     
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-      console.log('Base URL:', baseUrl);
-      console.log('Token:', token);
       
-      console.log('Making user cart API call...');
-      const response = await fetch(CART_API, {
+      const response = await fetch(USER_CART_API, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -140,8 +134,10 @@ const Menu = () => {
           duration: 3000,
         });
       } else {
-        console.error('Failed to add to user cart');
-        toast.error('Failed to add item to cart');
+        console.error('Failed to add to user cart:', response.status, response.statusText);
+        const errorData = await response.text();
+        console.error('Error response:', errorData);
+        toast.error(`Failed to add item to cart (${response.status})`);
       }
     } catch (error) {
       console.error('Error adding to user cart:', error);
@@ -158,15 +154,16 @@ const Menu = () => {
 
   // Main cart handler that checks authentication
   const handleAddToCart = (menu: any) => {
-    console.log('handleAddToCart called with menu:', menu);
-    console.log('isAuthenticated:', isAuthenticated);
-    console.log('guestId:', guestId);
+    console.log('Adding to cart:', { 
+      isAuthenticated, 
+      hasToken: !!token, 
+      guestId: guestId,
+      menuId: menu.id 
+    });
     
     if (isAuthenticated) {
-      console.log('Calling handleAddtoCart for authenticated user');
       handleAddtoCart(menu);
     } else {
-      console.log('Calling handleGuestAddtoCart for guest user');
       handleGuestAddtoCart(menu);
     }
   };

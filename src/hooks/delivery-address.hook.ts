@@ -7,7 +7,6 @@ import { DELIVERY_ADDRESSES_API, getDeliveryAddressById } from '@/app/api';
 export interface DeliveryAddress {
   id: number;
   user_id: number;
-  fields: string;
   address_line_1: string;
   address_line_2: string;
   post_code: string;
@@ -17,7 +16,6 @@ export interface DeliveryAddress {
 }
 
 export interface CreateDeliveryAddressData {
-  fields: string;
   address_line_1: string;
   address_line_2: string;
   post_code: string;
