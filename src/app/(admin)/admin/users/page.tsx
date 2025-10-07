@@ -11,7 +11,18 @@ import {
     Calendar,
     Loader2
 } from 'lucide-react';
-import { useUsers } from '@/hooks/users.hook';
+import { useUsers, useUpdateUser, useDeleteUser } from '@/hooks/users.hook';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const UsersPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -19,6 +30,11 @@ const UsersPage: React.FC = () => {
     // Note: Status filter removed as API doesn't provide status field
     const [currentPage, setCurrentPage] = useState(1);
     const [perPage, setPerPage] = useState(10);
+    const [deleteOpen, setDeleteOpen] = useState(false);
+    const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+    const [editOpen, setEditOpen] = useState(false);
+    const [editingUserId, setEditingUserId] = useState<string | null>(null);
+    const [editForm, setEditForm] = useState<{ name: string; email: string; role: string }>({ name: '', email: '', role: 'user' });
 
     // Use the users hook with parameters
     const { users, loading, error, pagination, refetch } = useUsers({
@@ -27,9 +43,51 @@ const UsersPage: React.FC = () => {
         per_page: perPage,
         page: currentPage,
     });
+    const { updateUser, loading: updating } = useUpdateUser();
+    const { deleteUser, loading: deleting } = useDeleteUser();
 
     // Since the API doesn't provide status field, we'll show all users
     const filteredUsers = users;
+    const openEdit = (u: any) => {
+        setEditingUserId(String(u.id));
+        setEditForm({ name: u.name || '', email: u.email || '', role: u.role || 'user' });
+        setEditOpen(true);
+    };
+
+    const submitEdit = async () => {
+        if (!editingUserId) return;
+        await updateUser(editingUserId, {
+            name: editForm.name,
+            email: editForm.email,
+            role: editForm.role,
+        });
+        setEditOpen(false);
+        setEditingUserId(null);
+        await refetch({
+            role: filterRole === 'All' ? undefined : filterRole,
+            search: searchQuery || undefined,
+            per_page: perPage,
+            page: currentPage,
+        });
+    };
+
+    const askDelete = (id: number) => {
+        setDeletingUserId(String(id));
+        setDeleteOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!deletingUserId) return;
+        await deleteUser(deletingUserId);
+        setDeleteOpen(false);
+        setDeletingUserId(null);
+        await refetch({
+            role: filterRole === 'All' ? undefined : filterRole,
+            search: searchQuery || undefined,
+            per_page: perPage,
+            page: currentPage,
+        });
+    };
 
 
     const getRoleColor = (role: string) => {
@@ -46,6 +104,7 @@ const UsersPage: React.FC = () => {
     };
 
     return (
+        <>
         <div className="space-y-3">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -256,12 +315,12 @@ const UsersPage: React.FC = () => {
                                                     <button className="text-blue-600 hover:text-blue-900 p-0.5">
                                                         <Eye size={12} />
                                             </button>
-                                                    <button className="text-orange-600 hover:text-orange-900 p-0.5">
+                                                    <button className="text-orange-600 hover:text-orange-900 p-0.5" onClick={() => openEdit(user)}>
                                                         <Edit size={12} />
-                                            </button>
-                                                    <button className="text-red-600 hover:text-red-900 p-0.5">
+                                                    </button>
+                                                    <button className="text-red-600 hover:text-red-900 p-0.5" onClick={() => askDelete(user.id)} disabled={deleting}>
                                                         <Trash2 size={12} />
-                                            </button>
+                                                    </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -319,6 +378,69 @@ const UsersPage: React.FC = () => {
             </div>
             )}
         </div>
+
+        {/* Edit Dialog */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Edit User</DialogTitle>
+                    <DialogDescription>Update user details and role.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-3">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Name</label>
+                        <input
+                            type="text"
+                            value={editForm.name}
+                            onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))}
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
+                        <input
+                            type="email"
+                            value={editForm.email}
+                            onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))}
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Role</label>
+                        <select
+                            value={editForm.role}
+                            onChange={(e) => setEditForm((p) => ({ ...p, role: e.target.value }))}
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+                        >
+                            <option value="admin">Admin</option>
+                            <option value="staff">Staff</option>
+                            <option value="user">User</option>
+                        </select>
+                    </div>
+                </div>
+                <div className="flex items-center justify-end gap-2 pt-2">
+                    <button onClick={() => setEditOpen(false)} className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded">Cancel</button>
+                    <button onClick={submitEdit} disabled={updating} className="px-3 py-1.5 text-sm bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50">
+                        {updating ? 'Saving...' : 'Save Changes'}
+                    </button>
+                </div>
+            </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirm */}
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Delete user?</AlertDialogTitle>
+                    <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        </>
     );
 };
 

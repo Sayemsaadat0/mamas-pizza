@@ -6,19 +6,25 @@ import { RESTAURANTS_API, getRestaurantById } from '@/app/api';
 
 export interface Restaurant {
   id: number;
-  privacy_policy: string;
-  terms: string;
-  refund_process: string;
-  license: string;
+  privacy_policy: string | null;
+  terms: string | null;
+  refund_process: string | null;
+  license: string | null;
   isShopOpen: boolean;
   shop_name: string;
   shop_address: string;
   shop_details: string;
   created_at: string;
   updated_at: string;
+  user_info?: {
+    id: number;
+    name: string;
+    email: string;
+  } | null;
 }
 
 export interface CreateRestaurantData {
+  user_id: number;
   privacy_policy: string;
   terms: string;
   refund_process: string;
@@ -69,6 +75,7 @@ export function useRestaurants() {
       }
 
       const result = await response.json();
+      console.log(result);
       setRestaurants(result.data || []);
     } catch (err: any) {
       setError(err.message);
@@ -157,6 +164,12 @@ export function useCreateRestaurant() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        // Bubble up validation errors when available
+        if (response.status === 422) {
+          throw new Error(
+            errorData.message || 'Validation error while creating restaurant'
+          );
+        }
         throw new Error(errorData.message || 'Failed to create restaurant');
       }
 
@@ -204,6 +217,14 @@ export function useUpdateRestaurant() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        if (response.status === 404) {
+          throw new Error(errorData.message || 'Restaurant not found');
+        }
+        if (response.status === 422) {
+          throw new Error(
+            errorData.message || 'Validation error while updating restaurant'
+          );
+        }
         throw new Error(errorData.message || 'Failed to update restaurant');
       }
 
@@ -249,6 +270,9 @@ export function useDeleteRestaurant() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        if (response.status === 404) {
+          throw new Error(errorData.message || 'Restaurant not found');
+        }
         throw new Error(errorData.message || 'Failed to delete restaurant');
       }
 

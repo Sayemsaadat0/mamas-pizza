@@ -13,7 +13,18 @@ import {
     User,
     Loader2
 } from 'lucide-react';
-import { useAdminOrders } from '@/hooks/admin-orders.hook';
+import { useAdminOrders, useUpdateOrderStatus, useCancelOrder } from '@/hooks/admin-orders.hook';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const OrdersPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -21,6 +32,11 @@ const OrdersPage: React.FC = () => {
     const [filterPaymentStatus, setFilterPaymentStatus] = useState('All');
     const [currentPage, setCurrentPage] = useState(1);
     const [perPage, setPerPage] = useState(10);
+    const [statusOpen, setStatusOpen] = useState(false);
+    const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+    const [statusValue, setStatusValue] = useState('pending');
+    const [deleteOpen, setDeleteOpen] = useState(false);
+    const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
 
     // Use the admin orders hook with parameters
     const { orders, loading, error, pagination, summary, refetch } = useAdminOrders({
@@ -30,6 +46,8 @@ const OrdersPage: React.FC = () => {
         per_page: perPage,
         page: currentPage,
     });
+    const { updateOrderStatus, loading: updatingStatus } = useUpdateOrderStatus();
+    const { cancelOrder, loading: cancelling } = useCancelOrder();
 
     // Since we're using API filtering, no need for client-side filtering
     const filteredOrders = orders;
@@ -92,7 +110,47 @@ const OrdersPage: React.FC = () => {
     const pendingOrders = summary?.pending_orders || orders.filter(order => order.status === 'pending').length;
     const paidOrders = summary?.paid_orders || orders.filter(order => order.payment_status === 'paid').length;
 
+    const openEditStatus = (order: any) => {
+        setEditingOrderId(String(order.id));
+        setStatusValue(order.status || 'pending');
+        setStatusOpen(true);
+    };
+
+    const submitStatusUpdate = async () => {
+        if (!editingOrderId) return;
+        await updateOrderStatus(editingOrderId, statusValue);
+        setStatusOpen(false);
+        setEditingOrderId(null);
+        await refetch({
+            status: filterStatus === 'All' ? undefined : filterStatus,
+            payment_status: filterPaymentStatus === 'All' ? undefined : filterPaymentStatus,
+            search: searchQuery || undefined,
+            per_page: perPage,
+            page: currentPage,
+        });
+    };
+
+    const askCancel = (id: number) => {
+        setDeletingOrderId(String(id));
+        setDeleteOpen(true);
+    };
+
+    const confirmCancel = async () => {
+        if (!deletingOrderId) return;
+        await cancelOrder(deletingOrderId);
+        setDeleteOpen(false);
+        setDeletingOrderId(null);
+        await refetch({
+            status: filterStatus === 'All' ? undefined : filterStatus,
+            payment_status: filterPaymentStatus === 'All' ? undefined : filterPaymentStatus,
+            search: searchQuery || undefined,
+            per_page: perPage,
+            page: currentPage,
+        });
+    };
+
     return (
+        <>
         <div className="space-y-3">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -329,11 +387,11 @@ const OrdersPage: React.FC = () => {
                                                     <button className="text-blue-600 hover:text-blue-900 p-0.5">
                                                         <Eye size={12} />
                                                     </button>
-                                                    <button className="text-orange-600 hover:text-orange-900 p-0.5">
+                                                    <button className="text-orange-600 hover:text-orange-900 p-0.5" onClick={() => openEditStatus(order)}>
                                                         <Edit size={12} />
                                                     </button>
-                                                    <button className="text-green-600 hover:text-green-900 p-0.5">
-                                                        <Truck size={12} />
+                                                    <button className="text-red-600 hover:text-red-900 p-0.5" onClick={() => askCancel(order.id)} disabled={cancelling}>
+                                                        <XCircle size={12} />
                                                     </button>
                                                 </div>
                                             </td>
@@ -392,6 +450,52 @@ const OrdersPage: React.FC = () => {
                 </div>
             )}
         </div>
+
+        {/* Update Status Dialog */}
+        <Dialog open={statusOpen} onOpenChange={setStatusOpen}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Update Order Status</DialogTitle>
+                    <DialogDescription>Change the current status of the order.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-3">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
+                    <select
+                        value={statusValue}
+                        onChange={(e) => setStatusValue(e.target.value)}
+                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+                    >
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="prepared">Prepared</option>
+                        <option value="out_for_delivery">Out for delivery</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div className="flex items-center justify-end gap-2 pt-2">
+                    <button onClick={() => setStatusOpen(false)} className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded">Cancel</button>
+                    <button onClick={submitStatusUpdate} disabled={updatingStatus} className="px-3 py-1.5 text-sm bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50">
+                        {updatingStatus ? 'Saving...' : 'Save Changes'}
+                    </button>
+                </div>
+            </DialogContent>
+        </Dialog>
+
+        {/* Cancel Confirm */}
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Cancel order?</AlertDialogTitle>
+                    <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Close</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmCancel}>Confirm</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        </>
     );
 };
 

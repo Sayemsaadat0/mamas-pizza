@@ -58,6 +58,23 @@ const sidebarItems: SidebarItem[] = [
         ],
     },
     {
+        title: 'Post Codes',
+        href: '/admin/post-codes',
+        icon: FolderOpen,
+        children: [
+            {
+                title: 'Codes',
+                href: '/admin/post-codes',
+                icon: FolderOpen,
+            },
+            {
+                title: 'Guest Codes',
+                href: '/admin/guest-post-codes',
+                icon: FolderOpen,
+            },
+        ],
+    },
+    {
         title: 'Profile',
         href: '/admin/profile',
         icon: User,

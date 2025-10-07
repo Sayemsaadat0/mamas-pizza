@@ -230,9 +230,9 @@ export const DefaultNavMenuList: React.FC<{ isScrolled: boolean }> = ({ isScroll
 const Navbar: React.FC = () => {
     const [hideContactNav, setHideContactNav] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
-    const { user, isAuthenticated, clearUser } = useAuth();
+    const { user, isAuthenticated, clearUser , token } = useAuth();
     const router = useRouter();
-    console.log(user);
+    console.log(token);
 
     useEffect(() => {
         const handleScroll = () => {

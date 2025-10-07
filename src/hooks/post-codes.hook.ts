@@ -60,6 +60,8 @@ export function usePostCodes() {
     loading,
     error,
     fetchPostCodes,
+    // Backwards-compatible alias expected by some pages
+    refetch: fetchPostCodes,
   };
 }
 
