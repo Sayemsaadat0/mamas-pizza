@@ -8,6 +8,7 @@ export interface MenuItem {
   id: number;
   name: string;
   category_id: number;
+  size_id: number;
   details: string;
   main_price: string;
   prev_price: string;
@@ -19,6 +20,13 @@ export interface MenuItem {
     id: number;
     name: string;
     status: boolean;
+    created_at: string;
+    updated_at: string;
+  };
+  size?: {
+    id: number;
+    size: string;
+    status: string;
     created_at: string;
     updated_at: string;
   };

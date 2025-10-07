@@ -70,6 +70,9 @@ export const POST_CODE_BY_ID_API = `${API_BASE_URL}/api/v1/post-codes`;
 export const GUEST_POST_CODES_API = `${API_BASE_URL}/api/v1/guest-post-codes`;
 export const GUEST_POST_CODE_BY_ID_API = `${API_BASE_URL}/api/v1/guest-post-codes`;
 
+// ==================== SIZES APIs ====================
+export const SIZES_API = `${API_BASE_URL}/api/v1/sizes`;
+
 // ==================== HELPER FUNCTIONS ====================
 // Helper function to get delivery addresses for a specific user
 export const getUserDeliveryAddresses = (userId: string) => 
@@ -133,6 +136,10 @@ export const getAdminOrderById = (orderId: string) =>
 // Helper function to cancel admin order
 export const cancelAdminOrder = (orderId: string) => 
   `${ADMIN_ORDER_BY_ID_API}/${orderId}/cancel`;
+
+// Helper function to get specific size
+export const getSizeById = (sizeId: string) => 
+  `${SIZES_API}/${sizeId}`;
 
 // ==================== LEGACY COMPATIBILITY (for existing code) ====================
 // These maintain backward compatibility with existing code

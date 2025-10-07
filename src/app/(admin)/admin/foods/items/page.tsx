@@ -12,21 +12,14 @@ import {
     Loader2
 } from 'lucide-react';
 import { useMenus, useDeleteMenu } from '@/hooks/menu.hook';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import AddItemForm from '@/components/admin/AddItemForm';
 
 const ItemPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('All');
     const [filterCategory, setFilterCategory] = useState('All');
+    const [filterSize, setFilterSize] = useState('All');
     const [showAddModal, setShowAddModal] = useState(false);
-    const [showEditModal, setShowEditModal] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [editingMenu, setEditingMenu] = useState<any>(null);
 
     // Hooks
@@ -35,17 +28,22 @@ const ItemPage: React.FC = () => {
 
     const filteredItems = menus.filter(item => {
         const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            item.category?.name.toLowerCase().includes(searchQuery.toLowerCase());
+                            item.category?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            item.size?.size.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesStatus = filterStatus === 'All' || item.status === filterStatus;
         const matchesCategory = filterCategory === 'All' || item.category?.name === filterCategory;
+        const matchesSize = filterSize === 'All' || item.size?.size === filterSize;
         
-        return matchesSearch && matchesStatus && matchesCategory;
+        return matchesSearch && matchesStatus && matchesCategory && matchesSize;
     });
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
+    const getStatusColor = (status: string | number) => {
+        const statusStr = String(status);
+        switch (statusStr) {
+            case '1':
             case 'active':
                 return 'bg-green-100 text-green-800';
+            case '0':
             case 'inactive':
                 return 'bg-red-100 text-red-800';
             default:
@@ -53,7 +51,22 @@ const ItemPage: React.FC = () => {
         }
     };
 
+    const getStatusText = (status: string | number) => {
+        const statusStr = String(status);
+        switch (statusStr) {
+            case '1':
+            case 'active':
+                return 'Active';
+            case '0':
+            case 'inactive':
+                return 'Inactive';
+            default:
+                return 'Unknown';
+        }
+    };
+
     const categories = [...new Set(menus.map(item => item.category?.name).filter(Boolean))];
+    const sizesList = [...new Set(menus.map(item => item.size?.size).filter(Boolean))];
 
     // Handler functions
     const handleDeleteMenu = async (id: string) => {
@@ -67,7 +80,6 @@ const ItemPage: React.FC = () => {
 
     const openEditModal = (menu: any) => {
         setEditingMenu(menu);
-        setShowEditModal(true);
     };
 
     const formatPrice = (price: string | number | undefined) => {
@@ -119,7 +131,7 @@ const ItemPage: React.FC = () => {
                             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                             <input
                                 type="text"
-                                placeholder="Search items..."
+                                placeholder="Search items, categories, or sizes..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent"
@@ -140,6 +152,20 @@ const ItemPage: React.FC = () => {
                             ))}
                         </select>
                     </div>
+
+                    {/* Size Filter */}
+                    <div className="sm:w-32">
+                        <select
+                            value={filterSize}
+                            onChange={(e) => setFilterSize(e.target.value)}
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+                        >
+                            <option value="All">All Sizes</option>
+                            {sizesList.map(size => (
+                                <option key={size} value={size}>{size}</option>
+                            ))}
+                        </select>
+                    </div>
                 
                     {/* Status Filter */}
                     <div className="sm:w-32">
@@ -149,8 +175,8 @@ const ItemPage: React.FC = () => {
                             className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent"
                         >
                             <option value="All">All</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
+                            <option value="1">Active</option>
+                            <option value="0">Inactive</option>
                         </select>
                     </div>
                 </div>
@@ -175,12 +201,15 @@ const ItemPage: React.FC = () => {
                                         Category
                                     </th>
                                     <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                                        Size
+                                    </th>
+                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                                         Regular
                                     </th>
                                     <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Price
                                     </th>
-                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell">
                                         Status
                                     </th>
                                     <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -214,13 +243,16 @@ const ItemPage: React.FC = () => {
                                                     <div className="text-xs text-gray-500 truncate max-w-32 sm:max-w-48">
                                                         {item.details}
                                                     </div>
-                                                    {/* Mobile: Show category and status on small screens */}
+                                                    {/* Mobile: Show category, size and status on small screens */}
                                                     <div className="sm:hidden flex items-center gap-2 mt-1">
                                                         <span className="text-xs text-gray-600">
                                                             {item.category?.name || 'No Category'}
                                                         </span>
-                                                        <span className={`inline-flex px-1.5 py-0.5 text-xs font-semibold rounded-full ${getStatusColor(item.status || 'inactive')}`}>
-                                                            {item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : 'Inactive'}
+                                                        <span className="text-xs text-gray-500">
+                                                            {item.size?.size || 'No Size'}
+                                                        </span>
+                                                        <span className={`inline-flex px-1.5 py-0.5 text-xs font-semibold rounded-full ${getStatusColor(item.status || '0')}`}>
+                                                            {getStatusText(item.status || '0')}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -233,6 +265,11 @@ const ItemPage: React.FC = () => {
                                         </td>
                                         <td className="px-3 py-2 text-sm text-gray-900 hidden md:table-cell">
                                             <div className="truncate">
+                                                {item.size?.size || 'No Size'}
+                                            </div>
+                                        </td>
+                                        <td className="px-3 py-2 text-sm text-gray-900 hidden lg:table-cell">
+                                            <div className="truncate">
                                                 {formatPrice(item?.prev_price)}
                                             </div>
                                         </td>
@@ -241,13 +278,13 @@ const ItemPage: React.FC = () => {
                                                 {formatPrice(item?.main_price)}
                                             </div>
                                             {/* Mobile: Show regular price on small screens */}
-                                            <div className="md:hidden text-xs text-gray-500">
+                                            <div className="lg:hidden text-xs text-gray-500">
                                                 Reg: {formatPrice(item?.prev_price)}
                                             </div>
                                         </td>
-                                        <td className="px-3 py-2 hidden lg:table-cell">
-                                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(item.status || 'inactive')}`}>
-                                                {item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : 'Inactive'}
+                                        <td className="px-3 py-2 hidden xl:table-cell">
+                                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(item.status || '0')}`}>
+                                                {getStatusText(item.status || '0')}
                                             </span>
                                         </td>
                                         <td className="px-3 py-2 text-right">
@@ -295,66 +332,22 @@ const ItemPage: React.FC = () => {
                 </div>
             )}
 
-            {/* Add Menu Modal */}
-            <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Add New Menu Item</DialogTitle>
-                        <DialogDescription>
-                            Menu item creation form would go here...
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="flex items-center gap-2 justify-end mt-4">
-                        <button 
-                            onClick={() => setShowAddModal(false)}
-                            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button 
-                            onClick={() => setShowAddModal(false)}
-                            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-                        >
-                            Create Menu Item
-                        </button>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-            {/* Edit Menu Modal */}
-            <Dialog open={showEditModal} onOpenChange={(open) => {
-                setShowEditModal(open);
-                if (!open) setEditingMenu(null);
-            }}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Edit Menu Item</DialogTitle>
-                        <DialogDescription>
-                            Menu item editing form would go here...
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="flex items-center gap-2 justify-end mt-4">
-                        <button 
-                            onClick={() => {
-                                setShowEditModal(false);
-                                setEditingMenu(null);
-                            }}
-                            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button 
-                            onClick={() => {
-                                setShowEditModal(false);
-                                setEditingMenu(null);
-                            }}
-                            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-                        >
-                            Update Menu Item
-                        </button>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            {/* Add/Edit Item Form */}
+            <AddItemForm
+                open={showAddModal || !!editingMenu}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setShowAddModal(false);
+                        setEditingMenu(null);
+                    }
+                }}
+                instance={editingMenu}
+                onSuccess={() => {
+                    refetch();
+                    setShowAddModal(false);
+                    setEditingMenu(null);
+                }}
+            />
         </div>
     );
 };

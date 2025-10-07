@@ -55,6 +55,11 @@ const sidebarItems: SidebarItem[] = [
                 href: '/admin/foods/items',
                 icon: Utensils,
             },
+            {
+                title: 'Sizes',
+                href: '/admin/foods/sizes',
+                icon: FolderOpen,
+            },
         ],
     },
     {
