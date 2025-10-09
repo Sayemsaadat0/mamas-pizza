@@ -11,6 +11,7 @@ import {
     User,
     ChevronDown,
     Settings,
+    Percent,
     // Menu,
     LogOut,
 } from 'lucide-react';
@@ -39,6 +40,11 @@ const sidebarItems: SidebarItem[] = [
         title: 'Orders',
         href: '/admin/orders',
         icon: ShoppingBag,
+    },
+    {
+        title: 'Offers',
+        href: '/admin/offers',
+        icon: Percent,
     },
     {
         title: 'Foods',

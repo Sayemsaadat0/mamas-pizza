@@ -207,12 +207,12 @@ export const DefaultNavMenuList: React.FC<{ isScrolled: boolean }> = ({ isScroll
                 <div key={i.path}>
                     <Link
                         className={`font-semibold uppercase px-3 tracking-widest py-2 rounded-full transition-all duration-300 ${pathname === i.path
-                                ? isScrolled
-                                    ? 'text-orange-600 bg-orange-100'
-                                    : 'text-orange-600 bg-orange-100'
-                                : isScrolled
-                                    ? 'text-gray-700 hover:text-orange-600 hover:bg-orange-50'
-                                    : 'text-white hover:text-orange-600 hover:bg-orange-50'
+                            ? isScrolled
+                                ? 'text-orange-600 bg-orange-100'
+                                : 'text-orange-600 bg-orange-100'
+                            : isScrolled
+                                ? 'text-gray-700 hover:text-orange-600 hover:bg-orange-50'
+                                : 'text-white hover:text-orange-600 hover:bg-orange-50'
                             }`}
                         href={i.path}
                     >
@@ -230,9 +230,9 @@ export const DefaultNavMenuList: React.FC<{ isScrolled: boolean }> = ({ isScroll
 const Navbar: React.FC = () => {
     const [hideContactNav, setHideContactNav] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
-    const { user, isAuthenticated, clearUser , token } = useAuth();
+    const { user, isAuthenticated, clearUser, token } = useAuth();
     const router = useRouter();
-    console.log(token);
+    // console.log(token);
 
     useEffect(() => {
         const handleScroll = () => {

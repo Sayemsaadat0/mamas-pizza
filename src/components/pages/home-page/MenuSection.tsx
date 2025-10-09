@@ -3,16 +3,19 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useCategories } from "@/hooks/category.hook";
 import { useMenus } from "@/hooks/menu.hook";
+import { useBogoOffers } from "@/hooks/bogo-offer.hooks";
 import { useAuth } from "@/lib/auth/useAuth";
 import { useGuest } from "@/lib/guest/GuestProvider";
 import MenuCard from "@/components/MenuCard";
-import { Utensils, Pizza, Coffee, Sandwich } from "lucide-react";
+import MenuOfferCards from "@/components/pages/home-page/MenuOfferCards";
+import { Utensils, Pizza, Coffee, Sandwich, Percent } from "lucide-react";
 import { toast } from "sonner";
 import { GUEST_CART_API, USER_CART_API } from "@/app/api";
 
 // Icon mapping for categories
 const categoryIcons: { [key: string]: any } = {
     "All": Utensils,
+    "Offer": Percent,
     "Pizza": Pizza,
     "Burgers": Sandwich,
     "Drinks": Coffee,
@@ -22,11 +25,39 @@ const categoryIcons: { [key: string]: any } = {
 const MenuSection: React.FC = () => {
     const [activeTab, setActiveTab] = useState("All");
     const [loadingItems, setLoadingItems] = useState<Set<number>>(new Set());
+    const [openOfferId, setOpenOfferId] = useState<number | null>(null);
+    const [loadingOffers, setLoadingOffers] = useState<Set<number>>(new Set());
 
     // --- Hooks ---
     const { categories } = useCategories();
+    const { bogoOffers, loading: bogoOffersLoading } = useBogoOffers();
     const { token, isAuthenticated } = useAuth();
     const { guestId } = useGuest();
+
+    // Handle offer modal opening
+    const handleOfferModalOpen = (offerId: number) => {
+        // Prevent opening if already open or loading
+        if (openOfferId === offerId || loadingOffers.has(offerId)) {
+            return;
+        }
+        
+        setLoadingOffers(prev => new Set(prev).add(offerId));
+        
+        // Simulate loading delay (you can replace this with actual API call)
+        setTimeout(() => {
+            setOpenOfferId(offerId);
+            setLoadingOffers(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(offerId);
+                return newSet;
+            });
+        }, 300);
+    };
+
+    const handleOfferModalClose = () => {
+        setOpenOfferId(null);
+        setLoadingOffers(new Set());
+    };
     
     // Find the selected category ID
     const selectedCategory = categories.find(cat => cat.name === activeTab);
@@ -37,14 +68,18 @@ const MenuSection: React.FC = () => {
         per_page: 8, // Show 8 items on home page
     });
 
-    // Create menu tabs with real categories
-    const menuTabs = [
+
+
+    
+        const menuTabs1 = [
         { name: "All", icon: Utensils },
+        { name: "Offer", icon: Utensils },
         ...categories.map(cat => ({
             name: cat.name,
             icon: categoryIcons[cat.name] || categoryIcons.default
         }))
     ];
+    
 
     // Guest cart function
     const handleGuestAddtoCart = async (menu: any) => {
@@ -151,6 +186,12 @@ const MenuSection: React.FC = () => {
 
     // Main cart handler that checks authentication
     const handleCartAdd = (menu: any) => {
+        // Prevent multiple clicks if already loading
+        if (loadingItems.has(menu.id)) {
+            console.log('Item is already being added to cart, ignoring click');
+            return;
+        }
+        
         console.log('handleCartAdd called with menu:', menu);
         console.log('isAuthenticated:', isAuthenticated);
         console.log('guestId:', guestId);
@@ -187,7 +228,7 @@ const MenuSection: React.FC = () => {
                 <div className="mb-16">
                     {/* Mobile Scrollable Tabs */}
                     <div className="flex overflow-x-auto gap-4 py-8 px-5 md:flex-wrap md:justify-center scrollbar-hide">
-                        {menuTabs.map((tab) => {
+                        {menuTabs1.map((tab) => {
                             const IconComponent = tab.icon;
                             const isActive = activeTab === tab.name;
 
@@ -227,36 +268,77 @@ const MenuSection: React.FC = () => {
 
                 {/* Food Cards */}
                 <div>
-                    {menuLoading ? (
-                        <div className="text-center py-20">
-                            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-500"></div>
-                            <p className="text-orange-600 mt-4 font-medium">Loading delicious menu items...</p>
-                        </div>
-                    ) : menus.length > 0 ? (
-                        <motion.div 
-                            layout
-                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
-                        >
-                            {menus.map((menu, index) => (
-                                <MenuCard
-                                    key={menu.id}
-                                    menu={menu}
-                                    index={index}
-                                    onAddToCart={handleCartAdd}
-                                    isLoading={loadingItems.has(menu.id)}
-                                />
-                            ))}
-                        </motion.div>
-                    ) : (
-                        <div className="text-center py-20">
-                            <div className="bg-gray-50 rounded-3xl p-12 max-w-md mx-auto">
-                                <div className="text-gray-400 mb-4">
-                                    <Utensils size={48} className="mx-auto" />
-                                </div>
-                                <h3 className="text-xl font-semibold text-gray-700 mb-2">No items found</h3>
-                                <p className="text-gray-500">We couldn&apos;t find any items in this category.</p>
+                    {activeTab === "Offer" ? (
+                        bogoOffersLoading ? (
+                            <div className="text-center py-20">
+                                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-500"></div>
+                                <p className="text-orange-600 mt-4 font-medium">Loading amazing offers...</p>
                             </div>
-                        </div>
+                        ) : bogoOffers.length > 0 ? (
+                            <motion.div 
+                                layout
+                                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+                            >
+                                {bogoOffers.map((offer, index) => (
+                                    <motion.div
+                                        key={offer.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                                    >
+                                        <MenuOfferCards 
+                                            offer={offer} 
+                                            isModalOpen={openOfferId === offer.id}
+                                            onModalOpen={handleOfferModalOpen}
+                                            isLoading={loadingOffers.has(offer.id)}
+                                        />
+                                    </motion.div>
+                                ))}
+                            </motion.div>
+                        ) : (
+                            <div className="text-center py-20">
+                                <div className="bg-gray-50 rounded-3xl p-12 max-w-md mx-auto">
+                                    <div className="text-gray-400 mb-4">
+                                        <Percent size={48} className="mx-auto" />
+                                    </div>
+                                    <h3 className="text-xl font-semibold text-gray-700 mb-2">No offers available</h3>
+                                    <p className="text-gray-500">Check back later for amazing deals!</p>
+                                </div>
+                            </div>
+                        )
+                    ) : (
+                        // Show Regular Menu Items
+                        menuLoading ? (
+                            <div className="text-center py-20">
+                                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-500"></div>
+                                <p className="text-orange-600 mt-4 font-medium">Loading delicious menu items...</p>
+                            </div>
+                        ) : menus.length > 0 ? (
+                            <motion.div 
+                                layout
+                                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+                            >
+                                {menus.map((menu, index) => (
+                                    <MenuCard
+                                        key={menu.id}
+                                        menu={menu}
+                                        index={index}
+                                        onAddToCart={handleCartAdd}
+                                        isLoading={loadingItems.has(menu.id)}
+                                    />
+                                ))}
+                            </motion.div>
+                        ) : (
+                            <div className="text-center py-20">
+                                <div className="bg-gray-50 rounded-3xl p-12 max-w-md mx-auto">
+                                    <div className="text-gray-400 mb-4">
+                                        <Utensils size={48} className="mx-auto" />
+                                    </div>
+                                    <h3 className="text-xl font-semibold text-gray-700 mb-2">No items found</h3>
+                                    <p className="text-gray-500">We couldn&apos;t find any items in this category.</p>
+                                </div>
+                            </div>
+                        )
                     )}
                 </div>
 

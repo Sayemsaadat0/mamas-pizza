@@ -7,15 +7,15 @@ import { SIZES_API, getSizeById } from '@/app/api';
 // ==================== TYPES ====================
 export interface Size {
   id: string;
-  size: string | number;
+  size: number;
   status: 'active' | 'inactive' | string | number;
   created_at: string;
   updated_at: string;
 }
 
 export interface CreateSizeData {
-  size: string;
-  status: 'active' | 'inactive';
+  size: number;
+  status: number;
 }
 
 export interface UpdateSizeData {
@@ -110,6 +110,12 @@ export function useCreateSize() {
     setError(null);
 
     try {
+      // Always send status as 1 (active) for sizes
+      const apiData = {
+        ...data,
+        status: 1
+      };
+
       const response = await fetch(SIZES_API, {
         method: 'POST',
         headers: {
@@ -117,7 +123,7 @@ export function useCreateSize() {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(apiData),
       });
 
       if (!response.ok) {
@@ -167,6 +173,12 @@ export function useUpdateSize() {
     setError(null);
 
     try {
+      // Convert status to 0/1 for API
+      const apiData = {
+        ...data,
+        status: data.status ? (data.status === 'active' ? 1 : 0) : undefined
+      };
+
       const response = await fetch(getSizeById(id), {
         method: 'PUT',
         headers: {
@@ -174,7 +186,7 @@ export function useUpdateSize() {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(apiData),
       });
 
       if (!response.ok) {

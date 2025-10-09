@@ -2,8 +2,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { 
-    FolderOpen, 
+import {
+    FolderOpen,
     Plus,
     Search,
     Edit,
@@ -13,6 +13,16 @@ import {
 } from 'lucide-react';
 import { useMenus, useDeleteMenu } from '@/hooks/menu.hook';
 import AddItemForm from '@/components/admin/AddItemForm';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const ItemPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -21,6 +31,8 @@ const ItemPage: React.FC = () => {
     const [filterSize, setFilterSize] = useState('All');
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingMenu, setEditingMenu] = useState<any>(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState<any>(null);
 
     // Hooks
     const { menus, loading, error, refetch } = useMenus();
@@ -28,40 +40,39 @@ const ItemPage: React.FC = () => {
 
     const filteredItems = menus.filter(item => {
         const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            item.category?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            item.size?.size.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesStatus = filterStatus === 'All' || item.status === filterStatus;
+            item.category?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.size?.size.toLowerCase().includes(searchQuery.toLowerCase());
+        const status = item.status as any;
+        const isActive = status === true || status === 'true' || status === 1 || status === '1' || status === 'active';
+        const isInactive = status === false || status === 'false' || status === 0 || status === '0' || status === 'inactive';
+        const matchesStatus = filterStatus === 'All' || 
+            (filterStatus === '1' && isActive) ||
+            (filterStatus === '0' && isInactive);
         const matchesCategory = filterCategory === 'All' || item.category?.name === filterCategory;
         const matchesSize = filterSize === 'All' || item.size?.size === filterSize;
-        
+
         return matchesSearch && matchesStatus && matchesCategory && matchesSize;
     });
 
-    const getStatusColor = (status: string | number) => {
-        const statusStr = String(status);
-        switch (statusStr) {
-            case '1':
-            case 'active':
-                return 'bg-green-100 text-green-800';
-            case '0':
-            case 'inactive':
-                return 'bg-red-100 text-red-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
+    const getStatusColor = (status: string | number | boolean) => {
+        // Handle API response: true/false (boolean) or 1/0 (number/string)
+        if (status === true || status === 'true' || status === 1 || status === '1' || status === 'active') {
+            return 'bg-green-100 text-green-800';
+        } else if (status === false || status === 'false' || status === 0 || status === '0' || status === 'inactive') {
+            return 'bg-red-100 text-red-800';
+        } else {
+            return 'bg-gray-100 text-gray-800';
         }
     };
 
-    const getStatusText = (status: string | number) => {
-        const statusStr = String(status);
-        switch (statusStr) {
-            case '1':
-            case 'active':
-                return 'Active';
-            case '0':
-            case 'inactive':
-                return 'Inactive';
-            default:
-                return 'Unknown';
+    const getStatusText = (status: string | number | boolean) => {
+        // Handle API response: true/false (boolean) or 1/0 (number/string)
+        if (status === true || status === 'true' || status === 1 || status === '1' || status === 'active') {
+            return 'Active';
+        } else if (status === false || status === 'false' || status === 0 || status === '0' || status === 'inactive') {
+            return 'Inactive';
+        } else {
+            return 'Unknown';
         }
     };
 
@@ -69,13 +80,25 @@ const ItemPage: React.FC = () => {
     const sizesList = [...new Set(menus.map(item => item.size?.size).filter(Boolean))];
 
     // Handler functions
-    const handleDeleteMenu = async (id: string) => {
-        if (window.confirm('Are you sure you want to delete this menu item?')) {
-            const result = await deleteMenu(id);
+    const handleDeleteClick = (item: any) => {
+        setItemToDelete(item);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (itemToDelete) {
+            const result = await deleteMenu(itemToDelete.id.toString());
             if (result) {
                 refetch();
+                setDeleteDialogOpen(false);
+                setItemToDelete(null);
             }
         }
+    };
+
+    const handleDeleteCancel = () => {
+        setDeleteDialogOpen(false);
+        setItemToDelete(null);
     };
 
     const openEditModal = (menu: any) => {
@@ -104,7 +127,7 @@ const ItemPage: React.FC = () => {
                         <span className="hidden sm:inline">Manage Categories</span>
                         <span className="sm:hidden">Categories</span>
                     </Link>
-                    <button 
+                    <button
                         onClick={() => setShowAddModal(true)}
                         className="flex items-center gap-1.5 bg-orange-500 text-white px-3 py-1.5 text-sm rounded-lg hover:bg-orange-600 transition-colors"
                     >
@@ -138,7 +161,7 @@ const ItemPage: React.FC = () => {
                             />
                         </div>
                     </div>
-                
+
                     {/* Category Filter */}
                     <div className="sm:w-40">
                         <select
@@ -166,7 +189,7 @@ const ItemPage: React.FC = () => {
                             ))}
                         </select>
                     </div>
-                
+
                     {/* Status Filter */}
                     <div className="sm:w-32">
                         <select
@@ -222,20 +245,24 @@ const ItemPage: React.FC = () => {
                                     <tr key={item.id} className="hover:bg-gray-50">
                                         <td className="px-3 py-2">
                                             <div className="flex items-center">
-                                                {item.thumbnail && (
-                                                    <div className="w-8 h-8 rounded overflow-hidden mr-2 relative flex-shrink-0">
-                                                        <Image 
-                                                            src={`${process.env.NEXT_PUBLIC_API_URL}/${item.thumbnail}`} 
-                                                            alt={item.thumbnail}
-                                                            width={32}
-                                                            height={32}
-                                                            className="object-cover"
+                                                <div className="w-10 h-10 rounded overflow-hidden mr-3 relative flex-shrink-0 bg-gray-100">
+                                                    {item.thumbnail ? (
+                                                        <Image
+                                                            src={`${process.env.NEXT_PUBLIC_API_URL}/${item.thumbnail}`}
+                                                            alt={item.name}
+                                                            width={40}
+                                                            height={40}
+                                                            className="object-cover w-full h-full"
                                                             onError={(e) => {
                                                                 e.currentTarget.style.display = 'none';
+                                                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
                                                             }}
                                                         />
+                                                    ) : null}
+                                                    <div className={`absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400 text-xs ${item.thumbnail ? 'hidden' : ''}`}>
+                                                        No Image
                                                     </div>
-                                                )}
+                                                </div>
                                                 <div className="min-w-0 flex-1">
                                                     <div className="text-sm font-medium text-gray-900 truncate">
                                                         {item.name}
@@ -292,14 +319,14 @@ const ItemPage: React.FC = () => {
                                                 <button className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors">
                                                     <Eye size={14} />
                                                 </button>
-                                                <button 
+                                                <button
                                                     onClick={() => openEditModal(item)}
                                                     className="text-orange-600 hover:text-orange-900 p-1 rounded hover:bg-orange-50 transition-colors"
                                                 >
                                                     <Edit size={14} />
                                                 </button>
-                                                <button 
-                                                    onClick={() => handleDeleteMenu(item.id.toString())}
+                                                <button
+                                                    onClick={() => handleDeleteClick(item)}
                                                     disabled={deleteLoading}
                                                     className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors disabled:opacity-50"
                                                 >
@@ -323,7 +350,7 @@ const ItemPage: React.FC = () => {
                     </div>
                     <h3 className="text-base font-medium text-gray-900 mb-1">No food items found</h3>
                     <p className="text-sm text-gray-500 mb-3">Try adjusting your search or filter criteria</p>
-                    <button 
+                    <button
                         onClick={() => setShowAddModal(true)}
                         className="bg-orange-500 text-white px-3 py-1.5 text-sm rounded-lg hover:bg-orange-600 transition-colors"
                     >
@@ -348,6 +375,37 @@ const ItemPage: React.FC = () => {
                     setEditingMenu(null);
                 }}
             />
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Menu Item</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete &quot;{itemToDelete?.name}&quot;? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={handleDeleteCancel}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDeleteConfirm}
+                            disabled={deleteLoading}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            {deleteLoading ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                'Delete'
+                            )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

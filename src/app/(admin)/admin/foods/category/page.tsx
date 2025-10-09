@@ -8,6 +8,24 @@ import {
     Loader2,
 } from 'lucide-react';
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '@/hooks/category.hook';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const CategoryPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -16,6 +34,8 @@ const CategoryPage: React.FC = () => {
     const [editingCategory, setEditingCategory] = useState<any>(null);
     const [newCategoryName, setNewCategoryName] = useState('');
     const [editCategoryName, setEditCategoryName] = useState('');
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [categoryToDelete, setCategoryToDelete] = useState<any>(null);
 
     // Hooks
     const { categories, loading, error, refetch } = useCategories();
@@ -52,13 +72,25 @@ const CategoryPage: React.FC = () => {
         }
     };
 
-    const handleDeleteCategory = async (id: string) => {
-        if (window.confirm('Are you sure you want to delete this category?')) {
-            const result = await deleteCategory(id);
+    const handleDeleteClick = (category: any) => {
+        setCategoryToDelete(category);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (categoryToDelete) {
+            const result = await deleteCategory(categoryToDelete.id);
             if (result) {
                 refetch();
+                setDeleteDialogOpen(false);
+                setCategoryToDelete(null);
             }
         }
+    };
+
+    const handleDeleteCancel = () => {
+        setDeleteDialogOpen(false);
+        setCategoryToDelete(null);
     };
 
     const openEditModal = (category: any) => {
@@ -168,7 +200,7 @@ const CategoryPage: React.FC = () => {
                                                     <Edit size={16} />
                                                 </button>
                                                 <button 
-                                                    onClick={() => handleDeleteCategory(category.id)}
+                                                    onClick={() => handleDeleteClick(category)}
                                                     disabled={deleteLoading}
                                                     className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors disabled:opacity-50"
                                                 >
@@ -201,12 +233,17 @@ const CategoryPage: React.FC = () => {
                 </div>
             )}
 
-            {/* Add Category Modal */}
-            {showAddModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Add New Category</h3>
-                        <div className="mb-4">
+            {/* Add Category Dialog */}
+            <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Add New Category</DialogTitle>
+                        <DialogDescription>
+                            Create a new food category to organize your menu items.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Category Name
                             </label>
@@ -218,35 +255,40 @@ const CategoryPage: React.FC = () => {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                             />
                         </div>
-                        <div className="flex items-center gap-2 justify-end">
-                            <button 
-                                onClick={() => {
-                                    setShowAddModal(false);
-                                    setNewCategoryName('');
-                                }}
-                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                onClick={handleCreateCategory}
-                                disabled={createLoading || !newCategoryName.trim()}
-                                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center gap-2"
-                            >
-                                {createLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                                Create Category
-                            </button>
-                        </div>
                     </div>
-                </div>
-            )}
+                    <DialogFooter>
+                        <button 
+                            onClick={() => {
+                                setShowAddModal(false);
+                                setNewCategoryName('');
+                            }}
+                            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            onClick={handleCreateCategory}
+                            disabled={createLoading || !newCategoryName.trim()}
+                            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                        >
+                            {createLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                            Create Category
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
-            {/* Edit Category Modal */}
-            {showEditModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Edit Category</h3>
-                        <div className="mb-4">
+            {/* Edit Category Dialog */}
+            <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Edit Category</DialogTitle>
+                        <DialogDescription>
+                            Update the category name to better organize your menu items.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Category Name
                             </label>
@@ -258,29 +300,60 @@ const CategoryPage: React.FC = () => {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                             />
                         </div>
-                        <div className="flex items-center gap-2 justify-end">
-                            <button 
-                                onClick={() => {
-                                    setShowEditModal(false);
-                                    setEditCategoryName('');
-                                    setEditingCategory(null);
-                                }}
-                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                onClick={handleEditCategory}
-                                disabled={updateLoading || !editCategoryName.trim()}
-                                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center gap-2"
-                            >
-                                {updateLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                                Update Category
-                            </button>
-                        </div>
                     </div>
-                </div>
-            )}
+                    <DialogFooter>
+                        <button 
+                            onClick={() => {
+                                setShowEditModal(false);
+                                setEditCategoryName('');
+                                setEditingCategory(null);
+                            }}
+                            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            onClick={handleEditCategory}
+                            disabled={updateLoading || !editCategoryName.trim()}
+                            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                        >
+                            {updateLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                            Update Category
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Category</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete &quot;{categoryToDelete?.name}&quot;? This action cannot be undone and will remove all associated menu items from this category.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={handleDeleteCancel}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDeleteConfirm}
+                            disabled={deleteLoading}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            {deleteLoading ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                'Delete'
+                            )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

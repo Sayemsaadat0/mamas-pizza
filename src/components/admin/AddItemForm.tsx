@@ -36,7 +36,7 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
     details: '',
     category_id: '',
     size_id: '',
-    status: '1' as '0' | '1'
+    status: true
   });
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
@@ -85,7 +85,7 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
 
     try {
       const response = await fetch(`${ITEMS_API}/${id}`, {
-        method: 'PUT',
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
@@ -118,7 +118,7 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
         details: instance.details || '',
         category_id: instance.category_id?.toString() || '',
         size_id: instance.size_id?.toString() || '',
-        status: instance.status === 'active' || instance.status === 1 || instance.status === '1' ? '1' : '0'
+        status: instance.status === 'active' || instance.status === 1 || instance.status === '1' || instance.status === true || instance.status === 'true'
       });
       
       // Set thumbnail preview if exists
@@ -134,7 +134,7 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
         details: '',
         category_id: '',
         size_id: '',
-        status: '1'
+        status: true
       });
       setThumbnail(null);
       setThumbnailPreview(null);
@@ -182,7 +182,8 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
       submitData.append('details', formData.details.trim());
       submitData.append('category_id', formData.category_id);
       submitData.append('size_id', formData.size_id);
-      submitData.append('status', formData.status);
+      // Send status as 0 or 1 for API
+      submitData.append('status', formData.status ? '1' : '0');
       
       if (thumbnail) {
         submitData.append('thumbnail', thumbnail);
@@ -214,7 +215,7 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
           details: '',
           category_id: '',
           size_id: '',
-          status: '1'
+          status: true
         });
         setThumbnail(null);
         setThumbnailPreview(null);
@@ -235,7 +236,7 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
           details: '',
           category_id: '',
           size_id: '',
-          status: '1'
+          status: true
         });
       setThumbnail(null);
       setThumbnailPreview(null);
@@ -281,12 +282,12 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
               </label>
               <select
                 name="status"
-                value={formData.status}
-                onChange={handleInputChange}
+                value={formData.status ? 'true' : 'false'}
+                onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value === 'true' }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               >
-                <option value="1">Active</option>
-                <option value="0">Inactive</option>
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
               </select>
             </div>
           </div>

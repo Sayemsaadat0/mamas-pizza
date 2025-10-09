@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { useCallback } from "react";
 import { useOrderStore } from "@/lib/stores/orderStore";
 
 interface MenuItem {
@@ -34,9 +35,12 @@ interface MenuCardProps {
 const MenuCard: React.FC<MenuCardProps> = ({ menu, index = 0, onAddToCart, isLoading = false }) => {
   const { canOrder } = useOrderStore();
 
-  const handleAddToCart = () => {
-    if (!canOrder) {
-      return; // Don't proceed if canOrder is false
+  const handleAddToCart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!canOrder || isLoading) {
+      return; // Don't proceed if canOrder is false or already loading
     }
     
     // console.log('MenuCard: Add to Cart button clicked for menu:', menu);
@@ -47,7 +51,7 @@ const MenuCard: React.FC<MenuCardProps> = ({ menu, index = 0, onAddToCart, isLoa
     } else {
       // console.log('MenuCard: onAddToCart function is not provided');
     }
-  };
+  }, [canOrder, isLoading, onAddToCart, menu]);
 
   return (
     <motion.div

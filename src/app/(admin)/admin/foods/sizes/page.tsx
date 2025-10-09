@@ -1,19 +1,10 @@
 'use client';
 import React, { useState } from 'react';
 import { 
-    Search, 
-    Edit,
     Trash2, 
     Loader2,
 } from 'lucide-react';
-import { useSizes, useCreateSize, useUpdateSize, useDeleteSize } from '@/hooks/sizes.hook';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { useSizes, useCreateSize, useDeleteSize } from '@/hooks/sizes.hook';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,78 +17,36 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const SizesPage: React.FC = () => {
-    const [searchQuery, setSearchQuery] = useState('');
-    const [filterStatus, setFilterStatus] = useState('All');
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [editingSize, setEditingSize] = useState<any>(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deletingSizeId, setDeletingSizeId] = useState<string | null>(null);
     
     // Form states
     const [newSize, setNewSize] = useState('');
-    const [newStatus, setNewStatus] = useState<'active' | 'inactive'>('active');
-    const [editSize, setEditSize] = useState('');
-    const [editStatus, setEditStatus] = useState<'active' | 'inactive'>('active');
 
     // Hooks
     const { sizes, loading, error, refetch } = useSizes();
     const { createSize, loading: createLoading } = useCreateSize();
-    const { updateSize, loading: updateLoading } = useUpdateSize();
     const { deleteSize, loading: deleteLoading } = useDeleteSize();
 
-    const filteredSizes = sizes.filter(size => {
-        const sizeName = String(size.size || '').toLowerCase();
-        const searchTerm = searchQuery.toLowerCase();
-        const matchesSearch = sizeName.includes(searchTerm);
-        const statusStr = String(size.status || 'inactive').toLowerCase();
-        const matchesStatus = filterStatus === 'All' || statusStr === filterStatus.toLowerCase();
-        return matchesSearch && matchesStatus;
-    });
+    // Show all sizes without filtering
+    const filteredSizes = sizes;
 
-    const getStatusColor = (status: string | number) => {
-        const statusStr = String(status || 'inactive').toLowerCase();
-        switch (statusStr) {
-            case 'active':
-                return 'bg-green-100 text-green-800';
-            case 'inactive':
-                return 'bg-red-100 text-red-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
-        }
-    };
 
     // Handler functions
     const handleCreateSize = async () => {
-        const newSizeStr = String(newSize || '').trim();
-        if (!newSizeStr) return;
+        const newSizeNum = Number(newSize);
+        if (!newSizeNum || newSizeNum <= 0) return;
         
         const result = await createSize({ 
-            size: newSizeStr, 
-            status: newStatus 
+            size: newSizeNum,
+            status: 1 // Always 1 (active) for sizes
         });
         if (result) {
             setNewSize('');
-            setNewStatus('active');
             refetch();
         }
     };
 
-    const handleUpdateSize = async () => {
-        const editSizeStr = String(editSize || '').trim();
-        if (!editSizeStr || !editingSize) return;
-        
-        const result = await updateSize(editingSize.id, { 
-            size: editSizeStr, 
-            status: editStatus 
-        });
-        if (result) {
-            setEditSize('');
-            setEditStatus('active');
-            setEditingSize(null);
-            setShowEditModal(false);
-            refetch();
-        }
-    };
 
     const handleDeleteSize = async () => {
         if (!deletingSizeId) return;
@@ -110,12 +59,6 @@ const SizesPage: React.FC = () => {
         }
     };
 
-    const openEditModal = (size: any) => {
-        setEditingSize(size);
-        setEditSize(size.size);
-        setEditStatus(size.status);
-        setShowEditModal(true);
-    };
 
     const openDeleteModal = (sizeId: string) => {
         setDeletingSizeId(sizeId);
@@ -143,103 +86,59 @@ const SizesPage: React.FC = () => {
                 </div>
             )}
 
-            {/* Form - Single Row */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <div className="flex flex-col sm:flex-row gap-4">
+            {/* Add Size Form */}
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                <div className="flex flex-col sm:flex-row gap-3">
                     <div className="flex-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Size Name
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Size Number
                         </label>
                         <input
-                            type="text"
+                            type="number"
                             value={newSize}
                             onChange={(e) => setNewSize(e.target.value)}
-                            placeholder="Enter size name (e.g., Small, Medium, Large)..."
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                            placeholder="Enter size number (e.g., 12, 14, 16)..."
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+                            min="1"
+                            step="1"
                         />
-                    </div>
-                    <div className="sm:w-40">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Status
-                        </label>
-                        <select
-                            value={newStatus}
-                            onChange={(e) => setNewStatus(e.target.value as 'active' | 'inactive')}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                        >
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
                     </div>
                     <div className="flex items-end">
                         <button 
                             onClick={handleCreateSize}
-                            disabled={createLoading || !String(newSize || '').trim()}
-                            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                            disabled={createLoading || !newSize || Number(newSize) <= 0}
+                            className="px-3 py-1.5 text-sm bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center gap-1"
                         >
-                            {createLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                            {createLoading && <Loader2 className="w-3 h-3 animate-spin" />}
                             Add Size
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Filters and Search */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <div className="flex flex-col lg:flex-row gap-4">
-                    {/* Search */}
-                    <div className="flex-1">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                            <input
-                                type="text"
-                                placeholder="Search sizes..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                            />
-                        </div>
-                    </div>
-                    {/* Status Filter */}
-                    <div className="sm:w-40">
-                        <select
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                        >
-                            <option value="All">All Status</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
 
             {/* Sizes Table */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 {loading ? (
-                    <div className="flex items-center justify-center py-12">
-                        <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-                        <span className="ml-2 text-gray-600">Loading sizes...</span>
+                    <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+                        <span className="ml-2 text-sm text-gray-600">Loading sizes...</span>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Size Name
+                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Size Number
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Created Date
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Updated Date
                                     </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Actions
                                     </th>
                                 </tr>
@@ -247,39 +146,28 @@ const SizesPage: React.FC = () => {
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {filteredSizes.map((size) => (
                                     <tr key={size.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap">
+                                        <td className="px-3 py-2 whitespace-nowrap">
                                             <div className="text-sm font-medium text-gray-900">
-                                                {String(size.size || 'N/A')}
+                                                {size.size || 'N/A'}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(String(size.status || 'inactive'))}`}>
-                                                {String(size.status || 'inactive').charAt(0).toUpperCase() + String(size.status || 'inactive').slice(1)}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-500">
+                                        <td className="px-3 py-2 whitespace-nowrap">
+                                            <div className="text-xs text-gray-500">
                                                 {formatDate(size.created_at)}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-500">
+                                        <td className="px-3 py-2 whitespace-nowrap">
+                                            <div className="text-xs text-gray-500">
                                                 {formatDate(size.updated_at)}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button 
-                                                    onClick={() => openEditModal(size)}
-                                                    className="text-orange-600 hover:text-orange-900 p-1 rounded hover:bg-orange-50 transition-colors"
-                                                >
-                                                    <Edit size={16} />
-                                                </button>
+                                        <td className="px-3 py-2 whitespace-nowrap text-right text-sm font-medium">
+                                            <div className="flex items-center justify-end gap-1">
                                                 <button 
                                                     onClick={() => openDeleteModal(size.id)}
                                                     className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
                                                 >
-                                                    <Trash2 size={16} />
+                                                    <Trash2 size={14} />
                                                 </button>
                                             </div>
                                         </td>
@@ -293,91 +181,25 @@ const SizesPage: React.FC = () => {
 
             {/* Empty State */}
             {filteredSizes.length === 0 && !loading && (
-                <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Search className="w-8 h-8 text-gray-400" />
+                <div className="text-center py-8">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <div className="w-6 h-6 text-gray-400">📏</div>
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No sizes found</h3>
-                    <p className="text-gray-500 mb-4">Try adjusting your search or filter criteria</p>
+                    <h3 className="text-base font-medium text-gray-900 mb-1">No sizes found</h3>
+                    <p className="text-sm text-gray-500 mb-3">Get started by adding your first size</p>
                     <button 
                         onClick={() => {
                             // Focus on the form input
                             const input = document.querySelector('input[placeholder*="Enter size name"]') as HTMLInputElement;
                             if (input) input.focus();
                         }}
-                        className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+                        className="bg-orange-500 text-white px-3 py-1.5 text-sm rounded hover:bg-orange-600 transition-colors"
                     >
                         Add Your First Size
                     </button>
                 </div>
             )}
 
-            {/* Edit Size Modal */}
-            <Dialog open={showEditModal} onOpenChange={(open) => {
-                setShowEditModal(open);
-                if (!open) {
-                    setEditingSize(null);
-                    setEditSize('');
-                    setEditStatus('active');
-                }
-            }}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Edit Size</DialogTitle>
-                        <DialogDescription>
-                            Update the size information.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Size Name
-                            </label>
-                            <input
-                                type="text"
-                                value={editSize}
-                                onChange={(e) => setEditSize(e.target.value)}
-                                placeholder="Enter size name..."
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Status
-                            </label>
-                            <select
-                                value={editStatus}
-                                onChange={(e) => setEditStatus(e.target.value as 'active' | 'inactive')}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                            >
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2 justify-end mt-6">
-                        <button 
-                            onClick={() => {
-                                setShowEditModal(false);
-                                setEditingSize(null);
-                                setEditSize('');
-                                setEditStatus('active');
-                            }}
-                            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button 
-                            onClick={handleUpdateSize}
-                            disabled={updateLoading || !String(editSize || '').trim()}
-                            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center gap-2"
-                        >
-                            {updateLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                            Update Size
-                        </button>
-                    </div>
-                </DialogContent>
-            </Dialog>
 
             {/* Delete Confirmation Modal */}
             <AlertDialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>

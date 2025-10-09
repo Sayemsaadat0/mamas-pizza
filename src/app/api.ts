@@ -157,3 +157,12 @@ export const ADMIN_MENUS_API = ITEMS_API; // Admin menus uses items endpoint
 export const ADMIN_CATEGORIES_API = CATEGORIES_API; // Admin categories uses categories endpoint
 export const ADMIN_USERS_API = USERS_API; // Admin users uses users endpoint
 export const ADMIN_DASHBOARD_API = `${API_BASE_URL}/api/v1/admin/dashboard`; // Admin dashboard (to be implemented)
+
+
+
+
+
+
+export const ADMIN_OFFERS_API = `${API_BASE_URL}/api/v1/bogo-offers`;
+
+export const CREATE_ORDER_FROM_OFFER_API = `${API_BASE_URL}/api/v1/offers/add-to-cart`; 

@@ -60,6 +60,7 @@ export interface MenuResponse {
 // GET menus with query parameters
 export function useMenus(params?: {
   category_id?: string;
+  size_id?: number;
   per_page?: number;
   page?: number;
   search?: string;
@@ -81,6 +82,7 @@ export function useMenus(params?: {
 
   const fetchMenus = useCallback(async (queryParams?: {
     category_id?: string;
+    size_id?: number;
     per_page?: number;
     page?: number;
     search?: string;
@@ -95,6 +97,9 @@ export function useMenus(params?: {
       const searchParams = new URLSearchParams();
       if (queryParams?.category_id) {
         searchParams.append('category_id', queryParams.category_id);
+      }
+      if (queryParams?.size_id) {
+        searchParams.append('size_id', queryParams.size_id.toString());
       }
       if (queryParams?.per_page) {
         searchParams.append('per_page', queryParams.per_page.toString());
@@ -111,7 +116,7 @@ export function useMenus(params?: {
       
       const response = await fetch(url);
       const responseData = await response.json();
-      console.log('API Response:', responseData);
+      // console.log('API Response:', responseData);
       
       // Handle the API response structure: {success: true, message: "...", data: {...}}
       if (responseData.success && responseData.data && Array.isArray(responseData.data.data)) {
@@ -142,10 +147,11 @@ export function useMenus(params?: {
     fetchMenus({
       category_id: params?.category_id,
       per_page: params?.per_page,
+      size_id: params?.size_id,
       page: params?.page,
       search: params?.search,
     });
-  }, [fetchMenus, params?.category_id, params?.per_page, params?.page, params?.search]);
+  }, [fetchMenus, params?.category_id, params?.per_page, params?.page, params?.search, params?.size_id]);
 
   return { menus, loading, error, pagination, refetch: fetchMenus };
 }
@@ -203,14 +209,14 @@ export function useUpdateMenu() {
   const updateMenu = async (
     id: string,
     menuData: {
-      title?: string;
+      name?: string;
       category_id?: string;
-      description?: string;
-      short_description?: string;
-      regular_price?: string;
-      actual_price?: string;
+      details?: string;
+      main_price?: string;
+      prev_price?: string;
       thumbnail?: string;
-      status?: "active" | "inactive";
+      status?: string;
+      size_id?: string;
     }
   ) => {
     if (!token) return null;
@@ -219,16 +225,37 @@ export function useUpdateMenu() {
     setError(null);
 
     try {
-        const response = await fetch(`${ITEMS_API}/${id}`, {
-        method: "PUT",
+      // Create FormData for file upload
+      const formData = new FormData();
+      
+      // Add all fields to FormData
+      Object.entries(menuData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (key === 'thumbnail' && value && typeof value === 'object' && (value as any).constructor === File) {
+            formData.append('thumbnail', value as File);
+          } else if (key === 'status') {
+            // Handle status as 0 or 1 for API
+            formData.append(key, value ? '1' : '0');
+          } else {
+            formData.append(key, value.toString());
+          }
+        }
+      });
+
+      const response = await fetch(`${ITEMS_API}/${id}`, {
+        method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(menuData),
+        body: formData,
       });
 
       const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Update failed');
+      }
+      
       return data.data;
     } catch (err: any) {
       setError(err.message);
@@ -254,14 +281,23 @@ export function useDeleteMenu() {
     setError(null);
 
     try {
-        const response = await fetch(`${ITEMS_API}/${id}`, {
-        method: "DELETE",
+      const formData = new FormData();
+      formData.append('_method', 'DELETE');
+
+      const response = await fetch(`${ITEMS_API}/${id}`, {
+        method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        body: formData,
       });
 
       const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Delete failed');
+      }
+      
       return data;
     } catch (err: any) {
       setError(err.message);
