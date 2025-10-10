@@ -53,6 +53,8 @@ export const ORDER_CANCEL_API = `${API_BASE_URL}/api/v1/orders`;
 export const ORDER_SUMMARY_API = `${API_BASE_URL}/api/v1/orders`;
 export const ORDER_PAYMENT_STATUS_API = `${API_BASE_URL}/api/v1/orders`;
 
+export const ORDER_DETAILS_API = `${API_BASE_URL}/api/v1/order-details/`;
+
 // ==================== STRIPE PAYMENT APIs ====================
 export const STRIPE_CREATE_SESSION_API = `${API_BASE_URL}/api/v1/payments/create-session`;
 export const STRIPE_VERIFY_PAYMENT_API = `${API_BASE_URL}/api/v1/payments/verify`;
@@ -93,6 +95,8 @@ export const getCategoryById = (categoryId: string) =>
 // Helper function to get specific item
 export const getItemById = (itemId: string) => 
   `${ITEMS_API}/${itemId}`;
+export const getOrderDetailsByorderNumber = (orderNumber: string) => 
+  `${ORDER_DETAILS_API}${orderNumber}`;
 
 // Helper function to update profile with user ID
 export const updateUserProfile = (userId: string) => 
@@ -148,7 +152,7 @@ export const ADD_TO_CART_API = USER_CART_API; // Add to cart uses cart endpoint
 export const REMOVE_FROM_CART_API = USER_CART_API; // Remove from cart uses cart endpoint
 export const UPDATE_CART_API = USER_CART_API; // Update cart uses cart endpoint
 export const CREATE_ORDER_API = ORDERS_API; // Create order uses orders endpoint
-export const ORDER_DETAILS_API = ORDERS_API; // Order details uses orders endpoint
+// export const ORDER_DETAILS_API = ORDERS_API; // Order details uses orders endpoint
 export const USER_PROFILE_API = ME_API; // User profile uses me endpoint
 export const RESTAURANT_INFO_API = RESTAURANTS_API; // Restaurant info uses restaurants endpoint
 export const DELIVERY_AREAS_API = DELIVERY_ADDRESSES_API; // Delivery areas uses delivery addresses
