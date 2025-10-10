@@ -26,55 +26,56 @@ export interface UpdateSizeData {
 
 // ==================== HOOKS ====================
 
-// Hook to fetch all sizes
+// Hook to fetch all sizes (public - no authentication required)
 export function useSizes() {
-  const { token, isAuthenticated } = useAuth();
   const [sizes, setSizes] = useState<Size[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchSizes = useCallback(async () => {
-    if (!isAuthenticated || !token) {
-      setError('User not authenticated');
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
     try {
       const response = await fetch(SIZES_API, {
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
         },
       });
 
+      console.log('Sizes API Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: SIZES_API
+      });
+
       if (!response.ok) {
-        throw new Error('Failed to fetch sizes');
+        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
       }
 
       const result = await response.json();
+      console.log('Sizes Response Data:', result);
+
       if (result.success && result.data) {
         setSizes(result.data);
         return result.data as Size[];
       } else {
-        throw new Error(result.message || 'Failed to fetch sizes');
+        console.warn('Sizes API returned unsuccessful response:', result);
+        setSizes([]);
       }
     } catch (err: any) {
+      console.error('Error fetching sizes:', err);
       setError(err.message);
-      throw err;
+      setSizes([]);
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, token]);
+  }, []);
 
   // Initial fetch on component mount
   useEffect(() => {
-    if (isAuthenticated && token) {
-      fetchSizes();
-    }
-  }, [isAuthenticated, token, fetchSizes]);
+    fetchSizes();
+  }, [fetchSizes]);
 
   const refetch = useCallback(() => {
     return fetchSizes();

@@ -39,7 +39,7 @@ const HeroSection = () => {
 
     const handleSearch = async () => {
         if (!postCode.trim()) {
-            toast.error("Please enter a zip code or address")
+            toast.error("Please enter a Post Codeor address")
             return
         }
 
@@ -209,7 +209,7 @@ const HeroSection = () => {
                                 </div>
                                 <input
                                     type="text"
-                                    placeholder="Enter zip code or address..."
+                                    placeholder="Enter Post Codeor address..."
                                     value={postCode}
                                     onChange={handlePostCodeChange}
                                     maxLength={7}

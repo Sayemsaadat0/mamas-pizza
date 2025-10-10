@@ -163,6 +163,6 @@ export const ADMIN_DASHBOARD_API = `${API_BASE_URL}/api/v1/admin/dashboard`; // 
 
 
 
-export const ADMIN_OFFERS_API = `${API_BASE_URL}/api/v1/bogo-offers`;
+export const ADMIN_OFFERS_API = `${API_BASE_URL}/api/v1/offers`;
 
 export const CREATE_ORDER_FROM_OFFER_API = `${API_BASE_URL}/api/v1/offers/add-to-cart`; 

@@ -30,9 +30,17 @@ const MenuSection: React.FC = () => {
 
     // --- Hooks ---
     const { categories } = useCategories();
-    const { bogoOffers, loading: bogoOffersLoading } = useBogoOffers();
+    const { bogoOffers, loading: bogoOffersLoading, error: bogoOffersError } = useBogoOffers();
     const { token, isAuthenticated } = useAuth();
     const { guestId } = useGuest();
+
+    // Debug logging
+    console.log('MenuSection Debug:', {
+        bogoOffers,
+        bogoOffersLoading,
+        bogoOffersError,
+        activeTab
+    });
 
     // Handle offer modal opening
     const handleOfferModalOpen = (offerId: number) => {
@@ -273,6 +281,22 @@ const MenuSection: React.FC = () => {
                             <div className="text-center py-20">
                                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-500"></div>
                                 <p className="text-orange-600 mt-4 font-medium">Loading amazing offers...</p>
+                            </div>
+                        ) : bogoOffersError ? (
+                            <div className="text-center py-20">
+                                <div className="bg-red-50 rounded-3xl p-12 max-w-md mx-auto">
+                                    <div className="text-red-400 mb-4">
+                                        <Percent size={48} className="mx-auto" />
+                                    </div>
+                                    <h3 className="text-xl font-semibold text-red-700 mb-2">Error loading offers</h3>
+                                    <p className="text-red-500 mb-4">{bogoOffersError}</p>
+                                    <button 
+                                        onClick={() => window.location.reload()}
+                                        className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                                    >
+                                        Try Again
+                                    </button>
+                                </div>
                             </div>
                         ) : bogoOffers.length > 0 ? (
                             <motion.div 

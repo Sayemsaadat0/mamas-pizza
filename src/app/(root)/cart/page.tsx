@@ -73,7 +73,7 @@ export default function CartPage() {
   const { guestId } = useGuest();
   
   // Cart hooks
-  const { cartItems, loading, error, grandTotal,  refetch, updateCartItemLocally, removeCartItemLocally } = useCart();
+  const { cartItems, bogoOffers, bogoBundles, loading, error, grandTotal,  refetch, updateCartItemLocally, removeCartItemLocally } = useCart();
   const { updateCartItem,  } = useUpdateCartItem();
   const { deleteCartItem,  } = useDeleteCartItem();
   const { deleteGuestCartItem,  } = useDeleteGuestCartItem();
@@ -89,11 +89,14 @@ export default function CartPage() {
     return cartItems.map(item => ({
       id: item.id,
       name: item.item.name,
-      price: parseFloat(item.item.main_price),
+      price: item.is_bogo_item && item.bogo_price ? parseFloat(item.bogo_price) : parseFloat(item.item.main_price),
       image: `${process.env.NEXT_PUBLIC_API_URL}/${item.item.thumbnail}`,
       qty: item.quantity,
       description: item.item.details,
-      color: item.item.category.name
+      color: item.item.category.name,
+      isBogoItem: item.is_bogo_item,
+      bogoOfferId: item.bogo_offer_id,
+      originalPrice: parseFloat(item.item.main_price)
     }));
   }, [cartItems]);
 
@@ -156,7 +159,7 @@ export default function CartPage() {
     }
 
     if (!guestFormData.delivery_address.post_code.trim()) {
-      newErrors.delivery_address = { ...newErrors.delivery_address, post_code: "ZIP code is required" };
+      newErrors.delivery_address = { ...newErrors.delivery_address, post_code: "Post Codeis required" };
     }
 
     setGuestFormErrors(newErrors);
@@ -491,6 +494,55 @@ export default function CartPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
             {/* Left Side - Cart Items and Guest Form (7/12 width on desktop) */}
             <div className="lg:col-span-7 order-1 space-y-6">
+              {/* BOGO Bundles */}
+              {bogoBundles.length > 0 && (
+                <div className="mb-6">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">BOGO Offers</h2>
+                  <div className="space-y-4">
+                    {bogoBundles.map((bundle, index) => (
+                      <div key={index} className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-lg font-semibold text-green-800">
+                            {bogoOffers.find(offer => offer.id === bundle.bogo_offer_id)?.title || 'BOGO Offer'}
+                          </h3>
+                          <div className="text-lg font-bold text-green-600">
+                            ${bundle.offer_price.toFixed(2)}
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Buy Items */}
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">Items to Buy:</h4>
+                            <div className="space-y-2">
+                              {bundle.buy_items.map((item, itemIndex) => (
+                                <div key={itemIndex} className="flex items-center justify-between text-sm">
+                                  <span className="text-gray-800">{item.name}</span>
+                                  <span className="text-gray-600">${item.main_price}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          {/* Free Items */}
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">Items Free:</h4>
+                            <div className="space-y-2">
+                              {bundle.free_items.map((item, itemIndex) => (
+                                <div key={itemIndex} className="flex items-center justify-between text-sm">
+                                  <span className="text-gray-800">{item.name}</span>
+                                  <span className="text-green-600 font-medium">FREE</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Cart Items */}
               <div>
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Your Cart Items</h2>
@@ -509,54 +561,70 @@ export default function CartPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="text-sm sm:text-lg font-medium text-gray-900 truncate">{item.name}</h4>
-                          <p className="text-xs sm:text-sm text-gray-500">${item.price.toFixed(2)} each</p>
+                          <div className="flex items-center gap-2">
+                            {item.isBogoItem ? (
+                              <>
+                                <p className="text-xs sm:text-sm text-green-600 font-medium">BOGO Item</p>
+                                <p className="text-xs sm:text-sm text-gray-500 line-through">${item.originalPrice.toFixed(2)}</p>
+                                <p className="text-xs sm:text-sm text-green-600 font-medium">${item.price.toFixed(2)} each</p>
+                              </>
+                            ) : (
+                              <p className="text-xs sm:text-sm text-gray-500">${item.price.toFixed(2)} each</p>
+                            )}
+                          </div>
                         </div>
                         <div className="text-sm sm:text-lg font-semibold text-orange-600">
                           ${(item.price * item.qty).toFixed(2)}
                         </div>
                       </div>
                       
-                      {/* Quantity Controls */}
+                      {/* Quantity Controls - Hide for BOGO items */}
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1 sm:gap-2 border-2 border-orange-200 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white shadow-sm">
-                          <button
-                            onClick={() => updateQty(item.id, -1)}
-                            disabled={loadingItems.has(item.id)}
-                            className="w-5 h-5 sm:w-6 sm:h-6 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            aria-label="Decrease quantity"
-                          >
-                            {loadingItems.has(item.id) ? (
-                              <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
-                            ) : (
-                              <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                              </svg>
-                            )}
-                          </button>
-                          <input
-                            type="number"
-                            min="1"
-                            value={quantityInputs[item.id] !== undefined ? quantityInputs[item.id] : item.qty}
-                            onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
-                            onBlur={() => handleQuantityInputBlur(item.id)}
-                            className="min-w-6 sm:min-w-8 max-w-[60px] sm:max-w-[80px] text-center font-semibold text-xs sm:text-sm text-gray-900 bg-transparent border-none outline-none"
-                            disabled={loadingItems.has(item.id)}
-                          />
-                          <button
-                            onClick={() => updateQty(item.id, +1)}
-                            disabled={loadingItems.has(item.id)}
-                            className="w-5 h-5 sm:w-6 sm:h-6 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            aria-label="Increase quantity"
-                          >
-                            {loadingItems.has(item.id) ? (
-                              <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
-                            ) : (
-                              <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                              </svg>
-                            )}
-                          </button>
-                        </div>
+                        {!item.isBogoItem ? (
+                          <div className="flex items-center gap-1 sm:gap-2 border-2 border-orange-200 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white shadow-sm">
+                            <button
+                              onClick={() => updateQty(item.id, -1)}
+                              disabled={loadingItems.has(item.id)}
+                              className="w-5 h-5 sm:w-6 sm:h-6 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              aria-label="Decrease quantity"
+                            >
+                              {loadingItems.has(item.id) ? (
+                                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
+                              ) : (
+                                <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                                </svg>
+                              )}
+                            </button>
+                            <input
+                              type="number"
+                              min="1"
+                              value={quantityInputs[item.id] !== undefined ? quantityInputs[item.id] : item.qty}
+                              onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
+                              onBlur={() => handleQuantityInputBlur(item.id)}
+                              className="min-w-6 sm:min-w-8 max-w-[60px] sm:max-w-[80px] text-center font-semibold text-xs sm:text-sm text-gray-900 bg-transparent border-none outline-none"
+                              disabled={loadingItems.has(item.id)}
+                            />
+                            <button
+                              onClick={() => updateQty(item.id, +1)}
+                              disabled={loadingItems.has(item.id)}
+                              className="w-5 h-5 sm:w-6 sm:h-6 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              aria-label="Increase quantity"
+                            >
+                              {loadingItems.has(item.id) ? (
+                                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
+                              ) : (
+                                <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                              )}
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="text-sm text-gray-500 font-medium">
+                            BOGO Item - Fixed Quantity
+                          </div>
+                        )}
                         
                         <button
                           onClick={() => removeItem(item.id)}
@@ -689,7 +757,7 @@ export default function CartPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            ZIP Code *
+                            Post Code*
                           </label>
                           <input
                             type="text"
@@ -752,6 +820,8 @@ export default function CartPage() {
                 onCheckout={handleCheckout}
                 isFormValid={isGuestFormValid}
                 isLoading={Boolean(createOrderLoading || createGuestOrderLoading || createSessionLoading || paymentLoading)}
+                bogoBundles={bogoBundles}
+                bogoOffers={bogoOffers}
               />
             </div>
           </div>

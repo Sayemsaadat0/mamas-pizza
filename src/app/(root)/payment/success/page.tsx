@@ -18,11 +18,16 @@ import {
   Truck,
   Gift,
   Heart,
-  ArrowRight
+  ArrowRight,
+  Calendar,
+  CreditCard,
+  Mail,
+  MapPin,
+  ExternalLink,
+  RefreshCw
 } from 'lucide-react';
 import Link from 'next/link';
 import { useGuest } from '@/lib/guest/GuestProvider';
-import { useGuestId } from '@/lib/guest/useGuestId';
 import { useAuth } from '@/lib/auth/useAuth';
 import { toast } from 'sonner';
 import { GUEST_STRIPE_VERIFY_PAYMENT_API, STRIPE_VERIFY_PAYMENT_API, REGISTER_API } from '@/app/api';
@@ -35,9 +40,15 @@ interface PaymentVerificationResult {
     order_id: number;
     order_number: string;
     payment_status: string;
-    total_amount: string;
-    customer_email?: string;
-    customer_name?: string;
+    session_id: string;
+    payment_intent_id: string;
+    stripe_session_id: string;
+    amount_total: string;
+    customer_email: string;
+    paid_at: string;
+    payment_method: string;
+    order_tracking_url: string;
+    webhook_updated: string;
   };
 }
 
@@ -53,11 +64,11 @@ function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { guestId } = useGuest();
-  const { guestId: guestIdFromHook } = useGuestId();
   const { isAuthenticated, token } = useAuth();
 
   const [verificationResult, setVerificationResult] = useState<PaymentVerificationResult | null>(null);
   const [isVerifying, setIsVerifying] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Signup form state
   const [signupFormData, setSignupFormData] = useState<SignupFormData>({
@@ -70,13 +81,20 @@ function PaymentSuccessContent() {
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  const sessionId = searchParams.get('session_id');
+  const sessionId = searchParams.get('session');
+
+  console.log('Payment Success Page Debug:', {
+    sessionId,
+    guestId,
+    isAuthenticated,
+    hasToken: !!token
+  });
 
   // Show welcome dialog when page loads
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowWelcomeDialog(true);
-    }, 1000); // Show after 1 second
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -84,70 +102,23 @@ function PaymentSuccessContent() {
   useEffect(() => {
     const verifyPayment = async () => {
       if (!sessionId) {
-        setVerificationResult({
-          success: false,
-          message: 'Missing session ID'
-        });
+        setError('Missing session ID');
         setIsVerifying(false);
         return;
       }
 
-      // Check authentication status
-      if (isAuthenticated && !token) {
-        setVerificationResult({
-          success: false,
-          message: 'User not authenticated'
-        });
-        setIsVerifying(false);
-        return;
-      }
-
+      // For guest users, wait a bit for guestId to be available
       if (!isAuthenticated && !guestId) {
-        setVerificationResult({
-          success: false,
-          message: 'Missing guest ID'
-        });
-        setIsVerifying(false);
+        // Wait a bit for guest ID to be loaded
+        setTimeout(() => {
+          if (!guestId) {
+            setError('Missing guest ID. Please refresh the page and try again.');
+            setIsVerifying(false);
+          }
+        }, 2000);
         return;
       }
 
-      // Create cache key based on session ID and user type
-      const userIdentifier = isAuthenticated ? 'authenticated' : guestId;
-      const cacheKey = `payment_verification_${sessionId}_${userIdentifier}`;
-
-      // Check if we have cached data first
-      try {
-        const cachedData = localStorage.getItem(cacheKey);
-        if (cachedData) {
-          const parsedCache = JSON.parse(cachedData);
-          // Check if cache is not too old (24 hours)
-          const cacheTime = parsedCache.timestamp;
-          const now = Date.now();
-          const cacheAge = now - cacheTime;
-          const maxCacheAge = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-
-          if (cacheAge < maxCacheAge) {
-            // Use cached data
-            setVerificationResult(parsedCache.data);
-            if (parsedCache.data.success) {
-              toast.success('Payment verified successfully!');
-            } else {
-              toast.error(parsedCache.data.message || 'Payment verification failed');
-            }
-            setIsVerifying(false);
-            return;
-          } else {
-            // Cache is too old, remove it
-            localStorage.removeItem(cacheKey);
-          }
-        }
-      } catch (error) {
-        // If there's an error parsing cached data, remove it and continue with API call
-        console.warn('Error parsing cached payment data:', error);
-        localStorage.removeItem(cacheKey);
-      }
-
-      // No valid cache found, make API call
       try {
         let response;
         
@@ -164,50 +135,62 @@ function PaymentSuccessContent() {
           });
         } else {
           // Guest user verification
+          console.log('Making guest payment verification with:', { session_id: sessionId, guest_id: guestId });
+          
           response = await fetch(GUEST_STRIPE_VERIFY_PAYMENT_API, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
             },
-            body: JSON.stringify({ session_id: sessionId, guest_id: guestId }),
+            body: JSON.stringify({ 
+              session_id: sessionId, 
+              guest_id: guestId 
+            }),
           });
         }
 
+        console.log('response', response);
+
         if (!response.ok) {
           const errorData = await response.json();
-          const errorMessage = isAuthenticated 
-            ? errorData.message || 'Failed to verify payment' 
-            : errorData.message || 'Failed to verify guest payment';
-          throw new Error(errorMessage);
+          throw new Error(errorData.message || 'Failed to verify payment');
         }
 
         const result = await response.json();
+        console.log('Payment verification result:', result);
         setVerificationResult(result);
 
-        // Cache the successful result
         if (result.success) {
-          const cacheData = {
-            data: result,
-            timestamp: Date.now()
-          };
-          localStorage.setItem(cacheKey, JSON.stringify(cacheData));
           toast.success('Payment verified successfully!');
         } else {
           toast.error(result.message || 'Payment verification failed');
         }
       } catch (err: any) {
-        setVerificationResult({
-          success: false,
-          message: err.message || 'Payment verification failed'
-        });
+        console.error('Payment verification error:', err);
+        setError(err.message || 'Payment verification failed');
         toast.error('Payment verification failed');
       } finally {
         setIsVerifying(false);
       }
     };
 
-    verifyPayment();
+    // Only run verification if we have the required data
+    if (sessionId && (isAuthenticated || guestId)) {
+      verifyPayment();
+    } else if (sessionId && !isAuthenticated && !guestId) {
+      // For guest users, wait a bit for guest ID to be available
+      const timer = setTimeout(() => {
+        if (guestId) {
+          verifyPayment();
+        } else {
+          setError('Guest ID not available. Please refresh the page and try again.');
+          setIsVerifying(false);
+        }
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
   }, [sessionId, guestId, isAuthenticated, token]);
 
   const copyToClipboard = async (text: string, field: string) => {
@@ -227,7 +210,6 @@ function PaymentSuccessContent() {
       [field]: value
     }));
 
-    // Clear error when user starts typing
     if (signupFormErrors[field]) {
       setSignupFormErrors(prev => ({
         ...prev,
@@ -255,7 +237,7 @@ function PaymentSuccessContent() {
       return;
     }
 
-    if (!guestIdFromHook) {
+    if (!guestId) {
       toast.error("Guest ID not found. Please refresh and try again.");
       return;
     }
@@ -274,10 +256,10 @@ function PaymentSuccessContent() {
           'Accept': 'application/json',
         },
         body: JSON.stringify({
-          name: guestIdFromHook, // Use guest ID as name
-          email: verificationResult.data.customer_email, // Use email from payment verification
+          name: guestId,
+          email: verificationResult.data.customer_email,
           password: signupFormData.password,
-          password_confirmation: signupFormData.password // Use same password for confirmation
+          password_confirmation: signupFormData.password
         }),
       });
 
@@ -294,9 +276,6 @@ function PaymentSuccessContent() {
           router.push('/');
         }, 2000);
       }
-
-
-
     } catch (error: any) {
       console.error('Registration error:', error);
       toast.error(error.message || 'Failed to create account. Please try again.');
@@ -305,29 +284,21 @@ function PaymentSuccessContent() {
     }
   };
 
-
-  // Function to clear cache (can be called when needed)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const clearPaymentCache = () => {
-    if (sessionId && guestId) {
-      const cacheKey = `payment_verification_${sessionId}_${guestId}`;
-      localStorage.removeItem(cacheKey);
-    }
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
   };
-
-
-
-  // Clear cache when component unmounts (optional - uncomment if needed)
-  // useEffect(() => {
-  //   return () => {
-  //     clearPaymentCache();
-  //   };
-  // }, [sessionId, guestId]);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50">
       {/* Hero Section */}
-      <div className="relative h-[600px] flex items-center justify-center overflow-hidden">
+      <div className="relative h-[500px] flex items-center justify-center overflow-hidden">
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <Image
@@ -338,17 +309,16 @@ function PaymentSuccessContent() {
             priority
             sizes="100vw"
           />
-          {/* Black overlay */}
-          <div className="absolute inset-0 bg-black/60"></div>
+          <div className="absolute inset-0 bg-black/50"></div>
         </div>
 
         {/* Hero Content */}
         <div className="relative z-10 text-center px-4">
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white mb-4">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-4">
             PAYMENT SUCCESS
           </h1>
-          <div className="w-32 h-1.5 bg-gradient-to-r from-orange-400 to-red-500 mx-auto rounded-full"></div>
-          <p className="text-xl sm:text-2xl text-gray-200 mt-6 max-w-2xl mx-auto">
+          <div className="w-24 h-1 bg-gradient-to-r from-orange-400 to-red-500 mx-auto rounded-full"></div>
+          <p className="text-lg sm:text-xl text-gray-200 mt-6 max-w-2xl mx-auto">
             Your order has been placed successfully and payment is confirmed
           </p>
         </div>
@@ -359,8 +329,8 @@ function PaymentSuccessContent() {
           {isVerifying ? (
             <div className="text-center space-y-8">
               <div className="relative">
-                <div className="w-24 h-24 mx-auto bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <Clock className="w-12 h-12 text-white animate-spin" />
+                <div className="w-20 h-20 mx-auto bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <RefreshCw className="w-10 h-10 text-white animate-spin" />
                 </div>
                 <div className="absolute -top-2 -right-2 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
                   <Sparkles className="w-4 h-4 text-white animate-pulse" />
@@ -368,11 +338,42 @@ function PaymentSuccessContent() {
               </div>
               <div className="space-y-4">
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                  Verifying Your Payment
+                  {!isAuthenticated && !guestId ? 'Loading Guest Information...' : 'Verifying Your Payment'}
                 </h2>
                 <p className="text-lg text-gray-600 max-w-md mx-auto">
-                  We&apos;re confirming your payment and preparing your order. This will just take a moment.
+                  {!isAuthenticated && !guestId 
+                    ? 'We\'re loading your guest information to verify your payment. This will just take a moment.'
+                    : 'We\'re confirming your payment and preparing your order. This will just take a moment.'
+                  }
                 </p>
+                {!isAuthenticated && !guestId && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
+                    <div className="flex items-center gap-2 text-blue-700">
+                      <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-sm font-medium">Waiting for guest ID...</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : error ? (
+            <div className="text-center space-y-8">
+              <div className="w-20 h-20 mx-auto bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center">
+                <Clock className="w-10 h-10 text-white" />
+              </div>
+              <div className="space-y-4">
+                <h2 className="text-3xl font-bold text-red-600">
+                  Payment Verification Failed
+                </h2>
+                <p className="text-lg text-gray-600 max-w-md mx-auto">
+                  {error}
+                </p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-3 rounded-xl font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl"
+                >
+                  Try Again
+                </button>
               </div>
             </div>
           ) : verificationResult?.success && verificationResult.data ? (
@@ -380,8 +381,8 @@ function PaymentSuccessContent() {
               {/* Success Header */}
               <div className="text-center space-y-6">
                 <div className="relative inline-block">
-                  <div className="w-24 h-24 mx-auto bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-2xl">
-                    <CheckCircle className="w-12 h-12 text-white" />
+                  <div className="w-20 h-20 mx-auto bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-2xl">
+                    <CheckCircle className="w-10 h-10 text-white" />
                   </div>
                   <div className="absolute -top-2 -right-2 w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center animate-bounce">
                     <Sparkles className="w-5 h-5 text-white" />
@@ -406,7 +407,8 @@ function PaymentSuccessContent() {
                     Order Details
                   </h3>
                 </div>
-                <div className="p-6 space-y-4">
+                <div className="p-6 space-y-6">
+                  {/* Order Info Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                       <div className="flex items-center justify-between mb-2">
@@ -447,6 +449,7 @@ function PaymentSuccessContent() {
                     </div>
                   </div>
 
+                  {/* Payment Info Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-green-50 rounded-xl p-4 border border-green-200">
                       <div className="flex items-center gap-2 mb-2">
@@ -464,110 +467,165 @@ function PaymentSuccessContent() {
                         <span className="text-sm font-medium text-orange-700">Total Amount</span>
                       </div>
                       <p className="font-bold text-2xl text-orange-800">
-                        ${verificationResult.data.total_amount}
+                        ${verificationResult.data.amount_total}
                       </p>
                     </div>
                   </div>
+
+                  {/* Additional Details */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Mail className="w-5 h-5 text-blue-600" />
+                        <span className="text-sm font-medium text-blue-700">Customer Email</span>
+                      </div>
+                      <p className="font-medium text-blue-800">
+                        {verificationResult.data.customer_email}
+                      </p>
+                    </div>
+                    
+                    <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Calendar className="w-5 h-5 text-purple-600" />
+                        <span className="text-sm font-medium text-purple-700">Paid At</span>
+                      </div>
+                      <p className="font-medium text-purple-800">
+                        {formatDate(verificationResult.data.paid_at)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Payment Method */}
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CreditCard className="w-5 h-5 text-gray-600" />
+                      <span className="text-sm font-medium text-gray-700">Payment Method</span>
+                    </div>
+                    <p className="font-medium text-gray-800 capitalize">
+                      {verificationResult.data.payment_method}
+                    </p>
+                  </div>
+
+                  {/* Order Tracking */}
+                  {verificationResult.data.order_tracking_url && (
+                    <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-xl p-4 border border-orange-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Truck className="w-5 h-5 text-orange-600" />
+                          <span className="text-sm font-medium text-orange-700">Track Your Order</span>
+                        </div>
+                        <a
+                          href={verificationResult.data.order_tracking_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-orange-600 hover:text-orange-700 font-medium transition-colors"
+                        >
+                          <span>Track Order</span>
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Signup Section - Only for guest users */}
               {!isAuthenticated && (
-              <div className="bg-gradient-to-br from-orange-50 via-white to-red-50 rounded-2xl shadow-xl border border-orange-200 overflow-hidden">
-                <div className="bg-gradient-to-r from-orange-500 to-red-500 px-6 py-4">
-                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                    <Star className="w-6 h-6" />
-                    Join Our Family & Unlock Amazing Benefits!
-                  </h3>
-                </div>
-                
-                <div className="p-6">
-                  <div className="text-center mb-8">
-                    <p className="text-lg text-gray-700 mb-6">
-                      Create your account now and enjoy exclusive perks on every order!
-                    </p>
-                    
-                    {/* Benefits Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                      <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <Truck className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <h4 className="font-bold text-gray-900 mb-2">Track Orders</h4>
-                        <p className="text-sm text-gray-600">Real-time order tracking from kitchen to your door</p>
-                      </div>
-                      
-                      <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <Gift className="w-6 h-6 text-green-600" />
-                        </div>
-                        <h4 className="font-bold text-gray-900 mb-2">Exclusive Deals</h4>
-                        <p className="text-sm text-gray-600">Special offers and discounts just for members</p>
-                      </div>
-                      
-                      <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-                        <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <Heart className="w-6 h-6 text-red-600" />
-                        </div>
-                        <h4 className="font-bold text-gray-900 mb-2">Save Favorites</h4>
-                        <p className="text-sm text-gray-600">Quick reorder your favorite items anytime</p>
-                      </div>
-                    </div>
+                <div className="bg-gradient-to-br from-orange-50 via-white to-red-50 rounded-2xl shadow-xl border border-orange-200 overflow-hidden">
+                  <div className="bg-gradient-to-r from-orange-500 to-red-500 px-6 py-4">
+                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                      <Star className="w-6 h-6" />
+                      Join Our Family & Unlock Amazing Benefits!
+                    </h3>
                   </div>
-
-                  {/* Signup Form */}
-                  <div className="max-w-md mx-auto">
-                    <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
-                      <h4 className="text-lg font-bold text-gray-900 mb-4 text-center">
-                        Create Your Account
-                      </h4>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Create Password *
-                          </label>
-                          <div className="relative">
-                            <input
-                              type={showPassword ? 'text' : 'password'}
-                              value={signupFormData.password}
-                              onChange={(e) => handleSignupInputChange('password', e.target.value)}
-                              className={`w-full px-4 py-3 pr-12 border rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all text-sm ${
-                                signupFormErrors.password ? 'border-red-500' : 'border-gray-300'
-                              }`}
-                              placeholder="Enter your password"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                            >
-                              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                            </button>
+                  
+                  <div className="p-6">
+                    <div className="text-center mb-8">
+                      <p className="text-lg text-gray-700 mb-6">
+                        Create your account now and enjoy exclusive perks on every order!
+                      </p>
+                      
+                      {/* Benefits Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Truck className="w-6 h-6 text-blue-600" />
                           </div>
-                          {signupFormErrors.password && (
-                            <p className="text-red-500 text-sm mt-2">{signupFormErrors.password}</p>
-                          )}
+                          <h4 className="font-bold text-gray-900 mb-2">Track Orders</h4>
+                          <p className="text-sm text-gray-600">Real-time order tracking from kitchen to your door</p>
                         </div>
+                        
+                        <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Gift className="w-6 h-6 text-green-600" />
+                          </div>
+                          <h4 className="font-bold text-gray-900 mb-2">Exclusive Deals</h4>
+                          <p className="text-sm text-gray-600">Special offers and discounts just for members</p>
+                        </div>
+                        
+                        <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Heart className="w-6 h-6 text-red-600" />
+                          </div>
+                          <h4 className="font-bold text-gray-900 mb-2">Save Favorites</h4>
+                          <p className="text-sm text-gray-600">Quick reorder your favorite items anytime</p>
+                        </div>
+                      </div>
+                    </div>
 
-                        <button
-                          onClick={handleSignup}
-                          disabled={isSigningUp}
-                          className="w-full bg-orange-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base"
-                        >
-                          {isSigningUp ? (
-                            <>
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                              Creating...
-                            </>
-                          ) : (
-                            'Create Account'
-                          )}
-                        </button>
+                    {/* Signup Form */}
+                    <div className="max-w-md mx-auto">
+                      <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
+                        <h4 className="text-lg font-bold text-gray-900 mb-4 text-center">
+                          Create Your Account
+                        </h4>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Create Password *
+                            </label>
+                            <div className="relative">
+                              <input
+                                type={showPassword ? 'text' : 'password'}
+                                value={signupFormData.password}
+                                onChange={(e) => handleSignupInputChange('password', e.target.value)}
+                                className={`w-full px-4 py-3 pr-12 border rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all text-sm ${
+                                  signupFormErrors.password ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                                placeholder="Enter your password"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                              >
+                                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                              </button>
+                            </div>
+                            {signupFormErrors.password && (
+                              <p className="text-red-500 text-sm mt-2">{signupFormErrors.password}</p>
+                            )}
+                          </div>
+
+                          <button
+                            onClick={handleSignup}
+                            disabled={isSigningUp}
+                            className="w-full bg-orange-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base"
+                          >
+                            {isSigningUp ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                Creating...
+                              </>
+                            ) : (
+                              'Create Account'
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
               )}
 
               {/* Action Buttons */}
@@ -579,12 +637,23 @@ function PaymentSuccessContent() {
                   <ArrowRight className="w-5 h-5" />
                   Explore More Menu
                 </Link>
+                {verificationResult.data.order_tracking_url && (
+                  <a
+                    href={verificationResult.data.order_tracking_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-4 rounded-xl font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+                  >
+                    <Truck className="w-5 h-5" />
+                    Track Order
+                  </a>
+                )}
               </div>
             </div>
           ) : (
             <div className="text-center space-y-8">
-              <div className="w-24 h-24 mx-auto bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
-                <Clock className="w-12 h-12 text-white animate-spin" />
+              <div className="w-20 h-20 mx-auto bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
+                <Clock className="w-10 h-10 text-white animate-spin" />
               </div>
               <div className="space-y-4">
                 <h2 className="text-3xl font-bold text-gray-900">
@@ -679,9 +748,7 @@ export default function PaymentSuccessPage() {
   return (
     <Suspense fallback={
       <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50">
-        {/* Hero Section */}
-        <div className="relative h-[600px] flex items-center justify-center overflow-hidden">
-          {/* Background Image */}
+        <div className="relative h-[500px] flex items-center justify-center overflow-hidden">
           <div className="absolute inset-0 z-0">
             <Image
               src="https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?q=80&w=1164&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
@@ -691,17 +758,15 @@ export default function PaymentSuccessPage() {
               priority
               sizes="100vw"
             />
-            {/* Black overlay */}
-            <div className="absolute inset-0 bg-black/60"></div>
+            <div className="absolute inset-0 bg-black/50"></div>
           </div>
 
-          {/* Hero Content */}
           <div className="relative z-10 text-center px-4">
-            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white mb-4">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-4">
               PAYMENT SUCCESS
             </h1>
-            <div className="w-32 h-1.5 bg-gradient-to-r from-orange-400 to-red-500 mx-auto rounded-full"></div>
-            <p className="text-xl sm:text-2xl text-gray-200 mt-6 max-w-2xl mx-auto">
+            <div className="w-24 h-1 bg-gradient-to-r from-orange-400 to-red-500 mx-auto rounded-full"></div>
+            <p className="text-lg sm:text-xl text-gray-200 mt-6 max-w-2xl mx-auto">
               Your order has been placed successfully and payment is confirmed
             </p>
           </div>
@@ -709,9 +774,9 @@ export default function PaymentSuccessPage() {
 
         <div className="ah-container px-4 sm:px-6 lg:px-8 py-8 sm:py-16 lg:py-24">
           <div className="max-w-md mx-auto text-center">
-            <Clock className="w-16 h-16 text-blue-500 animate-spin mx-auto mb-6" />
+            <RefreshCw className="w-16 h-16 text-blue-500 animate-spin mx-auto mb-6" />
             <h2 className="text-2xl font-bold text-gray-900">
-              Order is placed
+              Verifying Payment
             </h2>
             <p className="text-gray-600">
               Loading...

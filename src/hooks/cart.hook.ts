@@ -10,9 +10,17 @@ export interface CartItemData {
   user_id: number | null;
   guest_id: string | null;
   item_id: number;
+  offer_id: number | null;
   quantity: number;
+  price: number | null;
+  discount: number | null;
+  metadata: any | null;
   created_at: string;
   updated_at: string;
+  bogo_offer_id: number | null;
+  bogo_price: string | null;
+  is_bogo_item: boolean;
+  special_instructions: string | null;
   total_price: number;
   item: {
     id: number;
@@ -22,6 +30,8 @@ export interface CartItemData {
     prev_price: string;
     details: string;
     category_id: number;
+    size_id: number;
+    status: boolean;
     created_at: string;
     updated_at: string;
     category: {
@@ -34,11 +44,49 @@ export interface CartItemData {
   };
 }
 
+export interface BogoOffer {
+  id: number;
+  title: string;
+  description: string;
+  buy_quantity: number;
+  get_quantity: number;
+  category_id: number;
+  item_ids: number[] | null;
+  is_active: boolean;
+  thumbnail: string | null;
+  terms_conditions: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BogoBundle {
+  bogo_offer_id: number;
+  buy_items: Array<{
+    id: number;
+    quantity: number;
+    name: string;
+    main_price: string;
+    category_id: number;
+  }>;
+  free_items: Array<{
+    id: number;
+    quantity: number;
+    name: string;
+    main_price: string;
+    category_id: number;
+  }>;
+  user_id: number | null;
+  guest_id: string | null;
+  offer_price: number;
+}
+
 export interface CartResponse {
   success: boolean;
   message: string;
   data: {
     items: CartItemData[];
+    bogo_offers: BogoOffer[];
+    bogo_bundles: BogoBundle[];
     grand_total: number;
     item_count: number;
   };
@@ -49,6 +97,8 @@ export function useCart() {
   const { token, isAuthenticated } = useAuth();
   const { guestId } = useGuest();
   const [cartItems, setCartItems] = useState<CartItemData[]>([]);
+  const [bogoOffers, setBogoOffers] = useState<BogoOffer[]>([]);
+  const [bogoBundles, setBogoBundles] = useState<BogoBundle[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [grandTotal, setGrandTotal] = useState(0);
@@ -113,10 +163,14 @@ export function useCart() {
         
         if (data.success) {
           setCartItems(data.data.items);
+          setBogoOffers(data.data.bogo_offers || []);
+          setBogoBundles(data.data.bogo_bundles || []);
           setGrandTotal(data.data.grand_total);
           setItemCount(data.data.item_count);
         } else {
           setCartItems([]);
+          setBogoOffers([]);
+          setBogoBundles([]);
           setGrandTotal(0);
           setItemCount(0);
         }
@@ -124,6 +178,8 @@ export function useCart() {
         // Fetch guest cart
         if (!guestId) {
           setCartItems([]);
+          setBogoOffers([]);
+          setBogoBundles([]);
           setGrandTotal(0);
           setItemCount(0);
           return;
@@ -139,10 +195,14 @@ export function useCart() {
         
         if (data.success) {
           setCartItems(data.data.items);
+          setBogoOffers(data.data.bogo_offers || []);
+          setBogoBundles(data.data.bogo_bundles || []);
           setGrandTotal(data.data.grand_total);
           setItemCount(data.data.item_count);
         } else {
           setCartItems([]);
+          setBogoOffers([]);
+          setBogoBundles([]);
           setGrandTotal(0);
           setItemCount(0);
         }
@@ -150,6 +210,8 @@ export function useCart() {
     } catch (err: any) {
       setError(err.message);
       setCartItems([]);
+      setBogoOffers([]);
+      setBogoBundles([]);
       setGrandTotal(0);
       setItemCount(0);
     } finally {
@@ -163,6 +225,8 @@ export function useCart() {
 
   return { 
     cartItems, 
+    bogoOffers,
+    bogoBundles,
     loading, 
     error, 
     grandTotal, 

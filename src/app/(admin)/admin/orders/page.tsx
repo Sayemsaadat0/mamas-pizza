@@ -11,7 +11,10 @@ import {
     Package,
     DollarSign,
     User,
-    Loader2
+    Loader2,
+    ChefHat,
+    Utensils,
+    RotateCcw
 } from 'lucide-react';
 import { useAdminOrders, useUpdateOrderStatus, useCancelOrder } from '@/hooks/admin-orders.hook';
 import {
@@ -58,14 +61,18 @@ const OrdersPage: React.FC = () => {
                 return 'bg-green-100 text-green-800';
             case 'out_for_delivery':
                 return 'bg-blue-100 text-blue-800';
-            case 'prepared':
+            case 'ready':
                 return 'bg-purple-100 text-purple-800';
+            case 'preparing':
+                return 'bg-orange-100 text-orange-800';
             case 'confirmed':
                 return 'bg-yellow-100 text-yellow-800';
             case 'pending':
                 return 'bg-gray-100 text-gray-800';
             case 'cancelled':
                 return 'bg-red-100 text-red-800';
+            case 'refunded':
+                return 'bg-indigo-100 text-indigo-800';
             default:
                 return 'bg-gray-100 text-gray-800';
         }
@@ -77,14 +84,18 @@ const OrdersPage: React.FC = () => {
                 return <CheckCircle size={12} />;
             case 'out_for_delivery':
                 return <Truck size={12} />;
-            case 'prepared':
+            case 'ready':
                 return <Package size={12} />;
+            case 'preparing':
+                return <ChefHat size={12} />;
             case 'confirmed':
-                return <Clock size={12} />;
+                return <CheckCircle size={12} />;
             case 'pending':
                 return <Clock size={12} />;
             case 'cancelled':
                 return <XCircle size={12} />;
+            case 'refunded':
+                return <RotateCcw size={12} />;
             default:
                 return <Clock size={12} />;
         }
@@ -103,6 +114,26 @@ const OrdersPage: React.FC = () => {
             default:
                 return 'bg-gray-100 text-gray-800';
         }
+    };
+
+    // Order status progression helper
+    const getStatusProgression = (currentStatus: string) => {
+        const statuses = [
+            { value: 'pending', label: 'Pending', color: 'bg-gray-100 text-gray-800' },
+            { value: 'confirmed', label: 'Confirmed', color: 'bg-yellow-100 text-yellow-800' },
+            { value: 'preparing', label: 'Preparing', color: 'bg-orange-100 text-orange-800' },
+            { value: 'ready', label: 'Ready', color: 'bg-purple-100 text-purple-800' },
+            { value: 'out_for_delivery', label: 'Out for Delivery', color: 'bg-blue-100 text-blue-800' },
+            { value: 'delivered', label: 'Delivered', color: 'bg-green-100 text-green-800' }
+        ];
+        
+        const currentIndex = statuses.findIndex(s => s.value === currentStatus.toLowerCase());
+        return statuses.map((status, index) => ({
+            ...status,
+            isActive: index === currentIndex,
+            isCompleted: index < currentIndex,
+            isUpcoming: index > currentIndex
+        }));
     };
 
     const totalRevenue = summary ? parseFloat(summary.total_revenue) : 0;
@@ -239,7 +270,7 @@ const OrdersPage: React.FC = () => {
                     </div>
 
                     {/* Status Filter */}
-                    <div className="w-20">
+                    <div className="w-24">
                         <select
                             value={filterStatus}
                             onChange={(e) => setFilterStatus(e.target.value)}
@@ -248,10 +279,12 @@ const OrdersPage: React.FC = () => {
                             <option value="All">All</option>
                             <option value="pending">Pending</option>
                             <option value="confirmed">Confirmed</option>
-                            <option value="prepared">Prepared</option>
-                            <option value="out_for_delivery">Shipped</option>
+                            <option value="preparing">Preparing</option>
+                            <option value="ready">Ready</option>
+                            <option value="out_for_delivery">Out for Delivery</option>
                             <option value="delivered">Delivered</option>
                             <option value="cancelled">Cancelled</option>
+                            <option value="refunded">Refunded</option>
                         </select>
                     </div>
 
@@ -460,6 +493,37 @@ const OrdersPage: React.FC = () => {
                 </DialogHeader>
                 <div className="space-y-3">
                     <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
+                    
+                    {/* Status Progression Indicator */}
+                    <div className="mb-4">
+                        <div className="flex items-center justify-between text-xs">
+                            {getStatusProgression(statusValue).map((status, index) => (
+                                <div key={status.value} className="flex flex-col items-center">
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center mb-1 ${
+                                        status.isCompleted 
+                                            ? 'bg-green-500 text-white' 
+                                            : status.isActive 
+                                                ? 'bg-orange-500 text-white' 
+                                                : 'bg-gray-200 text-gray-500'
+                                    }`}>
+                                        {status.isCompleted ? (
+                                            <CheckCircle size={12} />
+                                        ) : status.isActive ? (
+                                            <Clock size={12} />
+                                        ) : (
+                                            <div className="w-2 h-2 rounded-full bg-current" />
+                                        )}
+                                    </div>
+                                    <span className={`text-xs text-center max-w-[60px] ${
+                                        status.isActive ? 'font-semibold text-orange-600' : 'text-gray-500'
+                                    }`}>
+                                        {status.label}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    
                     <select
                         value={statusValue}
                         onChange={(e) => setStatusValue(e.target.value)}
@@ -467,10 +531,12 @@ const OrdersPage: React.FC = () => {
                     >
                         <option value="pending">Pending</option>
                         <option value="confirmed">Confirmed</option>
-                        <option value="prepared">Prepared</option>
-                        <option value="out_for_delivery">Out for delivery</option>
+                        <option value="preparing">Preparing</option>
+                        <option value="ready">Ready</option>
+                        <option value="out_for_delivery">Out for Delivery</option>
                         <option value="delivered">Delivered</option>
                         <option value="cancelled">Cancelled</option>
+                        <option value="refunded">Refunded</option>
                     </select>
                 </div>
                 <div className="flex items-center justify-end gap-2 pt-2">

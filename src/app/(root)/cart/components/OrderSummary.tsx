@@ -4,6 +4,42 @@ import { useAuth } from "@/lib/auth/useAuth";
 import Link from "next/link";
 import React from "react";
 
+interface BogoOffer {
+  id: number;
+  title: string;
+  description: string;
+  buy_quantity: number;
+  get_quantity: number;
+  category_id: number;
+  item_ids: number[] | null;
+  is_active: boolean;
+  thumbnail: string | null;
+  terms_conditions: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface BogoBundle {
+  bogo_offer_id: number;
+  buy_items: Array<{
+    id: number;
+    quantity: number;
+    name: string;
+    main_price: string;
+    category_id: number;
+  }>;
+  free_items: Array<{
+    id: number;
+    quantity: number;
+    name: string;
+    main_price: string;
+    category_id: number;
+  }>;
+  user_id: number | null;
+  guest_id: string | null;
+  offer_price: number;
+}
+
 interface OrderSummaryProps {
   summary: {
     subtotal: number;
@@ -14,9 +50,11 @@ interface OrderSummaryProps {
   onCheckout: () => void;
   isFormValid?: boolean;
   isLoading?: boolean;
+  bogoBundles?: BogoBundle[];
+  bogoOffers?: BogoOffer[];
 }
 
-export default function OrderSummary({ summary, onCheckout, isFormValid = true, isLoading = false }: OrderSummaryProps) {
+export default function OrderSummary({ summary, onCheckout, isFormValid = true, isLoading = false, bogoBundles = [], bogoOffers = [] }: OrderSummaryProps) {
   const { user } = useAuth();
 
   return (
@@ -31,6 +69,26 @@ export default function OrderSummary({ summary, onCheckout, isFormValid = true, 
             <span>Sub Total</span>
             <span className="font-semibold">{summary.subtotal.toFixed(0)} USD</span>
           </div>
+          
+          {/* BOGO Savings */}
+          {bogoBundles.length > 0 && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <div className="flex justify-between text-base sm:text-lg text-green-700">
+                <span className="font-medium">BOGO Savings</span>
+                <span className="font-semibold">
+                  -${bogoBundles.reduce((total, bundle) => {
+                    const originalPrice = bundle.buy_items.reduce((sum, item) => sum + parseFloat(item.main_price), 0) +
+                                       bundle.free_items.reduce((sum, item) => sum + parseFloat(item.main_price), 0);
+                    return total + (originalPrice - bundle.offer_price);
+                  }, 0).toFixed(2)}
+                </span>
+              </div>
+              <p className="text-xs text-green-600 mt-1">
+                You saved money with BOGO offers!
+              </p>
+            </div>
+          )}
+          
           <div className="flex justify-between text-base sm:text-lg text-gray-600">
             <span>Discount</span>
             <span className="text-gray-600 font-semibold">{summary.discount.toFixed(0)} USD</span>
@@ -61,7 +119,7 @@ export default function OrderSummary({ summary, onCheckout, isFormValid = true, 
         {/* Checkout Button */}
         <button
           onClick={onCheckout}
-          disabled={!isFormValid || isLoading || !user?.delivery_address}
+          disabled={!isFormValid || isLoading}
           className="w-full mt-6 sm:mt-8 bg-gradient-to-r from-orange-600 to-red-500 text-white py-2.5 sm:py-4 px-4 sm:px-8 rounded-lg sm:rounded-xl font-semibold text-base sm:text-xl hover:from-orange-700 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
         >
           {isLoading ? (

@@ -45,40 +45,51 @@ export type BogoOffersResponse = {
     data: BogoOffer[];
 };
 
-// GET bogo offers
+// GET bogo offers (public - no authentication required)
 export function useBogoOffers() {
-    const { token } = useAuth();
     const [bogoOffers, setBogoOffers] = useState<BogoOffer[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const fetchBogoOffers = useCallback(async () => {
-        if (!token) return;
-
         setLoading(true);
         setError(null);
 
         try {
+            // Try the admin endpoint first (might work without auth for public offers)
             const response = await fetch(ADMIN_OFFERS_API, {
                 headers: {
-                    'Authorization': `Bearer ${token}`,
                     'Accept': 'application/json',
                 },
             });
 
+            console.log('BOGO Offers API Response:', {
+                status: response.status,
+                statusText: response.statusText,
+                url: ADMIN_OFFERS_API
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+            }
+
             const responseData: BogoOffersResponse = await response.json();
+            console.log('BOGO Offers Response Data:', responseData);
 
             if (responseData.success && Array.isArray(responseData.data)) {
                 setBogoOffers(responseData.data);
             } else {
+                console.warn('BOGO Offers API returned unsuccessful response:', responseData);
                 setBogoOffers([]);
             }
         } catch (err: any) {
+            console.error('Error fetching BOGO offers:', err);
             setError(err.message);
+            setBogoOffers([]);
         } finally {
             setLoading(false);
         }
-    }, [token]);
+    }, []);
 
     useEffect(() => {
         fetchBogoOffers();
