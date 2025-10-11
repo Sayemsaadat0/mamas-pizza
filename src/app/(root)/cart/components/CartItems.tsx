@@ -34,6 +34,7 @@ export default function CartItems({
   onQuantityInputBlur
 }: CartItemsProps) {
   if (cart.length === 0) {
+
     return (
       <div className="bg-white/90 backdrop-blur-sm rounded-xl sm:rounded-2xl p-6 sm:p-8 lg:p-12 text-center shadow-xl border border-orange-100">
         <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-100 to-red-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">

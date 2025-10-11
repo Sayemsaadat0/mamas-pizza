@@ -156,13 +156,7 @@ export function useGuestOrder(orderNumber: string, guestId: string) {
       const queryString = searchParams.toString();
       const url = `${getGuestOrderByNumber(orderNumber)}?${queryString}`;
       
-      console.log('Guest Order API Call:', {
-        orderNumber,
-        guestId,
-        url,
-        fullUrl: url
-      });
-      
+  
       const response = await fetch(url, {
         headers: {
           'Accept': 'application/json',

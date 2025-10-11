@@ -189,7 +189,6 @@ export function useAdminOrders(params?: {
       }
 
       const responseData: OrdersResponse = await response.json();
-      console.log('Admin Orders API Response:', responseData);
       
       // Handle the API response structure: {success: true, message: "...", data: {data: [...], current_page: 1, ...}}
       if (responseData.success && responseData.data && Array.isArray(responseData.data.data)) {

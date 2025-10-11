@@ -47,7 +47,6 @@ export const useGuestId = () => {
       const existingGuestId = localStorage.getItem(GUEST_ID_KEY);
       
       if (existingGuestId) {
-        console.log('Existing guest ID found:', existingGuestId);
         setGuestId(existingGuestId);
         return existingGuestId;
       }
@@ -55,7 +54,6 @@ export const useGuestId = () => {
       // Generate new guest ID if none exists
       const newGuestId = generateGuestId();
       localStorage.setItem(GUEST_ID_KEY, newGuestId);
-      console.log('New guest ID created:', newGuestId);
       setGuestId(newGuestId);
       return newGuestId;
       

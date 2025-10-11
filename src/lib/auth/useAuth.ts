@@ -8,6 +8,7 @@ export interface User {
   name: string;
   delivery_address?: DeliveryAddress | null;
   email: string;
+  phone?: string | null;
   role: 'admin' | 'staff' | 'user';
   user_image?: string | null;
   created_at: string;

@@ -26,7 +26,6 @@ const OrderTrackingContent = () => {
 
             try {
                 const url = getOrderDetailsByorderNumber(orderNumber);
-                console.log('Fetching order details:', url);
 
                 const response = await fetch(url, {
                     headers: {
@@ -42,7 +41,6 @@ const OrderTrackingContent = () => {
                 }
 
                 const result = await response.json();
-                console.log('Order details:', result);
                 setOrder(result.data || result);
             } catch (err: any) {
                 console.error('Error fetching order details:', err);

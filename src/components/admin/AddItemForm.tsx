@@ -94,7 +94,6 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
       });
 
       const data = await response.json();
-      console.log('Update response:', data);
       
       if (data.success) {
         return data.data;
@@ -190,10 +189,10 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
       }
 
       // Debug: Log FormData contents
-      console.log('FormData contents:');
-      for (const [key, value] of submitData.entries()) {
-        console.log(key, value);
-      }
+      // console.log('FormData contents:');
+      // for (const [key, value] of submitData.entries()) {
+      //   console.log(key, value);
+      // }
 
       let result;
       if (isEdit) {

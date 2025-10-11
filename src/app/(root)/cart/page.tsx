@@ -6,12 +6,14 @@ import { User, MapPin, MessageSquare } from "lucide-react";
 import { useCart, useUpdateCartItem, useDeleteCartItem, useDeleteGuestCartItem } from "@/hooks/cart.hook";
 import { useAuth } from "@/lib/auth/useAuth";
 import { useCreateOrder } from "@/hooks/order.hook";
+import { USER_ORDERS_API, USER_STRIPE_CREATE_SESSION_API } from "@/app/api";
 import { useCreateGuestOrder } from "@/hooks/guest-order.hook";
 import { useCreateGuestStripeSession } from "@/hooks/guest-payment.hook";
 import { usePaymentWorkflow } from "@/hooks/stripe-payment.hook";
 import { useGuest } from "@/lib/guest/GuestProvider";
 import { toast } from "sonner";
 import OrderSummary from "./components/OrderSummary";
+import OfferGroupCard from "@/components/pages/cart-page/OfferGroupCard";
 
 // interface CartItem {
 //   id: number;
@@ -52,7 +54,7 @@ interface GuestOrderFormErrors {
 export default function CartPage() {
   const [loadingItems, setLoadingItems] = useState<Set<number>>(new Set());
   const [quantityInputs, setQuantityInputs] = useState<{ [key: number]: string }>({});
-  
+
   // Guest form state
   const [guestFormData, setGuestFormData] = useState<GuestOrderData>({
     customer_name: "",
@@ -67,38 +69,103 @@ export default function CartPage() {
     special_instructions: "",
   });
   const [guestFormErrors, setGuestFormErrors] = useState<GuestOrderFormErrors>({});
-  
+
   // Auth hook
-  const { isAuthenticated  , user} = useAuth();
+  const { isAuthenticated, user, token } = useAuth();
   const { guestId } = useGuest();
-  
+
   // Cart hooks
-  const { cartItems, bogoOffers, bogoBundles, loading, error, grandTotal,  refetch, updateCartItemLocally, removeCartItemLocally } = useCart();
-  const { updateCartItem,  } = useUpdateCartItem();
-  const { deleteCartItem,  } = useDeleteCartItem();
-  const { deleteGuestCartItem,  } = useDeleteGuestCartItem();
-  
+  const { cartItems, bogoOffers, bogoBundles, loading, error, grandTotal, refetch, updateCartItemLocally, removeCartItemLocally } = useCart();
+  const { updateCartItem, } = useUpdateCartItem();
+  const { deleteCartItem, } = useDeleteCartItem();
+  const { deleteGuestCartItem, } = useDeleteGuestCartItem();
+
   // Order creation hooks
-  const { createOrder, loading: createOrderLoading } = useCreateOrder();
+  const { loading: createOrderLoading } = useCreateOrder();
   const { createGuestOrder, loading: createGuestOrderLoading } = useCreateGuestOrder();
   const { createSession, loading: createSessionLoading } = useCreateGuestStripeSession();
-  const { startPayment, loading: paymentLoading } = usePaymentWorkflow();
+  const { loading: paymentLoading } = usePaymentWorkflow();
 
-  // Transform cart data to match CartItems component interface
-  const cart = useMemo(() => {
-    return cartItems.map(item => ({
-      id: item.id,
-      name: item.item.name,
-      price: item.is_bogo_item && item.bogo_price ? parseFloat(item.bogo_price) : parseFloat(item.item.main_price),
-      image: `${process.env.NEXT_PUBLIC_API_URL}/${item.item.thumbnail}`,
-      qty: item.quantity,
-      description: item.item.details,
-      color: item.item.category.name,
-      isBogoItem: item.is_bogo_item,
-      bogoOfferId: item.bogo_offer_id,
-      originalPrice: parseFloat(item.item.main_price)
-    }));
-  }, [cartItems]);
+  // Separate regular items from BOGO items and create BOGO bundles
+  const { regularItems, processedBogoBundles } = useMemo(() => {
+    const regular: any[] = [];
+    const bogo: any[] = [];
+    const bundles: any[] = [];
+
+    // Group BOGO items by offer_id
+    const bogoGroups: { [key: number]: any[] } = {};
+
+    cartItems.forEach(item => {
+      const itemData = {
+        id: item.id,
+        name: item.item.name,
+        price: item.is_bogo_item && item.bogo_price ? parseFloat(item.bogo_price) : parseFloat(item.item.main_price),
+        image: `${process.env.NEXT_PUBLIC_API_URL}/${item.item.thumbnail}`,
+        qty: item.quantity,
+        description: item.item.details,
+        color: item.item.category.name,
+        isBogoItem: item.is_bogo_item,
+        bogoOfferId: item.bogo_offer_id,
+        originalPrice: parseFloat(item.item.main_price),
+        // Add raw item data for bundle creation
+        rawItem: item
+      };
+
+      if (item.is_bogo_item && item.bogo_offer_id) {
+        bogo.push(itemData);
+
+        // Group by bogo_offer_id
+        if (!bogoGroups[item.bogo_offer_id]) {
+          bogoGroups[item.bogo_offer_id] = [];
+        }
+        bogoGroups[item.bogo_offer_id].push(item);
+      } else {
+        regular.push(itemData);
+      }
+    });
+
+    // Create BOGO bundles from grouped items
+    Object.keys(bogoGroups).forEach(offerId => {
+      const items = bogoGroups[parseInt(offerId)];
+      const offer = bogoOffers.find(o => o.id === parseInt(offerId));
+
+      if (offer && items.length > 0) {
+        // Separate buy items and free items based on bogo_price
+        const buyItems = items.filter(item => !item.bogo_price || parseFloat(item.bogo_price) > 0);
+        const freeItems = items.filter(item => item.bogo_price && parseFloat(item.bogo_price) === 0);
+
+        // Calculate offer price (sum of buy items)
+        const offerPrice = buyItems.reduce((sum, item) => sum + parseFloat(item.item.main_price), 0);
+
+        const bundle = {
+          bogo_offer_id: parseInt(offerId),
+          buy_items: buyItems.map(item => ({
+            id: item.item_id,
+            quantity: item.quantity,
+            name: item.item.name,
+            main_price: item.item.main_price,
+            category_id: item.item.category_id,
+            thumbnail: item.item.thumbnail
+          })),
+          free_items: freeItems.map(item => ({
+            id: item.item_id,
+            quantity: item.quantity,
+            name: item.item.name,
+            main_price: item.item.main_price,
+            category_id: item.item.category_id,
+            thumbnail: item.item.thumbnail
+          })),
+          user_id: items[0].user_id,
+          guest_id: items[0].guest_id,
+          offer_price: offerPrice
+        };
+
+        bundles.push(bundle);
+      }
+    });
+
+    return { regularItems: regular, bogoItems: bogo, processedBogoBundles: bundles };
+  }, [cartItems, bogoOffers]);
 
   const summary = useMemo(() => {
     const subtotal = grandTotal;
@@ -125,7 +192,7 @@ export default function CartPage() {
         [field]: value
       }));
     }
-    
+
     // Clear error when user starts typing
     if (guestFormErrors[field as keyof GuestOrderData]) {
       setGuestFormErrors(prev => ({
@@ -179,28 +246,28 @@ export default function CartPage() {
 
   // Debounce timer ref
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Debounced update function
   const debouncedUpdateQty = useCallback((cartItemId: number, newQuantity: number) => {
     // Clear existing timer
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
-    
+
     // Set new timer
     debounceTimerRef.current = setTimeout(async () => {
       try {
         // Set loading state
         setLoadingItems(prev => new Set(prev).add(cartItemId));
-        
+
         // Update UI immediately for better UX
         updateCartItemLocally(cartItemId, newQuantity);
-        
+
         // Make API call
         await updateCartItem(cartItemId, newQuantity);
-        
+
         toast.success('Cart updated successfully');
-      } catch (error ) {
+      } catch (error) {
         console.error('Error updating cart item:', error);
         // Revert the local change if API call fails
         const currentItem = cartItems.find(item => item.id === cartItemId);
@@ -222,7 +289,7 @@ export default function CartPage() {
   const updateQty = (cartItemId: number, delta: number) => {
     const currentItem = cartItems.find(item => item.id === cartItemId);
     if (!currentItem) return;
-    
+
     const newQuantity = Math.max(1, currentItem.quantity + delta);
     debouncedUpdateQty(cartItemId, newQuantity);
   };
@@ -252,19 +319,19 @@ export default function CartPage() {
     try {
       // Set loading state
       setLoadingItems(prev => new Set(prev).add(cartItemId));
-      
+
       // Update UI immediately for better UX
       removeCartItemLocally(cartItemId);
-      
+
       // Make API call based on authentication status
       if (isAuthenticated) {
         await deleteCartItem(cartItemId);
       } else {
         await deleteGuestCartItem(cartItemId);
       }
-      
+
       toast.success('Item removed from cart');
-    } catch (error ) {
+    } catch (error) {
       console.error('Error removing item from cart:', error);
       // Revert the local change if API call fails - refetch to restore original state
       refetch();
@@ -279,6 +346,53 @@ export default function CartPage() {
     }
   };
 
+  const removeBogoBundle = async (bundleId: string) => {
+    try {
+      // Find all BOGO items for this bundle and remove them
+      const bundleOfferId = parseInt(bundleId.split('-')[0]);
+      const bogoItemsToRemove = cartItems.filter(item =>
+        item.is_bogo_item && item.bogo_offer_id === bundleOfferId
+      );
+
+      // Set loading state for all items in the bundle
+      const itemIds = bogoItemsToRemove.map(item => item.id);
+      setLoadingItems(prev => {
+        const newSet = new Set(prev);
+        itemIds.forEach(id => newSet.add(id));
+        return newSet;
+      });
+
+      // Remove all BOGO items for this bundle
+      const deletePromises = bogoItemsToRemove.map(async (item) => {
+        // Update UI immediately for better UX
+        removeCartItemLocally(item.id);
+
+        // Make API call
+        if (isAuthenticated) {
+          return deleteCartItem(item.id);
+        } else {
+          return deleteGuestCartItem(item.id);
+        }
+      });
+
+      // Wait for all deletions to complete
+      await Promise.all(deletePromises);
+
+      // Refetch cart data to ensure UI is in sync
+      await refetch();
+
+      toast.success('BOGO offer removed from cart');
+    } catch (error) {
+      console.error('Error removing BOGO bundle:', error);
+      // Refetch to restore original state
+      await refetch();
+      toast.error('Failed to remove BOGO offer');
+    } finally {
+      // Clear loading state for all items
+      setLoadingItems(new Set());
+    }
+  };
+
   const handleCheckout = async () => {
     // Validate guest form if not authenticated
     if (!isAuthenticated && !validateGuestForm()) {
@@ -288,24 +402,94 @@ export default function CartPage() {
 
     try {
       if (isAuthenticated) {
-        // Create order for authenticated user
+        // Validate required user information
+        if (!user?.name || !user?.email) {
+          toast.error("User profile information is incomplete. Please update your profile.");
+          return;
+        }
+
+        // Create order for authenticated user using USER_ORDERS_API
         const orderData = {
-          delivery_address_id: user?.delivery_address?.id || null,
+          // Customer information (required by API)
+          customer_name: user.name,
+          customer_phone: user.phone || "000-000-0000", // Default phone if not available
+          customer_email: user.email,
+
+          // Order details
           delivery_type: "delivery" as const,
           payment_method: "stripe" as const,
+          special_instructions: "",
+
+          // Pricing details
           tax_rate: 0,
           delivery_fee: 0,
           discount_amount: 0,
-          special_instructions: "",
+          subtotal: grandTotal,
+          tax_amount: 0,
+          total_amount: grandTotal,
+
+          // Delivery address - always include full details as required by API
+          delivery_address: user?.delivery_address ? {
+            address_line_1: user.delivery_address.address_line_1,
+            address_line_2: user.delivery_address.address_line_2 || "",
+            post_code: user.delivery_address.post_code,
+            details: user.delivery_address.details || "",
+          } : {
+            address_line_1: "Default Address",
+            address_line_2: "",
+            post_code: "00000",
+            details: "",
+          }
         };
-        
-        const orderResult = await createOrder(orderData);
+
+        // Make API call to USER_ORDERS_API
+        const response = await fetch(USER_ORDERS_API, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify(orderData),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || "Failed to create order");
+        }
         toast.success("Order created successfully!");
-        
+
         // Create Stripe payment session for authenticated user
         try {
-          await startPayment(orderResult.id);
-          // startPayment will redirect to Stripe checkout automatically
+          const orderId = result.data.order.id;
+
+          if (!orderId) {
+            throw new Error("Order ID not found in response");
+          }
+
+          const paymentResponse = await fetch(USER_STRIPE_CREATE_SESSION_API, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              order_id: orderId
+            }),
+          });
+
+          const paymentResult = await paymentResponse.json();
+
+          if (!paymentResponse.ok || !paymentResult.success) {
+            throw new Error(paymentResult.message || "Failed to create payment session");
+          }
+          if (paymentResult.data.session_url) {
+            toast.success("Redirecting to payment...");
+            // Navigate to Stripe checkout session
+            window.location.href = paymentResult.data.session_url;
+          } else {
+            toast.error("Payment session creation failed");
+          }
         } catch (paymentError: any) {
           console.error("Error creating payment session:", paymentError);
           toast.error(paymentError.message || "Failed to create payment session");
@@ -339,19 +523,18 @@ export default function CartPage() {
 
         const orderResult = await createGuestOrder(guestOrderData);
         toast.success("Order created successfully!");
-        
+
         // Create payment session for guest order
         try {
           const paymentData: { order_id: number; guest_id: string } = {
             order_id: orderResult.id,
             guest_id: guestId,
           };
-          
+
           const sessionResult = await createSession(paymentData);
-          
+
           if (sessionResult.session_url) {
             toast.success("Redirecting to payment...");
-            // Navigate to Stripe checkout session
             window.location.href = sessionResult.session_url;
           } else {
             toast.error("Payment session creation failed");
@@ -398,7 +581,7 @@ export default function CartPage() {
             </p>
           </div>
         </div>
-        
+
         <div className="ah-container px-4 sm:px-6 lg:px-8 py-8 sm:py-16 lg:py-24 xl:py-40">
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
@@ -442,12 +625,12 @@ export default function CartPage() {
             </p>
           </div>
         </div>
-        
+
         <div className="ah-container px-4 sm:px-6 lg:px-8 py-8 sm:py-16 lg:py-24 xl:py-40">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
             <h3 className="text-lg font-semibold text-red-800 mb-2">Error Loading Cart</h3>
             <p className="text-red-600 mb-4">{error}</p>
-            <button 
+            <button
               onClick={refetch}
               className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
             >
@@ -458,7 +641,6 @@ export default function CartPage() {
       </main>
     );
   }
-
   return (
     <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50">
       {/* Hero Section */}
@@ -488,54 +670,138 @@ export default function CartPage() {
           </p>
         </div>
       </div>
-    
+
       <div className="ah-container px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-12">
+
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
             {/* Left Side - Cart Items and Guest Form (7/12 width on desktop) */}
             <div className="lg:col-span-7 order-1 space-y-6">
-              {/* BOGO Bundles */}
-              {bogoBundles.length > 0 && (
+              {/* BOGO Bundles - Grouped Display */}
+              {(bogoBundles.length > 0 || processedBogoBundles.length > 0) && (
                 <div className="mb-6">
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">BOGO Offers</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Special Offers</h2>
                   <div className="space-y-4">
-                    {bogoBundles.map((bundle, index) => (
-                      <div key={index} className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-lg font-semibold text-green-800">
-                            {bogoOffers.find(offer => offer.id === bundle.bogo_offer_id)?.title || 'BOGO Offer'}
-                          </h3>
-                          <div className="text-lg font-bold text-green-600">
-                            ${bundle.offer_price.toFixed(2)}
+                    {/* Use processed bundles for authenticated users, API bundles for guests */}
+                    {(processedBogoBundles.length > 0 ? processedBogoBundles : bogoBundles).map((bundle, index) => {
+                      const offer = bogoOffers.find(offer => offer.id === bundle.bogo_offer_id);
+                      return offer ? (
+                        <OfferGroupCard
+                          key={`bundle-${bundle.bogo_offer_id}-${index}`}
+                          bundle={bundle}
+                          offer={offer}
+                          onRemoveBundle={removeBogoBundle}
+                          isLoading={cartItems.some(item =>
+                            item.is_bogo_item &&
+                            item.bogo_offer_id === bundle.bogo_offer_id &&
+                            loadingItems.has(item.id)
+                          )}
+                          loadingItems={loadingItems}
+                        />
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Regular Cart Items */}
+              {regularItems.length > 0 && (
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Regular Items</h2>
+                  <div className="space-y-3 sm:space-y-4">
+                    {regularItems.map((item) => (
+                      <div key={item.id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4">
+                        <div className="flex items-center space-x-3 sm:space-x-4 mb-3">
+                          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden flex-shrink-0">
+                            <Image
+                              src={item.image}
+                              alt={item.name}
+                              width={64}
+                              height={64}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm sm:text-lg font-medium text-gray-900 truncate">{item.name}</h4>
+                            <div className="flex items-center gap-2">
+                              {item.isBogoItem ? (
+                                <>
+                                  <p className="text-xs sm:text-sm text-green-600 font-medium">BOGO Item</p>
+                                  <p className="text-xs sm:text-sm text-gray-500 line-through">${item.originalPrice.toFixed(2)}</p>
+                                  <p className="text-xs sm:text-sm text-green-600 font-medium">${item.price.toFixed(2)} each</p>
+                                </>
+                              ) : (
+                                <p className="text-xs sm:text-sm text-gray-500">${item.price.toFixed(2)} each</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-sm sm:text-lg font-semibold text-orange-600">
+                            ${(item.price * item.qty).toFixed(2)}
                           </div>
                         </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {/* Buy Items */}
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">Items to Buy:</h4>
-                            <div className="space-y-2">
-                              {bundle.buy_items.map((item, itemIndex) => (
-                                <div key={itemIndex} className="flex items-center justify-between text-sm">
-                                  <span className="text-gray-800">{item.name}</span>
-                                  <span className="text-gray-600">${item.main_price}</span>
-                                </div>
-                              ))}
+
+                        {/* Quantity Controls - Hide for BOGO items */}
+                        <div className="flex items-center justify-between">
+                          {!item.isBogoItem ? (
+                            <div className="flex items-center gap-1 sm:gap-2 border-2 border-orange-200 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white shadow-sm">
+                              <button
+                                onClick={() => updateQty(item.id, -1)}
+                                disabled={loadingItems.has(item.id)}
+                                className="w-5 h-5 sm:w-6 sm:h-6 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                aria-label="Decrease quantity"
+                              >
+                                {loadingItems.has(item.id) ? (
+                                  <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
+                                ) : (
+                                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                                  </svg>
+                                )}
+                              </button>
+                              <input
+                                type="number"
+                                min="1"
+                                value={quantityInputs[item.id] !== undefined ? quantityInputs[item.id] : item.qty}
+                                onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
+                                onBlur={() => handleQuantityInputBlur(item.id)}
+                                className="min-w-6 sm:min-w-8 max-w-[60px] sm:max-w-[80px] text-center font-semibold text-xs sm:text-sm text-gray-900 bg-transparent border-none outline-none"
+                                disabled={loadingItems.has(item.id)}
+                              />
+                              <button
+                                onClick={() => updateQty(item.id, +1)}
+                                disabled={loadingItems.has(item.id)}
+                                className="w-5 h-5 sm:w-6 sm:h-6 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                aria-label="Increase quantity"
+                              >
+                                {loadingItems.has(item.id) ? (
+                                  <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
+                                ) : (
+                                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                  </svg>
+                                )}
+                              </button>
                             </div>
-                          </div>
-                          
-                          {/* Free Items */}
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">Items Free:</h4>
-                            <div className="space-y-2">
-                              {bundle.free_items.map((item, itemIndex) => (
-                                <div key={itemIndex} className="flex items-center justify-between text-sm">
-                                  <span className="text-gray-800">{item.name}</span>
-                                  <span className="text-green-600 font-medium">FREE</span>
-                                </div>
-                              ))}
+                          ) : (
+                            <div className="text-sm text-gray-500 font-medium">
+                              BOGO Item - Fixed Quantity
                             </div>
-                          </div>
+                          )}
+
+                          <button
+                            onClick={() => removeItem(item.id)}
+                            disabled={loadingItems.has(item.id)}
+                            className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            aria-label="Remove item"
+                          >
+                            {loadingItems.has(item.id) ? (
+                              <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
+                            ) : (
+                              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            )}
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -543,114 +809,11 @@ export default function CartPage() {
                 </div>
               )}
 
-              {/* Cart Items */}
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Your Cart Items</h2>
-                <div className="space-y-3 sm:space-y-4">
-                  {cart.map((item) => (
-                    <div key={item.id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4">
-                      <div className="flex items-center space-x-3 sm:space-x-4 mb-3">
-                        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden flex-shrink-0">
-                          <Image
-                            src={item.image}
-                            alt={item.name}
-                            width={64}
-                            height={64}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-sm sm:text-lg font-medium text-gray-900 truncate">{item.name}</h4>
-                          <div className="flex items-center gap-2">
-                            {item.isBogoItem ? (
-                              <>
-                                <p className="text-xs sm:text-sm text-green-600 font-medium">BOGO Item</p>
-                                <p className="text-xs sm:text-sm text-gray-500 line-through">${item.originalPrice.toFixed(2)}</p>
-                                <p className="text-xs sm:text-sm text-green-600 font-medium">${item.price.toFixed(2)} each</p>
-                              </>
-                            ) : (
-                              <p className="text-xs sm:text-sm text-gray-500">${item.price.toFixed(2)} each</p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-sm sm:text-lg font-semibold text-orange-600">
-                          ${(item.price * item.qty).toFixed(2)}
-                        </div>
-                      </div>
-                      
-                      {/* Quantity Controls - Hide for BOGO items */}
-                      <div className="flex items-center justify-between">
-                        {!item.isBogoItem ? (
-                          <div className="flex items-center gap-1 sm:gap-2 border-2 border-orange-200 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white shadow-sm">
-                            <button
-                              onClick={() => updateQty(item.id, -1)}
-                              disabled={loadingItems.has(item.id)}
-                              className="w-5 h-5 sm:w-6 sm:h-6 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                              aria-label="Decrease quantity"
-                            >
-                              {loadingItems.has(item.id) ? (
-                                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
-                              ) : (
-                                <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                                </svg>
-                              )}
-                            </button>
-                            <input
-                              type="number"
-                              min="1"
-                              value={quantityInputs[item.id] !== undefined ? quantityInputs[item.id] : item.qty}
-                              onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
-                              onBlur={() => handleQuantityInputBlur(item.id)}
-                              className="min-w-6 sm:min-w-8 max-w-[60px] sm:max-w-[80px] text-center font-semibold text-xs sm:text-sm text-gray-900 bg-transparent border-none outline-none"
-                              disabled={loadingItems.has(item.id)}
-                            />
-                            <button
-                              onClick={() => updateQty(item.id, +1)}
-                              disabled={loadingItems.has(item.id)}
-                              className="w-5 h-5 sm:w-6 sm:h-6 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                              aria-label="Increase quantity"
-                            >
-                              {loadingItems.has(item.id) ? (
-                                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
-                              ) : (
-                                <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                </svg>
-                              )}
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="text-sm text-gray-500 font-medium">
-                            BOGO Item - Fixed Quantity
-                          </div>
-                        )}
-                        
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          disabled={loadingItems.has(item.id)}
-                          className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                          aria-label="Remove item"
-                        >
-                          {loadingItems.has(item.id) ? (
-                            <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
-                          ) : (
-                            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
               {/* Guest Form - Only show if not authenticated */}
               {!isAuthenticated && (
                 <div className="bg-white/90 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-orange-100">
                   <h3 className="text-2xl font-bold text-gray-900 mb-6">Delivery Information</h3>
-                  
+
                   <div className="space-y-6">
                     {/* Customer Information */}
                     <div className="space-y-4">
@@ -658,7 +821,7 @@ export default function CartPage() {
                         <User className="w-5 h-5 text-orange-600" />
                         Customer Information
                       </h4>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -668,9 +831,8 @@ export default function CartPage() {
                             type="text"
                             value={guestFormData.customer_name}
                             onChange={(e) => handleGuestInputChange('customer_name', e.target.value)}
-                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
-                              guestFormErrors.customer_name ? 'border-red-500' : 'border-gray-300'
-                            }`}
+                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.customer_name ? 'border-red-500' : 'border-gray-300'
+                              }`}
                             placeholder="Enter your full name"
                           />
                           {guestFormErrors.customer_name && (
@@ -686,9 +848,8 @@ export default function CartPage() {
                             type="tel"
                             value={guestFormData.customer_phone}
                             onChange={(e) => handleGuestInputChange('customer_phone', e.target.value)}
-                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
-                              guestFormErrors.customer_phone ? 'border-red-500' : 'border-gray-300'
-                            }`}
+                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.customer_phone ? 'border-red-500' : 'border-gray-300'
+                              }`}
                             placeholder="+1234567890"
                           />
                           {guestFormErrors.customer_phone && (
@@ -705,9 +866,8 @@ export default function CartPage() {
                           type="email"
                           value={guestFormData.customer_email}
                           onChange={(e) => handleGuestInputChange('customer_email', e.target.value)}
-                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
-                            guestFormErrors.customer_email ? 'border-red-500' : 'border-gray-300'
-                          }`}
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.customer_email ? 'border-red-500' : 'border-gray-300'
+                            }`}
                           placeholder="john@example.com"
                         />
                         {guestFormErrors.customer_email && (
@@ -722,7 +882,7 @@ export default function CartPage() {
                         <MapPin className="w-5 h-5 text-orange-600" />
                         Delivery Address
                       </h4>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Address Line 1 *
@@ -731,9 +891,8 @@ export default function CartPage() {
                           type="text"
                           value={guestFormData.delivery_address.address_line_1}
                           onChange={(e) => handleGuestInputChange('delivery_address.address_line_1', e.target.value)}
-                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
-                            guestFormErrors.delivery_address?.address_line_1 ? 'border-red-500' : 'border-gray-300'
-                          }`}
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.delivery_address?.address_line_1 ? 'border-red-500' : 'border-gray-300'
+                            }`}
                           placeholder="123 Main Street"
                         />
                         {guestFormErrors.delivery_address?.address_line_1 && (
@@ -763,9 +922,8 @@ export default function CartPage() {
                             type="text"
                             value={guestFormData.delivery_address.post_code}
                             onChange={(e) => handleGuestInputChange('delivery_address.post_code', e.target.value)}
-                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
-                              guestFormErrors.delivery_address?.post_code ? 'border-red-500' : 'border-gray-300'
-                            }`}
+                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.delivery_address?.post_code ? 'border-red-500' : 'border-gray-300'
+                              }`}
                             placeholder="12345"
                           />
                           {guestFormErrors.delivery_address?.post_code && (
@@ -794,7 +952,7 @@ export default function CartPage() {
                         <MessageSquare className="w-5 h-5 text-orange-600" />
                         Special Instructions
                       </h4>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Additional Notes
@@ -815,12 +973,12 @@ export default function CartPage() {
 
             {/* Right Side - Order Summary (5/12 width on desktop) */}
             <div className="lg:col-span-5 order-2 lg:order-2">
-              <OrderSummary 
-                summary={summary} 
+              <OrderSummary
+                summary={summary}
                 onCheckout={handleCheckout}
                 isFormValid={isGuestFormValid}
                 isLoading={Boolean(createOrderLoading || createGuestOrderLoading || createSessionLoading || paymentLoading)}
-                bogoBundles={bogoBundles}
+                bogoBundles={processedBogoBundles.length > 0 ? processedBogoBundles : bogoBundles}
                 bogoOffers={bogoOffers}
               />
             </div>

@@ -109,7 +109,6 @@ export function useUsers(params?: {
       }
 
       const responseData: UsersResponse = await response.json();
-      console.log('Users API Response:', responseData);
       
       // Handle the API response structure: {success: true, message: "...", data: {users: [...], pagination: {...}}}
       if (responseData.success && responseData.data && Array.isArray(responseData.data.users)) {

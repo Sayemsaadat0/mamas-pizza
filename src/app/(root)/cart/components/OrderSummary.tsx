@@ -54,7 +54,7 @@ interface OrderSummaryProps {
   bogoOffers?: BogoOffer[];
 }
 
-export default function OrderSummary({ summary, onCheckout, isFormValid = true, isLoading = false, bogoBundles = [], bogoOffers = [] }: OrderSummaryProps) {
+export default function OrderSummary({ summary, onCheckout, isFormValid = true, isLoading = false, bogoBundles = [] }: OrderSummaryProps) {
   const { user } = useAuth();
 
   return (

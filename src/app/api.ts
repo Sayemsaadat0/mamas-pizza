@@ -47,6 +47,7 @@ export const CART_SUMMARY_API = `${API_BASE_URL}/api/v1/cart-summary`;
 
 // ==================== ORDER APIs ====================
 export const ORDERS_API = `${API_BASE_URL}/api/v1/orders`;
+export const USER_ORDERS_API = `${API_BASE_URL}/api/v1/orders`;
 export const GUEST_ORDER_API = `${API_BASE_URL}/api/v1/guest/orders`;
 export const ORDER_BY_ID_API = `${API_BASE_URL}/api/v1/orders`;
 export const ORDER_CANCEL_API = `${API_BASE_URL}/api/v1/orders`;
@@ -57,6 +58,7 @@ export const ORDER_DETAILS_API = `${API_BASE_URL}/api/v1/order-details/`;
 
 // ==================== STRIPE PAYMENT APIs ====================
 export const STRIPE_CREATE_SESSION_API = `${API_BASE_URL}/api/v1/payments/create-session`;
+export const USER_STRIPE_CREATE_SESSION_API = `${API_BASE_URL}/api/v1/payments/create-session`;
 export const STRIPE_VERIFY_PAYMENT_API = `${API_BASE_URL}/api/v1/payments/verify`;
 export const STRIPE_SESSION_STATUS_API = `${API_BASE_URL}/api/v1/payments/session-status`;
 export const STRIPE_WEBHOOK_API = `${API_BASE_URL}/api/v1/stripe/webhook`;
@@ -167,6 +169,8 @@ export const ADMIN_DASHBOARD_API = `${API_BASE_URL}/api/v1/admin/dashboard`; // 
 
 
 
-export const ADMIN_OFFERS_API = `${API_BASE_URL}/api/v1/offers`;
+export const ADMIN_OFFERS_API = `${API_BASE_URL}/api/v1/bogo-offers`;
+export const USER_BOGO_OFFERS_API = `${API_BASE_URL}/api/v1/user/bogo-offers`;
 
 export const CREATE_ORDER_FROM_OFFER_API = `${API_BASE_URL}/api/v1/offers/add-to-cart`; 
+export const CREATE_ORDER_FROM_OFFER_API_USER = `${API_BASE_URL}/api/v1/offers/user/add-to-cart`; 

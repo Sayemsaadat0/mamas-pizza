@@ -5,10 +5,13 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { useCategories } from "@/hooks/category.hook";
 import { useMenus } from "@/hooks/menu.hook";
+import { useBogoOffers } from "@/hooks/bogo-offer.hooks";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAuth } from "@/lib/auth/useAuth";
 import { useGuest } from "@/lib/guest/GuestProvider";
 import MenuCard from "@/components/MenuCard";
+import MenuOfferCards from "@/components/pages/home-page/MenuOfferCards";
+import { Utensils, Percent } from "lucide-react";
 import { toast } from "sonner";
 import { GUEST_CART_API, USER_CART_API } from "@/app/api";
 
@@ -18,14 +21,16 @@ const Menu = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [loadingItems, setLoadingItems] = useState<Set<number>>(new Set());
+  const [openOfferId, setOpenOfferId] = useState<number | null>(null);
+  const [loadingOffers, setLoadingOffers] = useState<Set<number>>(new Set());
   const perPage = 6; // items per page
 
   const debouncedSearch = useDebounce(search, 500);
 
   // --- Hooks ---
   const { categories, loading: catLoading } = useCategories();
-  const { token, isAuthenticated , user} = useAuth();
-  console.log(user);
+  const { bogoOffers, loading: bogoOffersLoading, error: bogoOffersError } = useBogoOffers();
+  const { token, isAuthenticated } = useAuth();
   const { guestId } = useGuest();
   const { menus, loading: menuLoading, pagination } = useMenus({
     category_id: categoryId,
@@ -34,13 +39,37 @@ const Menu = () => {
     search: debouncedSearch,
   });
 
-  console.log(menus) 
 
   // --- Handlers ---
   const handleCategoryClick = (id?: string) => {
     setCategoryId(id);
     setPage(1);
   };
+
+  // Handle offer modal opening
+  const handleOfferModalOpen = (offerId: number) => {
+    // Prevent opening if already open or loading
+    if (openOfferId === offerId || loadingOffers.has(offerId)) {
+      return;
+    }
+    
+    setLoadingOffers(prev => new Set(prev).add(offerId));
+    
+    // Simulate loading delay (you can replace this with actual API call)
+    setTimeout(() => {
+      setOpenOfferId(offerId);
+      setLoadingOffers(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(offerId);
+        return newSet;
+      });
+    }, 300);
+  };
+
+  // const handleOfferModalClose = () => {
+  //   setOpenOfferId(null);
+  //   setLoadingOffers(new Set());
+  // };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
@@ -68,7 +97,6 @@ const Menu = () => {
         return;
       }
       
-      console.log('Making guest cart API call...');
       const response = await fetch(GUEST_CART_API, {
         method: 'POST',
         headers: {
@@ -127,8 +155,7 @@ const Menu = () => {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        console.log('User cart updated:', data);
+         await response.json();
         toast.success(`${menu.name} added to cart!`, {
           description: "Item added to your cart",
           duration: 3000,
@@ -154,12 +181,7 @@ const Menu = () => {
 
   // Main cart handler that checks authentication
   const handleAddToCart = (menu: any) => {
-    console.log('Adding to cart:', { 
-      isAuthenticated, 
-      hasToken: !!token, 
-      guestId: guestId,
-      menuId: menu.id 
-    });
+   
     
     if (isAuthenticated) {
       handleAddtoCart(menu);
@@ -222,13 +244,25 @@ const Menu = () => {
         <div className="flex gap-3 flex-wrap justify-center mb-10">
           <button
             onClick={() => handleCategoryClick(undefined)}
-            className={`px-5 py-2.5 rounded-full text-sm font-semibold border-2 transition-all duration-200 ${
+            className={`px-5 py-2.5 rounded-full text-sm font-semibold border-2 transition-all duration-200 flex items-center gap-2 ${
               !categoryId
                 ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white border-orange-600 shadow-lg shadow-orange-200"
                 : "bg-white text-orange-600 border-orange-200 hover:bg-orange-50 hover:border-orange-300"
             }`}
           >
+            <Utensils size={16} />
             All
+          </button>
+          <button
+            onClick={() => handleCategoryClick("offers")}
+            className={`px-5 py-2.5 rounded-full text-sm font-semibold border-2 transition-all duration-200 flex items-center gap-2 ${
+              categoryId === "offers"
+                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white border-orange-600 shadow-lg shadow-orange-200"
+                : "bg-white text-orange-600 border-orange-200 hover:bg-orange-50 hover:border-orange-300"
+            }`}
+          >
+            <Percent size={16} />
+            Offers
           </button>
           {catLoading ? (
             <p className="text-orange-500">Loading categories...</p>
@@ -250,29 +284,85 @@ const Menu = () => {
         </div>
 
         {/* --- Menus --- */}
-        {menuLoading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-500"></div>
-            <p className="text-orange-600 mt-4 font-medium">Loading menus...</p>
-          </div>
-        ) : menus.length === 0 ? (
-          <p className="text-center text-orange-400 py-12 text-lg">No menus found.</p>
-         ) : (
-           <motion.div
-             layout
-             className="grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6"
-           >
-             {menus.map((menu, index) => (
-               <MenuCard
-                 key={menu.id}
-                 menu={menu}
-                 index={index}
-                 onAddToCart={handleAddToCart}
-                 isLoading={loadingItems.has(menu.id)}
-               />
-             ))}
-           </motion.div>
-         )}
+        {categoryId === "offers" ? (
+          bogoOffersLoading ? (
+            <div className="text-center py-20">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-500"></div>
+              <p className="text-orange-600 mt-4 font-medium">Loading amazing offers...</p>
+            </div>
+          ) : bogoOffersError ? (
+            <div className="text-center py-20">
+              <div className="bg-red-50 rounded-3xl p-12 max-w-md mx-auto">
+                <div className="text-red-400 mb-4">
+                  <Percent size={48} className="mx-auto" />
+                </div>
+                <h3 className="text-xl font-semibold text-red-700 mb-2">Error loading offers</h3>
+                <p className="text-red-500 mb-4">{bogoOffersError}</p>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          ) : bogoOffers.length > 0 ? (
+            <motion.div 
+              layout
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+            >
+              {bogoOffers.map((offer, index) => (
+                <motion.div
+                  key={offer.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                >
+                  <MenuOfferCards 
+                    offer={offer} 
+                    isModalOpen={openOfferId === offer.id}
+                    onModalOpen={handleOfferModalOpen}
+                    isLoading={loadingOffers.has(offer.id)}
+                  />
+                </motion.div>
+              ))}
+            </motion.div>
+          ) : (
+            <div className="text-center py-20">
+              <div className="bg-gray-50 rounded-3xl p-12 max-w-md mx-auto">
+                <div className="text-gray-400 mb-4">
+                  <Percent size={48} className="mx-auto" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">No offers available</h3>
+                <p className="text-gray-500">Check back later for amazing deals!</p>
+              </div>
+            </div>
+          )
+        ) : (
+          menuLoading ? (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-500"></div>
+              <p className="text-orange-600 mt-4 font-medium">Loading menus...</p>
+            </div>
+          ) : menus.length === 0 ? (
+            <p className="text-center text-orange-400 py-12 text-lg">No menus found.</p>
+           ) : (
+             <motion.div
+               layout
+               className="grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6"
+             >
+               {menus.map((menu, index) => (
+                 <MenuCard
+                   key={menu.id}
+                   menu={menu}
+                   index={index}
+                   onAddToCart={handleAddToCart}
+                   isLoading={loadingItems.has(menu.id)}
+                 />
+               ))}
+             </motion.div>
+           )
+        )}
 
         {/* --- Pagination --- */}
         {pagination && (

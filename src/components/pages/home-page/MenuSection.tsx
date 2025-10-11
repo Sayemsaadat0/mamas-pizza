@@ -34,13 +34,13 @@ const MenuSection: React.FC = () => {
     const { token, isAuthenticated } = useAuth();
     const { guestId } = useGuest();
 
-    // Debug logging
-    console.log('MenuSection Debug:', {
-        bogoOffers,
-        bogoOffersLoading,
-        bogoOffersError,
-        activeTab
-    });
+    // // Debug logging
+    // console.log('MenuSection Debug:', {
+    //     bogoOffers,
+    //     bogoOffersLoading,
+    //     bogoOffersError,
+    //     activeTab
+    // });
 
     // Handle offer modal opening
     const handleOfferModalOpen = (offerId: number) => {
@@ -62,10 +62,10 @@ const MenuSection: React.FC = () => {
         }, 300);
     };
 
-    const handleOfferModalClose = () => {
-        setOpenOfferId(null);
-        setLoadingOffers(new Set());
-    };
+    // const handleOfferModalClose = () => {
+    //     setOpenOfferId(null);
+    //     setLoadingOffers(new Set());
+    // };
     
     // Find the selected category ID
     const selectedCategory = categories.find(cat => cat.name === activeTab);
@@ -91,14 +91,11 @@ const MenuSection: React.FC = () => {
 
     // Guest cart function
     const handleGuestAddtoCart = async (menu: any) => {
-        console.log('handleGuestAddtoCart called with menu:', menu);
         
         // Set loading state
         setLoadingItems(prev => new Set(prev).add(menu.id));
         
         try {
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-            console.log('Base URL:', baseUrl);
             
             if (!guestId) {
                 console.error('Guest ID not available');
@@ -106,7 +103,6 @@ const MenuSection: React.FC = () => {
                 return;
             }
             
-            console.log('Making guest cart API call...');
             const response = await fetch(GUEST_CART_API, {
                 method: 'POST',
                 headers: {
@@ -120,8 +116,7 @@ const MenuSection: React.FC = () => {
             });
 
             if (response.ok) {
-                const data = await response.json();
-                console.log('Guest cart updated:', data);
+                 await response.json();
                 toast.success(`${menu.name} added to cart!`, {
                     description: "Item added to your guest cart",
                     duration: 3000,
@@ -145,17 +140,11 @@ const MenuSection: React.FC = () => {
 
     // Authenticated user cart function
     const handleAddtoCart = async (menu: any) => {
-        console.log('handleAddtoCart called with menu:', menu);
         
         // Set loading state
         setLoadingItems(prev => new Set(prev).add(menu.id));
         
         try {
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-            console.log('Base URL:', baseUrl);
-            console.log('Token:', token);
-            
-            console.log('Making user cart API call...');
             const response = await fetch(USER_CART_API, {
                 method: 'POST',
                 headers: {
@@ -169,8 +158,7 @@ const MenuSection: React.FC = () => {
             });
 
             if (response.ok) {
-                const data = await response.json();
-                console.log('User cart updated:', data);
+                 await response.json();
                 toast.success(`${menu.name} added to cart!`, {
                     description: "Item added to your cart",
                     duration: 3000,
@@ -196,19 +184,12 @@ const MenuSection: React.FC = () => {
     const handleCartAdd = (menu: any) => {
         // Prevent multiple clicks if already loading
         if (loadingItems.has(menu.id)) {
-            console.log('Item is already being added to cart, ignoring click');
             return;
         }
         
-        console.log('handleCartAdd called with menu:', menu);
-        console.log('isAuthenticated:', isAuthenticated);
-        console.log('guestId:', guestId);
-        
         if (isAuthenticated) {
-            console.log('Calling handleAddtoCart for authenticated user');
             handleAddtoCart(menu);
         } else {
-            console.log('Calling handleGuestAddtoCart for guest user');
             handleGuestAddtoCart(menu);
         }
     };

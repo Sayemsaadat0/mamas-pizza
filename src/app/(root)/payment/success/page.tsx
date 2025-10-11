@@ -83,12 +83,7 @@ function PaymentSuccessContent() {
 
   const sessionId = searchParams.get('session');
 
-  console.log('Payment Success Page Debug:', {
-    sessionId,
-    guestId,
-    isAuthenticated,
-    hasToken: !!token
-  });
+
 
   // Show welcome dialog when page loads
   useEffect(() => {
@@ -135,7 +130,6 @@ function PaymentSuccessContent() {
           });
         } else {
           // Guest user verification
-          console.log('Making guest payment verification with:', { session_id: sessionId, guest_id: guestId });
           
           response = await fetch(GUEST_STRIPE_VERIFY_PAYMENT_API, {
             method: 'POST',
@@ -150,7 +144,6 @@ function PaymentSuccessContent() {
           });
         }
 
-        console.log('response', response);
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -158,7 +151,6 @@ function PaymentSuccessContent() {
         }
 
         const result = await response.json();
-        console.log('Payment verification result:', result);
         setVerificationResult(result);
 
         if (result.success) {

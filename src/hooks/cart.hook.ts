@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/auth/useAuth";
 import { useGuest } from "@/lib/guest/GuestProvider";
-import { USER_CART_API, GUEST_CART_API, CART_SUMMARY_API } from "@/app/api";
+import { USER_CART_API, GUEST_CART_API, CART_SUMMARY_API, USER_BOGO_OFFERS_API } from "@/app/api";
 
 export interface CartItemData {
   id: number;
@@ -141,6 +141,25 @@ export function useCart() {
     setItemCount(newItemCount);
   };
 
+  // Function to fetch BOGO offers for authenticated users
+  const fetchUserBogoOffers = async () => {
+    try {
+      const response = await fetch(USER_BOGO_OFFERS_API, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data;
+      }
+    } catch (error) {
+      console.error('Error fetching user BOGO offers:', error);
+    }
+    return { bogo_offers: [], bogo_bundles: [] };
+  };
+
   const fetchCart = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -161,12 +180,21 @@ export function useCart() {
         
         const data: CartResponse = await response.json();
         
+        
         if (data.success) {
           setCartItems(data.data.items);
           setBogoOffers(data.data.bogo_offers || []);
           setBogoBundles(data.data.bogo_bundles || []);
           setGrandTotal(data.data.grand_total);
           setItemCount(data.data.item_count);
+          
+          // If no BOGO data in cart response, try to fetch it separately
+          if ((!data.data.bogo_offers || data.data.bogo_offers.length === 0) && 
+              (!data.data.bogo_bundles || data.data.bogo_bundles.length === 0)) {
+            const bogoData = await fetchUserBogoOffers();
+            if (bogoData.bogo_offers) setBogoOffers(bogoData.bogo_offers);
+            if (bogoData.bogo_bundles) setBogoBundles(bogoData.bogo_bundles);
+          }
         } else {
           setCartItems([]);
           setBogoOffers([]);

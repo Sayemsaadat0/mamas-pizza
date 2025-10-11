@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { 
     Plus, 
     Edit, 
@@ -19,7 +20,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import OfferForm from './_components/OfferForm';
-import { useBogoOffers, useDeleteBogoOffer, BogoOffer } from '@/hooks/bogo-offer.hooks';
+import { useBogoOffers, useDeleteBogoOffer } from '@/hooks/bogo-offer.hooks';
 
 
 const OffersPage: React.FC = () => {
@@ -122,16 +123,16 @@ const OffersPage: React.FC = () => {
                                 <thead className="bg-gray-50 border-b border-gray-200">
                                     <tr>
                                             <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Image
+                                        </th>
+                                            <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Offer Details
                                         </th>
                                             <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             BOGO Details
                                         </th>
                                             <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Price
-                                        </th>
-                                            <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Category/Size
+                                            Category
                                         </th>
                                             <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Status
@@ -152,16 +153,31 @@ const OffersPage: React.FC = () => {
                                     bogoOffers.map((offer) => (
                                 <tr key={offer.id} className="hover:bg-gray-50">
                                             <td className="px-2 py-1.5">
-                                        <div className="flex items-center">
-                                                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                                        <Percent className="w-4 h-4 text-orange-600" />
-                                            </div>
-                                                    <div className="ml-2 min-w-0 flex-1">
+                                                <div className="w-12 h-12 rounded overflow-hidden relative flex-shrink-0 bg-gray-100">
+                                                    {offer.thumbnail ? (
+                                                        <Image
+                                                            src={`${process.env.NEXT_PUBLIC_API_URL}${offer.thumbnail}`}
+                                                            alt={offer.title}
+                                                            width={48}
+                                                            height={48}
+                                                            className="object-cover w-full h-full"
+                                                            onError={(e) => {
+                                                                e.currentTarget.style.display = 'none';
+                                                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                                            }}
+                                                        />
+                                                    ) : null}
+                                                    <div className={`absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400 text-xs ${offer.thumbnail ? 'hidden' : ''}`}>
+                                                        <Percent className="w-4 h-4" />
+                                                    </div>
+                                                </div>
+                                    </td>
+                                            <td className="px-2 py-1.5">
+                                        <div className="min-w-0 flex-1">
                                                         <div className="text-xs font-medium text-gray-900 truncate">{offer.title}</div>
                                                         <div className="text-xs text-gray-500 truncate max-w-[150px]">{offer.description}</div>
                                                         <div className="text-xs text-gray-400">ID: #{offer.id}</div>
                                             </div>
-                                        </div>
                                     </td>
                                             <td className="px-2 py-1.5">
                                                 <div className="space-y-1">
@@ -176,27 +192,14 @@ const OffersPage: React.FC = () => {
                                                 </div>
                                     </td>
                                             <td className="px-2 py-1.5">
-                                                <div className="text-xs font-medium text-gray-900">
-                                                    ${offer.offer_price}
-                                                </div>
-                                                <div className="text-xs text-gray-500">
-                                                    {offer.get_quantity > 0 ? 'Per set' : 'Fixed price'}
-                                                </div>
-                                    </td>
-                                            <td className="px-2 py-1.5">
                                                 <div className="space-y-1">
                                                     {offer.category && (
                                                         <div className="text-xs text-gray-900">
                                                             <span className="font-medium">Category:</span> {offer.category.name}
                                                         </div>
                                                     )}
-                                                    {offer.size && (
-                                                        <div className="text-xs text-gray-500">
-                                                            <span className="font-medium">Size:</span> {offer.size.size}
-                                                        </div>
-                                                    )}
-                                                    {!offer.category && !offer.size && (
-                                                        <div className="text-xs text-gray-400">All items</div>
+                                                    {!offer.category && (
+                                                        <div className="text-xs text-gray-400">All categories</div>
                                                     )}
                                                 </div>
                                     </td>

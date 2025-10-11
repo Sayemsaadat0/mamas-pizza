@@ -63,18 +63,13 @@ export function useBogoOffers() {
                 },
             });
 
-            console.log('BOGO Offers API Response:', {
-                status: response.status,
-                statusText: response.statusText,
-                url: ADMIN_OFFERS_API
-            });
+          
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
             }
 
             const responseData: BogoOffersResponse = await response.json();
-            console.log('BOGO Offers Response Data:', responseData);
 
             if (responseData.success && Array.isArray(responseData.data)) {
                 setBogoOffers(responseData.data);

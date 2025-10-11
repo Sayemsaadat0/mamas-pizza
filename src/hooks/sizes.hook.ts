@@ -43,18 +43,13 @@ export function useSizes() {
         },
       });
 
-      console.log('Sizes API Response:', {
-        status: response.status,
-        statusText: response.statusText,
-        url: SIZES_API
-      });
+   
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
       }
 
       const result = await response.json();
-      console.log('Sizes Response Data:', result);
 
       if (result.success && result.data) {
         setSizes(result.data);
