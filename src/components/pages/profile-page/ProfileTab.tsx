@@ -6,14 +6,20 @@ import { User, MapPin, Lock } from 'lucide-react'
 interface ProfileTabProps {
   activeTab: string
   onTabChange: (tab: string) => void
+  userRole?: string
 }
 
-const ProfileTab: React.FC<ProfileTabProps> = ({ activeTab, onTabChange }) => {
-  const tabs = [
+const ProfileTab: React.FC<ProfileTabProps> = ({ activeTab, onTabChange, userRole }) => {
+  const allTabs = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'address', label: 'Delivery Address', icon: MapPin },
     { id: 'password', label: 'Change Password', icon: Lock },
   ]
+
+  // Filter out delivery address tab for admin users
+  const tabs = userRole === 'admin' 
+    ? allTabs.filter(tab => tab.id !== 'address')
+    : allTabs
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-2 mb-8">

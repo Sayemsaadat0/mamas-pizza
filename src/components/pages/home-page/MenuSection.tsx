@@ -5,6 +5,7 @@ import { useCategories } from "@/hooks/category.hook";
 import { useMenus } from "@/hooks/menu.hook";
 import { useBogoOffers } from "@/hooks/bogo-offer.hooks";
 import { useAuth } from "@/lib/stores/useAuth";
+import { useCartStore } from "@/lib/stores/cartStore";
 import { useGuest } from "@/lib/guest/GuestProvider";
 import MenuCard from "@/components/MenuCard";
 import MenuOfferCards from "@/components/pages/home-page/MenuOfferCards";
@@ -32,6 +33,7 @@ const MenuSection: React.FC = () => {
     const { categories } = useCategories();
     const { bogoOffers, loading: bogoOffersLoading, error: bogoOffersError } = useBogoOffers();
     const { token, isAuthenticated } = useAuth();
+    const { incrementItemCount } = useCartStore();
     const { guestId } = useGuest();
 
     // // Debug logging
@@ -117,6 +119,7 @@ const MenuSection: React.FC = () => {
 
             if (response.ok) {
                  await response.json();
+                incrementItemCount(1); // Update global cart count
                 toast.success(`${menu.name} added to cart!`, {
                     description: "Item added to your guest cart",
                     duration: 3000,
@@ -158,7 +161,8 @@ const MenuSection: React.FC = () => {
             });
 
             if (response.ok) {
-                 await response.json();
+                await response.json();
+                incrementItemCount(1); // Update global cart count
                 toast.success(`${menu.name} added to cart!`, {
                     description: "Item added to your cart",
                     duration: 3000,

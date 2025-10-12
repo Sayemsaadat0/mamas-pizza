@@ -21,6 +21,7 @@ import {
     UserCircle,
 } from 'lucide-react';
 import { useAuth } from '@/lib/stores/useAuth';
+import { useCartStore } from '@/lib/stores/cartStore';
 import { LOGOUT_API } from '@/app/api';
 import { defaultNavMenuData } from '../constant';
 import Image from 'next/image';
@@ -239,6 +240,7 @@ const Navbar: React.FC = () => {
     // Initialize scroll state based on current page
     const [isScrolled, setIsScrolled] = useState(!isLandingPage);
     const { user, isAuthenticated, clearUser, token } = useAuth();
+    const { itemCount } = useCartStore();
     const router = useRouter();
 
     useEffect(() => {
@@ -362,6 +364,11 @@ const Navbar: React.FC = () => {
                                 className="relative p-2 rounded-full bg-orange-600 hover:bg-orange-700 transition-colors group"
                             >
                                 <ShoppingCart size={18} className="text-white sm:w-5 sm:h-5" />
+                                {itemCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg">
+                                        {itemCount > 99 ? '99+' : itemCount}
+                                    </span>
+                                )}
                             </Link>
 
                             {/* CTA - Hidden on very small screens */}

@@ -93,7 +93,7 @@ const ProcessSection = () => {
                 </div>
 
                 {/* Bottom CTA */}
-                <div className="text-center mt-16">
+                {/* <div className="text-center mt-16">
                     <div className="bg-gradient-to-r from-orange-600 to-red-500 rounded-3xl p-8 text-white">
                         <h3 className="text-2xl md:text-3xl font-bold mb-4">
                             Ready to Get Started?
@@ -106,7 +106,7 @@ const ProcessSection = () => {
                             Start Ordering
                         </button>
                     </div>
-                </div>
+                </div> */}
             </div>
         </section>
     )

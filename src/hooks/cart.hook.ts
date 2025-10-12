@@ -1,7 +1,9 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/stores/useAuth";
+import { useCartStore } from "@/lib/stores/cartStore";
 import { useGuest } from "@/lib/guest/GuestProvider";
 import { USER_CART_API, GUEST_CART_API, CART_SUMMARY_API, USER_BOGO_OFFERS_API } from "@/app/api";
 
@@ -96,13 +98,14 @@ export interface CartResponse {
 export function useCart() {
   const { token, isAuthenticated } = useAuth();
   const { guestId } = useGuest();
+  const { setItemCount } = useCartStore();
   const [cartItems, setCartItems] = useState<CartItemData[]>([]);
   const [bogoOffers, setBogoOffers] = useState<BogoOffer[]>([]);
   const [bogoBundles, setBogoBundles] = useState<BogoBundle[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [grandTotal, setGrandTotal] = useState(0);
-  const [itemCount, setItemCount] = useState(0);
+  const [itemCount, setItemCountLocal] = useState(0);
 
   // Function to update cart item quantity locally
   const updateCartItemLocally = (cartItemId: number, newQuantity: number) => {
@@ -125,7 +128,8 @@ export function useCart() {
     const newItemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
     
     setGrandTotal(newGrandTotal);
-    setItemCount(newItemCount);
+    setItemCountLocal(newItemCount);
+    setItemCount(newItemCount); // Update global store
   };
 
   // Function to remove cart item locally
@@ -138,7 +142,8 @@ export function useCart() {
     const newItemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
     
     setGrandTotal(newGrandTotal);
-    setItemCount(newItemCount);
+    setItemCountLocal(newItemCount);
+    setItemCount(newItemCount); // Update global store
   };
 
   // Function to fetch BOGO offers for authenticated users
@@ -186,7 +191,8 @@ export function useCart() {
           setBogoOffers(data.data.bogo_offers || []);
           setBogoBundles(data.data.bogo_bundles || []);
           setGrandTotal(data.data.grand_total);
-          setItemCount(data.data.item_count);
+          setItemCountLocal(data.data.item_count);
+          setItemCount(data.data.item_count); // Update global store
           
           // If no BOGO data in cart response, try to fetch it separately
           if ((!data.data.bogo_offers || data.data.bogo_offers.length === 0) && 
@@ -200,7 +206,8 @@ export function useCart() {
           setBogoOffers([]);
           setBogoBundles([]);
           setGrandTotal(0);
-          setItemCount(0);
+          setItemCountLocal(0);
+          setItemCount(0); // Update global store
         }
       } else {
         // Fetch guest cart
@@ -209,7 +216,8 @@ export function useCart() {
           setBogoOffers([]);
           setBogoBundles([]);
           setGrandTotal(0);
-          setItemCount(0);
+          setItemCountLocal(0);
+          setItemCount(0); // Update global store
           return;
         }
         
@@ -226,13 +234,15 @@ export function useCart() {
           setBogoOffers(data.data.bogo_offers || []);
           setBogoBundles(data.data.bogo_bundles || []);
           setGrandTotal(data.data.grand_total);
-          setItemCount(data.data.item_count);
+          setItemCountLocal(data.data.item_count);
+          setItemCount(data.data.item_count); // Update global store
         } else {
           setCartItems([]);
           setBogoOffers([]);
           setBogoBundles([]);
           setGrandTotal(0);
-          setItemCount(0);
+          setItemCountLocal(0);
+          setItemCount(0); // Update global store
         }
       }
     } catch (err: any) {
@@ -258,7 +268,7 @@ export function useCart() {
     loading, 
     error, 
     grandTotal, 
-    itemCount, 
+    itemCount: itemCount, 
     refetch: fetchCart,
     updateCartItemLocally,
     removeCartItemLocally

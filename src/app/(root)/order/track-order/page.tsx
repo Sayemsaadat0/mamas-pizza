@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Clock, Package, AlertCircle, MapPin, Phone, Mail, Calendar } from 'lucide-react';
+import { Clock, Package, AlertCircle, MapPin, Phone, Mail } from 'lucide-react';
 import { getOrderDetailsByorderNumber } from '@/app/api';
 
 const OrderTrackingContent = () => {

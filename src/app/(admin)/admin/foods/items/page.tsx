@@ -23,6 +23,13 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 
 const ItemPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -33,6 +40,8 @@ const ItemPage: React.FC = () => {
     const [editingMenu, setEditingMenu] = useState<any>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState<any>(null);
+    const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+    const [selectedItem, setSelectedItem] = useState<any>(null);
 
     // Hooks
     const { menus, loading, error, refetch } = useMenus();
@@ -103,6 +112,11 @@ const ItemPage: React.FC = () => {
 
     const openEditModal = (menu: any) => {
         setEditingMenu(menu);
+    };
+
+    const openDetailsDialog = (item: any) => {
+        setSelectedItem(item);
+        setDetailsDialogOpen(true);
     };
 
     const formatPrice = (price: string | number | undefined) => {
@@ -309,14 +323,17 @@ const ItemPage: React.FC = () => {
                                                 Reg: {formatPrice(item?.prev_price)}
                                             </div>
                                         </td>
-                                        <td className="px-3 py-2 hidden xl:table-cell">
+                                        <td className="px-3 py-2 ">
                                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(item.status || '0')}`}>
                                                 {getStatusText(item.status || '0')}
                                             </span>
                                         </td>
                                         <td className="px-3 py-2 text-right">
                                             <div className="flex items-center justify-end gap-1">
-                                                <button className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors">
+                                                <button 
+                                                    onClick={() => openDetailsDialog(item)}
+                                                    className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
+                                                >
                                                     <Eye size={14} />
                                                 </button>
                                                 <button
@@ -406,6 +423,144 @@ const ItemPage: React.FC = () => {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Item Details Dialog */}
+            <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+                <DialogContent className="min-w-md max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader className="pb-3">
+                        <DialogTitle className="text-xl font-bold text-gray-900">
+                            {selectedItem?.name}
+                        </DialogTitle>
+                        <DialogDescription className="text-sm text-gray-600">
+                            Menu item details
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    {selectedItem && (
+                        <div className="space-y-4">
+                            {/* Image Section */}
+                            <div className="relative">
+                                <div className="w-full h-32 rounded-lg overflow-hidden bg-gray-100">
+                                    {selectedItem.thumbnail ? (
+                                        <Image
+                                            src={`${process.env.NEXT_PUBLIC_API_URL}/${selectedItem.thumbnail}`}
+                                            alt={selectedItem.name}
+                                            width={600}
+                                            height={128}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                                e.currentTarget.style.display = 'none';
+                                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                            }}
+                                        />
+                                    ) : null}
+                                    <div className={`absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400 ${selectedItem.thumbnail ? 'hidden' : ''}`}>
+                                        <div className="text-center">
+                                            <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-1">
+                                                <Search className="w-6 h-6 text-gray-400" />
+                                            </div>
+                                            <p className="text-xs">No Image</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Details Table */}
+                            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        <tr className="hover:bg-gray-50">
+                                            <td className="px-4 py-2 whitespace-nowrap text-xs font-medium text-gray-500 w-1/4">
+                                                Name
+                                            </td>
+                                            <td className="px-4 py-2 text-sm text-gray-900 font-medium">
+                                                {selectedItem.name}
+                                            </td>
+                                        </tr>
+                                        <tr className="hover:bg-gray-50">
+                                            <td className="px-4 py-2 whitespace-nowrap text-xs font-medium text-gray-500">
+                                                Description
+                                            </td>
+                                            <td className="px-4 py-2 text-sm text-gray-900">
+                                                {selectedItem.details || 'No description available'}
+                                            </td>
+                                        </tr>
+                                        <tr className="hover:bg-gray-50">
+                                            <td className="px-4 py-2 whitespace-nowrap text-xs font-medium text-gray-500">
+                                                Status
+                                            </td>
+                                            <td className="px-4 py-2">
+                                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedItem.status || '0')}`}>
+                                                    {getStatusText(selectedItem.status || '0')}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr className="hover:bg-gray-50">
+                                            <td className="px-4 py-2 whitespace-nowrap text-xs font-medium text-gray-500">
+                                                Category
+                                            </td>
+                                            <td className="px-4 py-2 text-sm text-gray-900 font-medium">
+                                                {selectedItem.category?.name || 'No Category'}
+                                            </td>
+                                        </tr>
+                                        <tr className="hover:bg-gray-50">
+                                            <td className="px-4 py-2 whitespace-nowrap text-xs font-medium text-gray-500">
+                                                Size
+                                            </td>
+                                            <td className="px-4 py-2 text-sm text-gray-900 font-medium">
+                                                {selectedItem.size?.size ? `${selectedItem.size.size}"` : 'No Size'}
+                                            </td>
+                                        </tr>
+                                        <tr className="hover:bg-gray-50">
+                                            <td className="px-4 py-2 whitespace-nowrap text-xs font-medium text-gray-500">
+                                                Current Price
+                                            </td>
+                                            <td className="px-4 py-2 text-sm text-gray-900">
+                                                <span className="text-lg font-bold text-green-600">
+                                                    {formatPrice(selectedItem.main_price)}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr className="hover:bg-gray-50">
+                                            <td className="px-4 py-2 whitespace-nowrap text-xs font-medium text-gray-500">
+                                                Regular Price
+                                            </td>
+                                            <td className="px-4 py-2 text-sm text-gray-900">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-base font-bold text-gray-600">
+                                                        {formatPrice(selectedItem.prev_price)}
+                                                    </span>
+                                                    {selectedItem.prev_price && parseFloat(selectedItem.prev_price) > parseFloat(selectedItem.main_price) && (
+                                                        <span className="text-xs font-medium text-orange-600 bg-orange-100 px-2 py-1 rounded-full">
+                                                            Save {formatPrice((parseFloat(selectedItem.prev_price) - parseFloat(selectedItem.main_price)).toString())}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr className="hover:bg-gray-50">
+                                            <td className="px-4 py-2 whitespace-nowrap text-xs font-medium text-gray-500">
+                                                Created At
+                                            </td>
+                                            <td className="px-4 py-2 text-xs text-gray-900">
+                                                {selectedItem.created_at ? new Date(selectedItem.created_at).toLocaleString() : 'N/A'}
+                                            </td>
+                                        </tr>
+                                        <tr className="hover:bg-gray-50">
+                                            <td className="px-4 py-2 whitespace-nowrap text-xs font-medium text-gray-500">
+                                                Last Updated
+                                            </td>
+                                            <td className="px-4 py-2 text-xs text-gray-900">
+                                                {selectedItem.updated_at ? new Date(selectedItem.updated_at).toLocaleString() : 'N/A'}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

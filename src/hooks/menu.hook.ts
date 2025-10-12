@@ -64,6 +64,8 @@ export function useMenus(params?: {
   per_page?: number;
   page?: number;
   search?: string;
+  ordering?: string;
+  status?: number;
 }) {
   // const { token } = useAuth();
   const [menus, setMenus] = useState<MenuItem[]>([]);
@@ -86,6 +88,8 @@ export function useMenus(params?: {
     per_page?: number;
     page?: number;
     search?: string;
+    ordering?: string;
+    status?: number;
   }) => {
     // if (!token) return;
 
@@ -109,6 +113,12 @@ export function useMenus(params?: {
       }
       if (queryParams?.search) {
         searchParams.append('search', queryParams.search);
+      }
+      if (queryParams?.ordering) {
+        searchParams.append('ordering', queryParams.ordering);
+      }
+      if (queryParams?.status !== undefined) {
+        searchParams.append('status', queryParams.status.toString());
       }
       
       const queryString = searchParams.toString();
@@ -150,8 +160,10 @@ export function useMenus(params?: {
       size_id: params?.size_id,
       page: params?.page,
       search: params?.search,
+      ordering: params?.ordering,
+      status: params?.status,
     });
-  }, [fetchMenus, params?.category_id, params?.per_page, params?.page, params?.search, params?.size_id]);
+  }, [fetchMenus, params?.category_id, params?.per_page, params?.page, params?.search, params?.size_id, params?.ordering, params?.status]);
 
   return { menus, loading, error, pagination, refetch: fetchMenus };
 }

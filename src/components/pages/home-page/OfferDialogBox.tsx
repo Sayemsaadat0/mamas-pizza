@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation"
 import { CREATE_ORDER_FROM_OFFER_API, CREATE_ORDER_FROM_OFFER_API_USER } from "@/app/api"
 import { Check } from "lucide-react"
 import { useAuth } from "@/lib/stores/useAuth"
+import { useCartStore } from "@/lib/stores/cartStore"
 
 interface OfferDialogBoxProps {
   offer: BogoOffer
@@ -27,6 +28,7 @@ const OfferDialogBox: React.FC<OfferDialogBoxProps> = ({ offer, open, setOpen })
   const { guestId } = useGuest()
   const { sizes, loading: sizesLoading } = useSizes()
   const { token, isAuthenticated, user } = useAuth()
+  const { incrementItemCount } = useCartStore()
   const router = useRouter()
 
   const [currentStep, setCurrentStep] = useState<SelectionStep>("size")
@@ -127,6 +129,9 @@ const OfferDialogBox: React.FC<OfferDialogBoxProps> = ({ offer, open, setOpen })
       const result = await response.json()
 
       if (response.ok && result.success) {
+        // Calculate total items added (buy + free items)
+        const totalItems = selectedBuyItems.length + selectedFreeItems.length
+        incrementItemCount(totalItems) // Update global cart count
         setOpen(false)
         router.push("/cart")
       } else {

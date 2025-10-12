@@ -32,6 +32,7 @@ export interface GuestOrderData {
   delivery_address: {
     address_line_1: string;
     address_line_2?: string;
+    city: string;
     post_code: string;
     details?: string;
   };
@@ -45,6 +46,7 @@ interface GuestOrderFormErrors {
   delivery_address?: {
     address_line_1?: string;
     address_line_2?: string;
+    city?: string;
     post_code?: string;
     details?: string;
   };
@@ -63,6 +65,7 @@ export default function CartPage() {
     delivery_address: {
       address_line_1: "",
       address_line_2: "",
+      city: "",
       post_code: "",
       details: "",
     },
@@ -225,8 +228,12 @@ export default function CartPage() {
       newErrors.delivery_address = { ...newErrors.delivery_address, address_line_1: "Address line 1 is required" };
     }
 
+    if (!guestFormData.delivery_address.city.trim()) {
+      newErrors.delivery_address = { ...newErrors.delivery_address, city: "City is required" };
+    }
+
     if (!guestFormData.delivery_address.post_code.trim()) {
-      newErrors.delivery_address = { ...newErrors.delivery_address, post_code: "Post Codeis required" };
+      newErrors.delivery_address = { ...newErrors.delivery_address, post_code: "Post Code is required" };
     }
 
     setGuestFormErrors(newErrors);
@@ -240,6 +247,7 @@ export default function CartPage() {
       guestFormData.customer_phone.trim() &&
       guestFormData.customer_email.trim() &&
       guestFormData.delivery_address.address_line_1.trim() &&
+      guestFormData.delivery_address.city.trim() &&
       guestFormData.delivery_address.post_code.trim()
     );
   }, [isAuthenticated, guestFormData]);
@@ -511,6 +519,7 @@ export default function CartPage() {
             fields: "Delivery Address", // Default field name
             address_line_1: guestFormData.delivery_address.address_line_1,
             address_line_2: guestFormData.delivery_address.address_line_2,
+            city: guestFormData.delivery_address.city,
             post_code: guestFormData.delivery_address.post_code,
             details: guestFormData.delivery_address.details,
           },
@@ -553,34 +562,8 @@ export default function CartPage() {
   // Loading state
   if (loading) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50">
+      <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 mt-[200px]">
         {/* Hero Section */}
-        <div className="relative h-[600px] flex items-center justify-center overflow-hidden">
-          {/* Background Image */}
-          <div className="absolute inset-0 z-0">
-            <Image
-              src="https://images.unsplash.com/photo-1595708684082-a173bb3a06c5?q=80&w=1164&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-              alt="Shopping cart background"
-              fill
-              className="object-cover"
-              priority
-              sizes="100vw"
-            />
-            {/* Black overlay */}
-            <div className="absolute inset-0 bg-black/60"></div>
-          </div>
-
-          {/* Hero Content */}
-          <div className="relative z-10 text-center px-4">
-            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white mb-4">
-              YOUR CART
-            </h1>
-            <div className="w-32 h-1.5 bg-gradient-to-r from-orange-400 to-red-500 mx-auto rounded-full"></div>
-            <p className="text-xl sm:text-2xl text-gray-200 mt-6 max-w-2xl mx-auto">
-              Review your delicious selections and proceed to checkout
-            </p>
-          </div>
-        </div>
 
         <div className="ah-container px-4 sm:px-6 lg:px-8 py-8 sm:py-16 lg:py-24 xl:py-40">
           <div className="flex items-center justify-center py-20">
@@ -597,35 +580,8 @@ export default function CartPage() {
   // Error state
   if (error) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50">
-        {/* Hero Section */}
-        <div className="relative h-[600px] flex items-center justify-center overflow-hidden">
-          {/* Background Image */}
-          <div className="absolute inset-0 z-0">
-            <Image
-              src="https://images.unsplash.com/photo-1595708684082-a173bb3a06c5?q=80&w=1164&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-              alt="Shopping cart background"
-              fill
-              className="object-cover"
-              priority
-              sizes="100vw"
-            />
-            {/* Black overlay */}
-            <div className="absolute inset-0 bg-black/60"></div>
-          </div>
-
-          {/* Hero Content */}
-          <div className="relative z-10 text-center px-4">
-            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white mb-4">
-              YOUR CART
-            </h1>
-            <div className="w-32 h-1.5 bg-gradient-to-r from-orange-400 to-red-500 mx-auto rounded-full"></div>
-            <p className="text-xl sm:text-2xl text-gray-200 mt-6 max-w-2xl mx-auto">
-              Review your delicious selections and proceed to checkout
-            </p>
-          </div>
-        </div>
-
+      <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 mt-[200px]">
+  
         <div className="ah-container px-4 sm:px-6 lg:px-8 py-8 sm:py-16 lg:py-24 xl:py-40">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
             <h3 className="text-lg font-semibold text-red-800 mb-2">Error Loading Cart</h3>
@@ -642,36 +598,8 @@ export default function CartPage() {
     );
   }
   return (
-    <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50">
-      {/* Hero Section */}
-      <div className="relative h-[600px] flex items-center justify-center overflow-hidden">
-        {/* Background Image */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="https://images.unsplash.com/photo-1595708684082-a173bb3a06c5?q=80&w=1164&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-            alt="Shopping cart background"
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-          />
-          {/* Black overlay */}
-          <div className="absolute inset-0 bg-black/60"></div>
-        </div>
-
-        {/* Hero Content */}
-        <div className="relative z-10 text-center px-4">
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white mb-4">
-            YOUR CART
-          </h1>
-          <div className="w-32 h-1.5 bg-gradient-to-r from-orange-400 to-red-500 mx-auto rounded-full"></div>
-          <p className="text-xl sm:text-2xl text-gray-200 mt-6 max-w-2xl mx-auto">
-            Review your delicious selections and proceed to checkout
-          </p>
-        </div>
-      </div>
-
-      <div className="ah-container px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-12">
+    <main className="min-h-screen ">
+      <div className="ah-container px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-12 mt-[200px]">
 
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
@@ -707,7 +635,7 @@ export default function CartPage() {
               {/* Regular Cart Items */}
               {regularItems.length > 0 && (
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Regular Items</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Cart Items</h2>
                   <div className="space-y-3 sm:space-y-4">
                     {regularItems.map((item) => (
                       <div key={item.id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4">
@@ -811,157 +739,174 @@ export default function CartPage() {
 
               {/* Guest Form - Only show if not authenticated */}
               {!isAuthenticated && (
-                <div className="bg-white/90 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-orange-100">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-6">Delivery Information</h3>
+                <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-xl border border-orange-100">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">Delivery Information</h3>
 
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {/* Customer Information */}
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                        <User className="w-5 h-5 text-orange-600" />
+                    <div className="space-y-3">
+                      <h4 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+                        <User className="w-4 h-4 text-orange-600" />
                         Customer Information
                       </h4>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Full Name *
                           </label>
                           <input
                             type="text"
                             value={guestFormData.customer_name}
                             onChange={(e) => handleGuestInputChange('customer_name', e.target.value)}
-                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.customer_name ? 'border-red-500' : 'border-gray-300'
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.customer_name ? 'border-red-500' : 'border-gray-300'
                               }`}
                             placeholder="Enter your full name"
                           />
                           {guestFormErrors.customer_name && (
-                            <p className="text-red-500 text-sm mt-1">{guestFormErrors.customer_name}</p>
+                            <p className="text-red-500 text-xs mt-1">{guestFormErrors.customer_name}</p>
                           )}
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Phone Number *
                           </label>
                           <input
                             type="tel"
                             value={guestFormData.customer_phone}
                             onChange={(e) => handleGuestInputChange('customer_phone', e.target.value)}
-                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.customer_phone ? 'border-red-500' : 'border-gray-300'
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.customer_phone ? 'border-red-500' : 'border-gray-300'
                               }`}
                             placeholder="+1234567890"
                           />
                           {guestFormErrors.customer_phone && (
-                            <p className="text-red-500 text-sm mt-1">{guestFormErrors.customer_phone}</p>
+                            <p className="text-red-500 text-xs mt-1">{guestFormErrors.customer_phone}</p>
                           )}
                         </div>
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
                           Email Address *
                         </label>
                         <input
                           type="email"
                           value={guestFormData.customer_email}
                           onChange={(e) => handleGuestInputChange('customer_email', e.target.value)}
-                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.customer_email ? 'border-red-500' : 'border-gray-300'
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.customer_email ? 'border-red-500' : 'border-gray-300'
                             }`}
                           placeholder="john@example.com"
                         />
                         {guestFormErrors.customer_email && (
-                          <p className="text-red-500 text-sm mt-1">{guestFormErrors.customer_email}</p>
+                          <p className="text-red-500 text-xs mt-1">{guestFormErrors.customer_email}</p>
                         )}
                       </div>
                     </div>
 
                     {/* Delivery Address */}
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                        <MapPin className="w-5 h-5 text-orange-600" />
+                    <div className="space-y-3">
+                      <h4 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-orange-600" />
                         Delivery Address
                       </h4>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
                           Address Line 1 *
                         </label>
                         <input
                           type="text"
                           value={guestFormData.delivery_address.address_line_1}
                           onChange={(e) => handleGuestInputChange('delivery_address.address_line_1', e.target.value)}
-                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.delivery_address?.address_line_1 ? 'border-red-500' : 'border-gray-300'
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.delivery_address?.address_line_1 ? 'border-red-500' : 'border-gray-300'
                             }`}
                           placeholder="123 Main Street"
                         />
                         {guestFormErrors.delivery_address?.address_line_1 && (
-                          <p className="text-red-500 text-sm mt-1">{guestFormErrors.delivery_address.address_line_1}</p>
+                          <p className="text-red-500 text-xs mt-1">{guestFormErrors.delivery_address.address_line_1}</p>
                         )}
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
                           Address Line 2
                         </label>
                         <input
                           type="text"
                           value={guestFormData.delivery_address.address_line_2}
                           onChange={(e) => handleGuestInputChange('delivery_address.address_line_2', e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                           placeholder="Apt 4B, Suite 200"
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Post Code*
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            City *
+                          </label>
+                          <input
+                            type="text"
+                            value={guestFormData.delivery_address.city}
+                            onChange={(e) => handleGuestInputChange('delivery_address.city', e.target.value)}
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.delivery_address?.city ? 'border-red-500' : 'border-gray-300'
+                              }`}
+                            placeholder="New York"
+                          />
+                          {guestFormErrors.delivery_address?.city && (
+                            <p className="text-red-500 text-xs mt-1">{guestFormErrors.delivery_address.city}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Post Code *
                           </label>
                           <input
                             type="text"
                             value={guestFormData.delivery_address.post_code}
                             onChange={(e) => handleGuestInputChange('delivery_address.post_code', e.target.value)}
-                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.delivery_address?.post_code ? 'border-red-500' : 'border-gray-300'
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.delivery_address?.post_code ? 'border-red-500' : 'border-gray-300'
                               }`}
                             placeholder="12345"
                           />
                           {guestFormErrors.delivery_address?.post_code && (
-                            <p className="text-red-500 text-sm mt-1">{guestFormErrors.delivery_address.post_code}</p>
+                            <p className="text-red-500 text-xs mt-1">{guestFormErrors.delivery_address.post_code}</p>
                           )}
                         </div>
+                      </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Additional Details
-                          </label>
-                          <input
-                            type="text"
-                            value={guestFormData.delivery_address.details}
-                            onChange={(e) => handleGuestInputChange('delivery_address.details', e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-                            placeholder="Ring doorbell twice"
-                          />
-                        </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Additional Details
+                        </label>
+                        <input
+                          type="text"
+                          value={guestFormData.delivery_address.details}
+                          onChange={(e) => handleGuestInputChange('delivery_address.details', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                          placeholder="Ring doorbell twice"
+                        />
                       </div>
                     </div>
 
                     {/* Special Instructions */}
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                        <MessageSquare className="w-5 h-5 text-orange-600" />
+                    <div className="space-y-3">
+                      <h4 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4 text-orange-600" />
                         Special Instructions
                       </h4>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
                           Additional Notes
                         </label>
                         <textarea
                           value={guestFormData.special_instructions}
                           onChange={(e) => handleGuestInputChange('special_instructions', e.target.value)}
-                          rows={3}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors resize-none"
+                          rows={2}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors resize-none"
                           placeholder="Extra napkins please, or any other special requests..."
                         />
                       </div>

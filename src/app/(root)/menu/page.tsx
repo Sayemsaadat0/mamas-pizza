@@ -2,16 +2,17 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import Image from "next/image";
 import { useCategories } from "@/hooks/category.hook";
 import { useMenus } from "@/hooks/menu.hook";
 import { useBogoOffers } from "@/hooks/bogo-offer.hooks";
+import { useSizes } from "@/hooks/sizes.hook";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAuth } from "@/lib/stores/useAuth";
+import { useCartStore } from "@/lib/stores/cartStore";
 import { useGuest } from "@/lib/guest/GuestProvider";
 import MenuCard from "@/components/MenuCard";
 import MenuOfferCards from "@/components/pages/home-page/MenuOfferCards";
-import { Utensils, Percent } from "lucide-react";
+import { Utensils, Percent, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { GUEST_CART_API, USER_CART_API } from "@/app/api";
 
@@ -20,7 +21,9 @@ const Menu = () => {
   const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [selectedSizeId, setSelectedSizeId] = useState<string | undefined>(undefined);
   const [loadingItems, setLoadingItems] = useState<Set<number>>(new Set());
+  const [itemErrors, setItemErrors] = useState<Map<number, string>>(new Map());
   const [openOfferId, setOpenOfferId] = useState<number | null>(null);
   const [loadingOffers, setLoadingOffers] = useState<Set<number>>(new Set());
   const perPage = 6; // items per page
@@ -29,14 +32,19 @@ const Menu = () => {
 
   // --- Hooks ---
   const { categories, loading: catLoading } = useCategories();
+  const { sizes, loading: sizesLoading } = useSizes();
   const { bogoOffers, loading: bogoOffersLoading, error: bogoOffersError } = useBogoOffers();
   const { token, isAuthenticated } = useAuth();
+  const { incrementItemCount } = useCartStore();
   const { guestId } = useGuest();
   const { menus, loading: menuLoading, pagination } = useMenus({
     category_id: categoryId,
+    size_id: selectedSizeId ? parseInt(selectedSizeId) : undefined,
     per_page: perPage,
     page,
     search: debouncedSearch,
+    ordering: '-created_at',
+    status: 1,
   });
 
 
@@ -44,6 +52,30 @@ const Menu = () => {
   const handleCategoryClick = (id?: string) => {
     setCategoryId(id);
     setPage(1);
+    // Clear errors when changing category
+    setItemErrors(new Map());
+  };
+
+  const handleSizeClick = (sizeId?: string) => {
+    setSelectedSizeId(sizeId);
+    setPage(1);
+    // Clear errors when changing size
+    setItemErrors(new Map());
+  };
+
+
+  // Clear error for specific item
+  const clearItemError = (itemId: number) => {
+    setItemErrors(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(itemId);
+      return newMap;
+    });
+  };
+
+  // Set error for specific item
+  const setItemError = (itemId: number, error: string) => {
+    setItemErrors(prev => new Map(prev).set(itemId, error));
   };
 
   // Handle offer modal opening
@@ -74,6 +106,8 @@ const Menu = () => {
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
     setPage(1);
+    // Clear errors when searching
+    setItemErrors(new Map());
   };
 
   const handlePrevPage = () => {
@@ -85,15 +119,17 @@ const Menu = () => {
 
   // Guest cart function
   const handleGuestAddtoCart = async (menu: any) => {
-
+    // Clear any existing error for this item
+    clearItemError(menu.id);
+    
     // Set loading state
     setLoadingItems(prev => new Set(prev).add(menu.id));
     
     try {
-      
       if (!guestId) {
-        console.error('Guest ID not available');
-        toast.error('Guest ID not available');
+        const errorMsg = 'Guest ID not available. Please refresh the page.';
+        setItemError(menu.id, errorMsg);
+        toast.error(errorMsg);
         return;
       }
       
@@ -115,15 +151,28 @@ const Menu = () => {
           description: "Item added to your guest cart",
           duration: 3000,
         });
+        // Clear any previous errors
+        clearItemError(menu.id);
       } else {
+        let errorMessage = `Failed to add item to cart (${response.status})`;
+        
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          // If response is not JSON, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        
+        setItemError(menu.id, errorMessage);
+        toast.error(errorMessage);
         console.error('Failed to add to guest cart:', response.status, response.statusText);
-        const errorData = await response.text();
-        console.error('Error response:', errorData);
-        toast.error(`Failed to add item to cart (${response.status})`);
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Network error. Please check your connection.';
+      setItemError(menu.id, errorMessage);
+      toast.error(errorMessage);
       console.error('Error adding to guest cart:', error);
-      toast.error('Error adding item to cart');
     } finally {
       // Remove loading state
       setLoadingItems(prev => {
@@ -136,11 +185,19 @@ const Menu = () => {
 
   // Authenticated user cart function
   const handleAddtoCart = async (menu: any) => {
+    // Clear any existing error for this item
+    clearItemError(menu.id);
     
     // Set loading state
     setLoadingItems(prev => new Set(prev).add(menu.id));
     
     try {
+      if (!token) {
+        const errorMsg = 'Authentication required. Please log in.';
+        setItemError(menu.id, errorMsg);
+        toast.error(errorMsg);
+        return;
+      }
       
       const response = await fetch(USER_CART_API, {
         method: 'POST',
@@ -155,20 +212,34 @@ const Menu = () => {
       });
 
       if (response.ok) {
-         await response.json();
+        await response.json();
+        incrementItemCount(1); // Update global cart count
         toast.success(`${menu.name} added to cart!`, {
           description: "Item added to your cart",
           duration: 3000,
         });
+        // Clear any previous errors
+        clearItemError(menu.id);
       } else {
+        let errorMessage = `Failed to add item to cart (${response.status})`;
+        
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          // If response is not JSON, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        
+        setItemError(menu.id, errorMessage);
+        toast.error(errorMessage);
         console.error('Failed to add to user cart:', response.status, response.statusText);
-        const errorData = await response.text();
-        console.error('Error response:', errorData);
-        toast.error(`Failed to add item to cart (${response.status})`);
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Network error. Please check your connection.';
+      setItemError(menu.id, errorMessage);
+      toast.error(errorMessage);
       console.error('Error adding to user cart:', error);
-      toast.error('Error adding item to cart');
     } finally {
       // Remove loading state
       setLoadingItems(prev => {
@@ -181,8 +252,6 @@ const Menu = () => {
 
   // Main cart handler that checks authentication
   const handleAddToCart = (menu: any) => {
-   
-    
     if (isAuthenticated) {
       handleAddtoCart(menu);
     } else {
@@ -190,91 +259,95 @@ const Menu = () => {
     }
   };
 
+  // Retry function for failed cart operations
+  const handleRetryAddToCart = (menu: any) => {
+    handleAddToCart(menu);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50">
-      {/* Hero Section */}
-      <div className="relative h-[600px] flex items-center justify-center overflow-hidden">
-        {/* Background Image */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="https://images.unsplash.com/photo-1595708684082-a173bb3a06c5?q=80&w=1164&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-            alt="Menu background"
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-          />
-          {/* Black overlay */}
-          <div className="absolute inset-0 bg-black/60"></div>
+    <div className="min-h-screen ">
+      <div className="max-w-7xl mx-auto px-4 py-10 mt-[180px]">
+        {/* --- Minimal Header --- */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-light text-gray-800 mb-6">Menu</h1>
         </div>
 
-        {/* Hero Content */}
-        <div className="relative z-10 text-center px-4">
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white mb-4">
-            OUR MENUS
-          </h1>
-          <div className="w-32 h-1.5 bg-gradient-to-r from-orange-400 to-red-500 mx-auto rounded-full"></div>
-          <p className="text-xl sm:text-2xl text-gray-200 mt-6 max-w-2xl mx-auto">
-            Explore our delicious selection of handcrafted pizzas and more
-          </p>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 py-10">
-
-        {/* --- Search --- */}
-        <div className="flex justify-center mb-8">
-          <div className="relative w-full max-w-md">
+        {/* --- Search and Filter Row --- */}
+        <div className="flex items-center gap-4 mb-6">
+          {/* Search Field */}
+          <div className="relative flex-1 max-w-md">
             <input
               type="text"
               placeholder="Search menu..."
               value={search}
               onChange={handleSearch}
-              className="w-full border-2 border-orange-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 shadow-sm bg-white placeholder-orange-300"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 shadow-sm bg-white placeholder-gray-400"
             />
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-orange-400">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
           </div>
+
+          {/* Size Filter */}
+          {categoryId !== "offers" && (
+            <div className="relative">
+              <select
+                value={selectedSizeId || ""}
+                onChange={(e) => handleSizeClick(e.target.value || undefined)}
+                className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2.5 pr-8 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 shadow-sm hover:border-gray-400 transition-colors min-w-[120px]"
+                disabled={sizesLoading}
+              >
+                <option value="">All Sizes</option>
+                {sizes.map(size => (
+                    <option key={size.id} value={size.id}>
+                      {size.size}&quot;
+                    </option>
+                  ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                <Filter size={14} className="text-gray-400" />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* --- Categories --- */}
-        <div className="flex gap-3 flex-wrap justify-center mb-10">
+        <div className="flex gap-2 flex-wrap mb-6">
           <button
             onClick={() => handleCategoryClick(undefined)}
-            className={`px-5 py-2.5 rounded-full text-sm font-semibold border-2 transition-all duration-200 flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-200 flex items-center gap-2 ${
               !categoryId
-                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white border-orange-600 shadow-lg shadow-orange-200"
-                : "bg-white text-orange-600 border-orange-200 hover:bg-orange-50 hover:border-orange-300"
+                ? "bg-orange-500 text-white border-orange-500 shadow-sm"
+                : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
             }`}
           >
-            <Utensils size={16} />
+            <Utensils size={14} />
             All
           </button>
           <button
             onClick={() => handleCategoryClick("offers")}
-            className={`px-5 py-2.5 rounded-full text-sm font-semibold border-2 transition-all duration-200 flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-200 flex items-center gap-2 ${
               categoryId === "offers"
-                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white border-orange-600 shadow-lg shadow-orange-200"
-                : "bg-white text-orange-600 border-orange-200 hover:bg-orange-50 hover:border-orange-300"
+                ? "bg-orange-500 text-white border-orange-500 shadow-sm"
+                : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
             }`}
           >
-            <Percent size={16} />
+            <Percent size={14} />
             Offers
           </button>
           {catLoading ? (
-            <p className="text-orange-500">Loading categories...</p>
+            <p className="text-gray-500 text-sm">Loading categories...</p>
           ) : (
             categories.map(cat => (
               <button
                 key={cat.id}
                 onClick={() => handleCategoryClick(cat.id)}
-                className={`px-5 py-2.5 rounded-full text-sm font-semibold border-2 transition-all duration-200 ${
+                className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-200 ${
                   categoryId === cat.id
-                    ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white border-orange-600 shadow-lg shadow-orange-200"
-                    : "bg-white text-orange-600 border-orange-200 hover:bg-orange-50 hover:border-orange-300"
+                    ? "bg-orange-500 text-white border-orange-500 shadow-sm"
+                    : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
                 }`}
               >
                 {cat.name}
@@ -282,6 +355,7 @@ const Menu = () => {
             ))
           )}
         </div>
+
 
         {/* --- Menus --- */}
         {categoryId === "offers" ? (
@@ -358,6 +432,8 @@ const Menu = () => {
                    index={index}
                    onAddToCart={handleAddToCart}
                    isLoading={loadingItems.has(menu.id)}
+                   error={itemErrors.get(menu.id) || null}
+                   onRetry={() => handleRetryAddToCart(menu)}
                  />
                ))}
              </motion.div>

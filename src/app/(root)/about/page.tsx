@@ -2,41 +2,13 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { Heart, Users, Award, Clock, MapPin, Phone, ChefHat, Leaf, Shield, Smile } from 'lucide-react';
+import { Heart, Users, Award,  ChefHat, Leaf, Shield, Smile } from 'lucide-react';
 
 export default function AboutPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50">
-      {/* Hero Section */}
-      <div className="relative h-[600px] flex items-center justify-center overflow-hidden">
-        {/* Background Image */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="https://images.unsplash.com/photo-1595708684082-a173bb3a06c5?q=80&w=1164&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-            alt="About us background"
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-          />
-          {/* Black overlay */}
-          <div className="absolute inset-0 bg-black/60"></div>
-        </div>
-
-        {/* Hero Content */}
-        <div className="relative z-10 text-center px-4">
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white mb-4">
-            ABOUT US
-          </h1>
-          <div className="w-32 h-1.5 bg-gradient-to-r from-orange-400 to-red-500 mx-auto rounded-full"></div>
-          <p className="text-xl sm:text-2xl text-gray-200 mt-6 max-w-2xl mx-auto">
-            Crafting memories one slice at a time for over a decade
-          </p>
-        </div>
-      </div>
-
+    <main className="min-h-screen mt-[200px]">
       {/* Our Story */}
-      <section className="py-20">
+      <section className="py-20 ">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-8">
@@ -152,8 +124,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Team Section */}
-      <section className="py-20 bg-gray-50">
+      {/* <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -187,7 +158,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Contact Info */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
@@ -217,7 +187,7 @@ export default function AboutPage() {
             />
           </div>
         </div>
-      </section>
+      </section> */}
     </main>
   );
 }
@@ -239,48 +209,48 @@ function ValueCard({ icon, title, description }: {
   );
 }
 
-// Team Member Component
-function TeamMember({ name, role, description, image }: {
-  name: string;
-  role: string;
-  description: string;
-  image: string;
-}) {
-  return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
-      <div className="relative h-64">
-        <Image
-          src={image}
-          alt={name}
-          fill
-          className="object-cover"
-        />
-      </div>
-      <div className="p-6">
-        <h3 className="text-xl font-bold text-gray-900 mb-1">{name}</h3>
-        <p className="text-orange-600 font-medium mb-3">{role}</p>
-        <p className="text-gray-600 text-sm leading-relaxed">{description}</p>
-      </div>
-    </div>
-  );
-}
+// Team Member Component - Currently unused
+// function TeamMember({ name, role, description, image }: {
+//   name: string;
+//   role: string;
+//   description: string;
+//   image: string;
+// }) {
+//   return (
+//     <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
+//       <div className="relative h-64">
+//         <Image
+//           src={image}
+//           alt={name}
+//           fill
+//           className="object-cover"
+//         />
+//       </div>
+//       <div className="p-6">
+//         <h3 className="text-xl font-bold text-gray-900 mb-1">{name}</h3>
+//         <p className="text-orange-600 font-medium mb-3">{role}</p>
+//         <p className="text-gray-600 text-sm leading-relaxed">{description}</p>
+//       </div>
+//     </div>
+//   );
+// }
 
-// Contact Card Component
-function ContactCard({ icon, title, content }: {
-  icon: React.ReactNode;
-  title: string;
-  content: string;
-}) {
-  return (
-    <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 text-center">
-      <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 mx-auto mb-6">
-        {icon}
-      </div>
-      <h3 className="text-xl font-bold text-gray-900 mb-4">{title}</h3>
-      <div 
-        className="text-gray-600 leading-relaxed"
-        dangerouslySetInnerHTML={{ __html: content }}
-      />
-    </div>
-  );
-}
+// Contact Card Component - Currently unused
+// function ContactCard({ icon, title, content }: {
+//   icon: React.ReactNode;
+//   title: string;
+//   content: string;
+// }) {
+//   return (
+//     <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 text-center">
+//       <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 mx-auto mb-6">
+//         {icon}
+//       </div>
+//       <h3 className="text-xl font-bold text-gray-900 mb-4">{title}</h3>
+//       <div 
+//         className="text-gray-600 leading-relaxed"
+//         dangerouslySetInnerHTML={{ __html: content }}
+//       />
+//     </div>
+//   );
+// }

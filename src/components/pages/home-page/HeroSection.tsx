@@ -20,13 +20,12 @@ const HeroSection = () => {
     const [postCode, setpostCode] = useState("")
     const [isSearching, setIsSearching] = useState(false)
     const [showDialog, setShowDialog] = useState(false)
-    const [isSubmittingRequest, setIsSubmittingRequest] = useState(false)
 
     const router = useRouter()
     const { setCanOrder } = useOrderStore()
 
     // Hooks for post code functionality
-    const { createGuestPostCode, loading: createLoading } = useCreateGuestPostCode()
+    const { createGuestPostCode } = useCreateGuestPostCode()
 
     // Handle input change with character limit
     const handlePostCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,11 +34,33 @@ const HeroSection = () => {
             setpostCode(value)
         }
     }
+    const handleSaveGuestPostCode = async () => {
+        try {
+            // Save the post code to guest post codes API
+            await createGuestPostCode({ code: postCode.trim() })
 
+            setCanOrder(false)
+            setShowDialog(true)
+        } catch (error) {
+            console.error("Error saving guest post code:", error)
+            setCanOrder(false)
+            toast.error("We're not delivering to your area yet. Please try again later.")
+        }
+    }
+
+    const handleCloseDialog = () => {
+        setShowDialog(false)
+        setpostCode("") // Clear the input
+    }
 
     const handleSearch = async () => {
         if (!postCode.trim()) {
-            toast.error("Please enter a Post Codeor address")
+            toast.error("Please enter a Post Code")
+            return
+        }
+
+        if (postCode.length < 5) {
+            toast.error("Post code must be at least 5 characters")
             return
         }
 
@@ -51,7 +72,7 @@ const HeroSection = () => {
         setIsSearching(true)
 
         try {
-            // Call the new API to check if postal code matches
+            // Call the API to check if postal code matches
             const response = await fetch(getPostCodeByCode(postCode.trim()), {
                 method: 'GET',
                 headers: {
@@ -59,93 +80,41 @@ const HeroSection = () => {
                 },
             })
 
-            if (!response.ok) {
-                // Handle different HTTP status codes gracefully
-                if (response.status === 404) {
-                    // No delivery area found - this is expected behavior
-                    setCanOrder(false)
-                    setShowDialog(true)
-                    return
-                } else if (response.status >= 500) {
-                    // Server error - show user-friendly message
-                    toast.error("Service temporarily unavailable. Please try again later.")
-                    setCanOrder(false)
-                    setShowDialog(true)
-                    return
+            if (response.ok) {
+                const result = await response.json()
+
+                // Check if the API call was successful and code matches
+                if (result.success && result.matched) {
+                    // Success - set canOrder to true and navigate to menu
+                    setCanOrder(true)
+                    toast.success("Great! We deliver to your area. Redirecting to menu...")
+                    router.push('/menu')
                 } else {
-                    // Other client errors
-                    setCanOrder(false)
-                    setShowDialog(true)
-                    return
+                    // No match found - save to guest post codes and show message
+                    await handleSaveGuestPostCode()
                 }
-            }
-
-            const result = await response.json()
-
-            // Check if the API call was successful and code matches
-            if (result.success && result.matched) {
-                // Success - set canOrder to true and navigate to menu
-                setCanOrder(true)
-                toast.success("Great! We deliver to your area. Redirecting to menu...")
-                router.push('/menu')
             } else {
-                // No match found - set canOrder to false and show dialog
-                setCanOrder(false)
-                setShowDialog(true)
+                // API error - save to guest post codes and show message
+                await handleSaveGuestPostCode()
             }
-        } catch (error) {
-            // Handle network errors and other exceptions gracefully
-            if (error instanceof TypeError && error.message.includes('fetch')) {
-                // Network error
-                toast.error("Network error. Please check your connection and try again.")
-            } else {
-                // Other errors - show generic message
-                toast.error("Unable to check delivery area. Please try again.")
-            }
-            
-            // Always set canOrder to false and show dialog on any error
-            setCanOrder(false)
-            setShowDialog(true)
+        } catch {
+            // Network error - save to guest post codes and show message
+            await handleSaveGuestPostCode()
         } finally {
             setIsSearching(false)
         }
     }
 
-    const handleRequestDelivery = async () => {
-        if (!postCode.trim()) {
-            toast.error("Please enter a zip code")
-            return
-        }
 
-        if (postCode.length > 7) {
-            toast.error("Post code must be 7 characters or less")
-            return
-        }
 
-        setIsSubmittingRequest(true)
-
-        try {
-            // Create guest post code request
-            await createGuestPostCode({ code: postCode.trim() })
-
-            toast.success("Thank you! We've received your request for delivery to this area. We'll notify you when we start delivering here.")
-            setShowDialog(false)
-            setpostCode("") // Clear the input
-        } catch (error) {
-            console.error("Request error:", error)
-            toast.error("Failed to submit request. Please try again.")
-        } finally {
-            setIsSubmittingRequest(false)
-        }
-    }
 
     return (
         <div className="relative min-h-screen flex items-center justify-center">
             {/* Background Image */}
-            <button className="absolute bottom-0 left-0 z-20 bg-white/95 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-2xl border border-white/20" onClick={() => setCanOrder(false)}>
-                        clear
-                     
-                    </button>
+            {/* <button className="absolute bottom-0 left-0 z-20 bg-white/95 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-2xl border border-white/20" onClick={() => setCanOrder(false)}>
+                clear
+
+            </button> */}
             <div className="absolute inset-0 z-0">
                 <Image
                     src="https://images.unsplash.com/photo-1595708684082-a173bb3a06c5?q=80&w=1164&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
@@ -162,7 +131,7 @@ const HeroSection = () => {
             {/* Centered Search Content */}
             <div className="relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center">
-                    
+
                     {/* Search Section */}
                     <div className="bg-white/95 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-2xl border border-white/20">
                         {/* Desktop Layout - Inline */}
@@ -178,13 +147,14 @@ const HeroSection = () => {
                                 placeholder="Enter your Post Code..."
                                 value={postCode}
                                 onChange={handlePostCodeChange}
+                                minLength={5}
                                 maxLength={7}
                                 className="w-full pl-20 pr-44 py-7 text-2xl border-2 border-gray-200 rounded-2xl bg-gray-50 focus:bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-200 transition-all duration-300 shadow-inner"
                                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                             />
                             <button
                                 onClick={handleSearch}
-                                disabled={isSearching}
+                                disabled={isSearching || postCode.length < 5}
                                 className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-10 py-5 rounded-xl font-bold text-xl hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isSearching ? (
@@ -209,7 +179,7 @@ const HeroSection = () => {
                                 </div>
                                 <input
                                     type="text"
-                                    placeholder="Enter Post Codeor address..."
+                                    placeholder="Enter Post Code..."
                                     value={postCode}
                                     onChange={handlePostCodeChange}
                                     maxLength={7}
@@ -218,12 +188,12 @@ const HeroSection = () => {
                                 />
                                 {/* Character counter for mobile */}
                                 <div className="absolute top-2 right-3 text-xs text-gray-400">
-                                    {postCode.length}/7
+                                    {postCode.length < 5 ? `${postCode.length}/5+` : `${postCode.length}/7`}
                                 </div>
                             </div>
                             <button
                                 onClick={handleSearch}
-                                disabled={isSearching}
+                                disabled={isSearching || postCode.length < 5}
                                 className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-3 rounded-lg font-semibold text-base hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isSearching ? (
@@ -271,14 +241,14 @@ const HeroSection = () => {
                         </DialogTitle>
                         <DialogDescription className="text-center text-sm sm:text-base text-gray-600">
                             We&apos;re not currently delivering to <span className="font-semibold text-orange-600">{postCode}</span> yet,
-                            but we&apos;re expanding our delivery areas regularly!
+                            but we&apos;ve saved your request and we&apos;re expanding our delivery areas regularly!
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="py-3 sm:py-4">
                         <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 sm:p-4">
                             <p className="text-xs sm:text-sm text-orange-800">
-                                💡 Submit a request and we&apos;ll notify you as soon as we start delivering to your area.
+                                💡 We&apos;ll notify you as soon as we start delivering to your area.
                                 We&apos;re always looking to expand our delivery network!
                             </p>
                         </div>
@@ -286,24 +256,10 @@ const HeroSection = () => {
 
                     <DialogFooter className="flex flex-col sm:flex-row gap-2">
                         <button
-                            onClick={() => setShowDialog(false)}
-                            className="w-full sm:flex-1 px-4 py-3 sm:py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                            onClick={handleCloseDialog}
+                            className="w-full sm:flex-1 px-4 py-3 sm:py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700"
                         >
-                            Maybe Later
-                        </button>
-                        <button
-                            onClick={handleRequestDelivery}
-                            disabled={isSubmittingRequest || createLoading}
-                            className="w-full sm:flex-1 px-4 py-3 sm:py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isSubmittingRequest || createLoading ? (
-                                <div className="flex items-center justify-center">
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                                    Submitting...
-                                </div>
-                            ) : (
-                                "Request Delivery"
-                            )}
+                            Got it!
                         </button>
                     </DialogFooter>
                 </DialogContent>

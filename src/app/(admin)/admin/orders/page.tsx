@@ -13,7 +13,6 @@ import {
     User,
     Loader2,
     ChefHat,
-    Utensils,
     RotateCcw
 } from 'lucide-react';
 import { useAdminOrders, useUpdateOrderStatus, useCancelOrder } from '@/hooks/admin-orders.hook';
@@ -497,7 +496,7 @@ const OrdersPage: React.FC = () => {
                     {/* Status Progression Indicator */}
                     <div className="mb-4">
                         <div className="flex items-center justify-between text-xs">
-                            {getStatusProgression(statusValue).map((status, index) => (
+                            {getStatusProgression(statusValue).map((status) => (
                                 <div key={status.value} className="flex flex-col items-center">
                                     <div className={`w-6 h-6 rounded-full flex items-center justify-center mb-1 ${
                                         status.isCompleted 

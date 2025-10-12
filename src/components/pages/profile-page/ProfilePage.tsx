@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/stores/useAuth'
 import ProfileTab from './ProfileTab'
 import ProfileInfoTab from './ProfileInfoTab'
@@ -13,6 +13,13 @@ const ProfilePage = () => {
   const { user, isAuthenticated } = useAuth()
   const [activeTab, setActiveTab] = useState('profile')
 
+  // Reset to profile tab if admin user has address tab selected
+  useEffect(() => {
+    if (user?.role === 'admin' && activeTab === 'address') {
+      setActiveTab('profile')
+    }
+  }, [user?.role, activeTab])
+
   if (!isAuthenticated) {
     return <UnauthorizedAccess />
   }
@@ -22,6 +29,11 @@ const ProfilePage = () => {
   }
 
   const renderTabContent = () => {
+    // If user is admin and address tab is selected, default to profile
+    if (user.role === 'admin' && activeTab === 'address') {
+      return <ProfileInfoTab />
+    }
+
     switch (activeTab) {
       case 'profile':
         return <ProfileInfoTab />
@@ -36,8 +48,8 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-[224px]">
-        <ProfileTab activeTab={activeTab} onTabChange={setActiveTab} />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-[250px]">
+        <ProfileTab activeTab={activeTab} onTabChange={setActiveTab} userRole={user.role} />
         {renderTabContent()}
       </div>
     </div>

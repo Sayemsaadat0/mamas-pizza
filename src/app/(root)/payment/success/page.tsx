@@ -22,7 +22,6 @@ import {
   Calendar,
   CreditCard,
   Mail,
-  MapPin,
   ExternalLink,
   RefreshCw
 } from 'lucide-react';
@@ -31,7 +30,7 @@ import { useGuest } from '@/lib/guest/GuestProvider';
 import { useAuth } from '@/lib/stores/useAuth';
 import { toast } from 'sonner';
 import { GUEST_STRIPE_VERIFY_PAYMENT_API, STRIPE_VERIFY_PAYMENT_API, REGISTER_API } from '@/app/api';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+// import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'; // No longer needed
 
 interface PaymentVerificationResult {
   success: boolean;
@@ -78,21 +77,21 @@ function PaymentSuccessContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
+  // const [showWelcomeDialog, setShowWelcomeDialog] = useState(false); // No longer needed
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const sessionId = searchParams.get('session');
 
 
 
-  // Show welcome dialog when page loads
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowWelcomeDialog(true);
-    }, 1000);
+  // Welcome dialog disabled - no longer showing
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     setShowWelcomeDialog(true);
+  //   }, 1000);
 
-    return () => clearTimeout(timer);
-  }, []);
+  //   return () => clearTimeout(timer);
+  // }, []);
 
   useEffect(() => {
     const verifyPayment = async () => {
@@ -288,35 +287,8 @@ function PaymentSuccessContent() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50">
-      {/* Hero Section */}
-      <div className="relative h-[500px] flex items-center justify-center overflow-hidden">
-        {/* Background Image */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?q=80&w=1164&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-            alt="Payment success background"
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-          />
-          <div className="absolute inset-0 bg-black/50"></div>
-        </div>
-
-        {/* Hero Content */}
-        <div className="relative z-10 text-center px-4">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-4">
-            PAYMENT SUCCESS
-          </h1>
-          <div className="w-24 h-1 bg-gradient-to-r from-orange-400 to-red-500 mx-auto rounded-full"></div>
-          <p className="text-lg sm:text-xl text-gray-200 mt-6 max-w-2xl mx-auto">
-            Your order has been placed successfully and payment is confirmed
-          </p>
-        </div>
-      </div>
-
-      <div className="ah-container px-4 sm:px-6 lg:px-8 py-8 sm:py-16 lg:py-24">
+    <main className="min-h-screen ">
+      <div className="ah-container px-4 sm:px-6 lg:px-8 py-8 sm:py-16 lg:py-24 mt-[200px]">
         <div className="max-w-4xl mx-auto">
           {isVerifying ? (
             <div className="text-center space-y-8">
@@ -372,22 +344,11 @@ function PaymentSuccessContent() {
             <div className="space-y-8">
               {/* Success Header */}
               <div className="text-center space-y-6">
-                <div className="relative inline-block">
-                  <div className="w-20 h-20 mx-auto bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-2xl">
-                    <CheckCircle className="w-10 h-10 text-white" />
-                  </div>
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center animate-bounce">
-                    <Sparkles className="w-5 h-5 text-white" />
-                  </div>
-                </div>
                 <div className="space-y-3">
-                  <h2 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                     Payment Successful!
                   </h2>
-                  <p className="text-lg text-gray-600 max-w-lg mx-auto">
-                    Your order has been confirmed and payment processed successfully. 
-                    Get ready to enjoy your delicious meal!
-                  </p>
+                 
                 </div>
               </div>
 
@@ -698,8 +659,8 @@ function PaymentSuccessContent() {
         </div>
       )}
 
-      {/* Welcome Dialog */}
-      <Dialog open={showWelcomeDialog} onOpenChange={setShowWelcomeDialog}>
+      {/* Welcome Dialog - Disabled */}
+      {/* <Dialog open={showWelcomeDialog} onOpenChange={setShowWelcomeDialog}>
         <DialogContent className="max-w-md mx-auto" showCloseButton={false}>
           <DialogHeader className="text-center space-y-4">
             <div className="w-16 h-16 mx-auto bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
@@ -731,7 +692,7 @@ function PaymentSuccessContent() {
             </div>
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </main>
   );
 }

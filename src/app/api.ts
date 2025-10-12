@@ -16,6 +16,12 @@ export const DELIVERY_ADDRESSES_API = `${API_BASE_URL}/api/v1/delivery-addresses
 export const DELIVERY_ADDRESS_BY_ID_API = `${API_BASE_URL}/api/v1/delivery-addresses`;
 
 
+// post codes api 
+export const POST_CODES_API = `${API_BASE_URL}/api/v1/post-codes`;
+export const POST_CODE_BY_ID_API = `${API_BASE_URL}/api/v1/post-codes`;
+export const GUEST_POST_CODES_API = `${API_BASE_URL}/api/v1/guest-post-codes`;
+export const GUEST_POST_CODE_BY_ID_API = `${API_BASE_URL}/api/v1/guest-post-codes`;
+
 
 // users api  
 
@@ -70,11 +76,7 @@ export const GUEST_STRIPE_CREATE_SESSION_API = `${API_BASE_URL}/api/v1/guest/pay
 export const GUEST_STRIPE_VERIFY_PAYMENT_API = `${API_BASE_URL}/api/v1/guest/payments/verify`;
 export const GUEST_STRIPE_SESSION_STATUS_API = `${API_BASE_URL}/api/v1/guest/payments/session-status`;
 
-// ==================== POST CODES APIs ====================
-export const POST_CODES_API = `${API_BASE_URL}/api/v1/post-codes`;
-export const POST_CODE_BY_ID_API = `${API_BASE_URL}/api/v1/post-codes`;
-export const GUEST_POST_CODES_API = `${API_BASE_URL}/api/v1/guest-post-codes`;
-export const GUEST_POST_CODE_BY_ID_API = `${API_BASE_URL}/api/v1/guest-post-codes`;
+
 
 // ==================== SIZES APIs ====================
 export const SIZES_API = `${API_BASE_URL}/api/v1/sizes`;

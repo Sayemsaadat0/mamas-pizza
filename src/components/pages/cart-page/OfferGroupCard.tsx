@@ -50,7 +50,7 @@ const OfferGroupCard: React.FC<OfferGroupCardProps> = ({
   offer, 
   onRemoveBundle,
   isLoading = false,
-  loadingItems = new Set()
+  // loadingItems = new Set() // Currently unused
 }) => {
   const bundleId = `${bundle.bogo_offer_id}-${bundle.user_id || bundle.guest_id}`;
   
