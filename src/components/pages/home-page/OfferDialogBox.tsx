@@ -13,7 +13,7 @@ import { useGuest } from "@/lib/guest/GuestProvider"
 import { useRouter } from "next/navigation"
 import { CREATE_ORDER_FROM_OFFER_API, CREATE_ORDER_FROM_OFFER_API_USER } from "@/app/api"
 import { Check } from "lucide-react"
-import { useAuth } from "@/lib/auth/useAuth"
+import { useAuth } from "@/lib/stores/useAuth"
 
 interface OfferDialogBoxProps {
   offer: BogoOffer

@@ -4,20 +4,24 @@ import React, { useState, useEffect } from 'react'
 import { MapPin, Home, Hash, MessageSquare, Save, Edit3, X } from 'lucide-react'
 import { useDeliveryAddresses, useCreateDeliveryAddress, useUpdateDeliveryAddress, DeliveryAddress, CreateDeliveryAddressData } from '@/hooks/delivery-address.hook'
 import { useMeAPI } from '@/hooks/useMeAPI.hook'
-import { useAuth } from '@/lib/auth/useAuth'
+import { useAuth } from '@/lib/stores/useAuth'
 import { useNotification } from '@/components/ui/NotificationProvider'
+import { usePostCodes } from '@/hooks/post-codes.hook'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const DeliveryAddressTab: React.FC = () => {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, updateDeliveryAddress } = useAuth()
   const { showNotification } = useNotification()
-  const { refetch: refetchMe, loading: meLoading } = useMeAPI()
+  const { loading: meLoading } = useMeAPI()
   const { addresses, loading: fetchLoading, fetchAddresses } = useDeliveryAddresses()
   const { createAddress, loading: createLoading } = useCreateDeliveryAddress()
   const { updateAddress, loading: updateLoading } = useUpdateDeliveryAddress()
+  const { postCodes, loading: postCodesLoading, fetchPostCodes } = usePostCodes()
 
   const [formData, setFormData] = useState({
     address_line_1: '',
     address_line_2: '',
+    city: '',
     post_code: '',
     details: ''
   })
@@ -26,12 +30,13 @@ const DeliveryAddressTab: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
 
-  // Fetch existing delivery address on component mount
+  // Fetch existing delivery address and post codes on component mount
   useEffect(() => {
     if (isAuthenticated) {
       fetchAddresses()
+      fetchPostCodes()
     }
-  }, [isAuthenticated, fetchAddresses])
+  }, [isAuthenticated, fetchAddresses, fetchPostCodes])
 
   // Set form data when addresses are fetched
   useEffect(() => {
@@ -41,6 +46,7 @@ const DeliveryAddressTab: React.FC = () => {
       setFormData({
         address_line_1: firstAddress.address_line_1 || '',
         address_line_2: firstAddress.address_line_2 || '',
+        city: (firstAddress as any).city || '',
         post_code: firstAddress.post_code || '',
         details: firstAddress.details || ''
       })
@@ -50,6 +56,7 @@ const DeliveryAddressTab: React.FC = () => {
       setFormData({
         address_line_1: '',
         address_line_2: '',
+        city: '',
         post_code: '',
         details: ''
       })
@@ -65,9 +72,16 @@ const DeliveryAddressTab: React.FC = () => {
     }))
   }
 
+  const handlePostCodeChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      post_code: value
+    }))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!isAuthenticated) {
       showNotification({
         type: 'error',
@@ -78,11 +92,11 @@ const DeliveryAddressTab: React.FC = () => {
     }
 
     // Basic validation
-    if (!formData.address_line_1.trim() || !formData.post_code.trim()) {
+    if (!formData.address_line_1.trim() || !formData.city.trim() || !formData.post_code.trim()) {
       showNotification({
         type: 'error',
         title: 'Validation Error',
-        message: 'Address line 1 and post code are required',
+        message: 'Address line 1, city, and post code are required',
       })
       return
     }
@@ -92,7 +106,13 @@ const DeliveryAddressTab: React.FC = () => {
     try {
       if (existingAddress) {
         // Update existing address
-        await updateAddress(existingAddress.id, formData)
+        const updatedAddress = await updateAddress(existingAddress.id, formData)
+        // console.log(updatedAddress)
+        // Store in auth store
+        if (updatedAddress) {
+          updateDeliveryAddress(updatedAddress)
+        }
+        
         showNotification({
           type: 'success',
           title: 'Success',
@@ -103,22 +123,30 @@ const DeliveryAddressTab: React.FC = () => {
         const addressData: CreateDeliveryAddressData = {
           address_line_1: formData.address_line_1.trim(),
           address_line_2: formData.address_line_2.trim(),
+          city: formData.city.trim(),
           post_code: formData.post_code.trim(),
           details: formData.details.trim()
         }
-        await createAddress(addressData)
+         await createAddress(addressData)
+        
+        
+        // Store in auth store
+        // if (result) {
+        //   updateDeliveryAddress(result)
+        // }
+        
         showNotification({
           type: 'success',
           title: 'Success',
           message: 'Delivery address created successfully!',
         })
       }
-      
+
       // Refresh addresses and user data after successful operation
-      await Promise.all([
-        fetchAddresses(),
-        refetchMe()
-      ])
+      // await Promise.all([
+      //   fetchAddresses(),
+      //   // refetchMe() 
+      // ])
       setIsEditing(false)
     } catch (error: any) {
       showNotification({
@@ -142,6 +170,7 @@ const DeliveryAddressTab: React.FC = () => {
       setFormData({
         address_line_1: existingAddress.address_line_1 || '',
         address_line_2: existingAddress.address_line_2 || '',
+        city: (existingAddress as any).city || '',
         post_code: existingAddress.post_code || '',
         details: existingAddress.details || ''
       })
@@ -160,12 +189,12 @@ const DeliveryAddressTab: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-12">
       <div className="bg-white rounded-2xl shadow-lg p-6">
         {/* Header with Actions */}
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold text-gray-900">Delivery Address</h3>
-          
+
           {existingAddress && !isEditing ? (
             <button
               onClick={handleEdit}
@@ -196,8 +225,8 @@ const DeliveryAddressTab: React.FC = () => {
         </div>
 
         <p className="text-sm text-gray-600 mb-6">
-          {existingAddress 
-            ? 'Manage your delivery address information below.' 
+          {existingAddress
+            ? 'Manage your delivery address information below.'
             : 'Add your delivery address information below.'
           }
         </p>
@@ -220,11 +249,10 @@ const DeliveryAddressTab: React.FC = () => {
                 onChange={handleInputChange}
                 placeholder="e.g., House 10, Road 5, Dhaka"
                 disabled={!isEditing || isLoading}
-                className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${
-                  isEditing 
-                    ? 'border-gray-200 bg-white' 
+                className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${isEditing
+                    ? 'border-gray-200 bg-white'
                     : 'border-gray-100 bg-gray-50'
-                }`}
+                  }`}
                 required
               />
             </div>
@@ -245,41 +273,77 @@ const DeliveryAddressTab: React.FC = () => {
                 type="text"
                 value={formData.address_line_2}
                 onChange={handleInputChange}
-                placeholder="e.g., Near the main gate, 2nd floor"
+                placeholder="e.g., Apt 4B, Near the main gate"
                 disabled={!isEditing || isLoading}
-                className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${
-                  isEditing 
-                    ? 'border-gray-200 bg-white' 
+                className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${isEditing
+                    ? 'border-gray-200 bg-white'
                     : 'border-gray-100 bg-gray-50'
-                }`}
+                  }`}
               />
             </div>
           </div>
 
-          {/* Post Code */}
-          <div>
-            <label htmlFor="post_code" className="block text-sm font-semibold text-gray-700 mb-2">
-              Post Code *
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Hash size={20} className="text-gray-400" />
+          {/* City and Post Code Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* City */}
+            <div>
+              <label htmlFor="city" className="block text-sm font-semibold text-gray-700 mb-2">
+                City *
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <MapPin size={20} className="text-gray-400" />
+                </div>
+                <input
+                  id="city"
+                  name="city"
+                  type="text"
+                  value={formData.city}
+                  onChange={handleInputChange}
+                  placeholder="e.g., New York"
+                  disabled={!isEditing || isLoading}
+                  className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${isEditing
+                      ? 'border-gray-200 bg-white'
+                      : 'border-gray-100 bg-gray-50'
+                    }`}
+                  required
+                />
               </div>
-              <input
-                id="post_code"
-                name="post_code"
-                type="text"
-                value={formData.post_code}
-                onChange={handleInputChange}
-                placeholder="e.g., 1200"
-                disabled={!isEditing || isLoading}
-                className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${
-                  isEditing 
-                    ? 'border-gray-200 bg-white' 
-                    : 'border-gray-100 bg-gray-50'
-                }`}
-                required
-              />
+            </div>
+
+            {/* Post Code */}
+            <div>
+              <label htmlFor="post_code" className="block text-sm font-semibold text-gray-700 mb-2">
+                Post Code *
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
+                  <Hash size={20} className="text-gray-400" />
+                </div>
+                <Select
+                  value={formData.post_code}
+
+                  onValueChange={handlePostCodeChange}
+                  disabled={!isEditing || isLoading || postCodesLoading}
+                >
+                  <SelectTrigger className={`w-full rounded-xl border-2 pl-12 pr-4 py-6 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${isEditing
+                      ? 'border-gray-200 bg-white'
+                      : 'border-gray-100 bg-gray-50'
+                    }`}>
+                    <SelectValue placeholder="Select a post code" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {postCodes.map((postCode) => (
+                      <SelectItem key={postCode.id} value={postCode.code}>
+                        {postCode.code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {postCodesLoading && (
+                <p className="text-xs text-gray-500 mt-1">Loading post codes...</p>
+              )}
             </div>
           </div>
 
@@ -300,11 +364,10 @@ const DeliveryAddressTab: React.FC = () => {
                 placeholder="e.g., Please call before delivery"
                 rows={3}
                 disabled={!isEditing || isLoading}
-                className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 resize-none ${
-                  isEditing 
-                    ? 'border-gray-200 bg-white' 
+                className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 resize-none ${isEditing
+                    ? 'border-gray-200 bg-white'
                     : 'border-gray-100 bg-gray-50'
-                }`}
+                  }`}
               />
             </div>
           </div>

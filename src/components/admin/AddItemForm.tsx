@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useCategories } from '@/hooks/category.hook';
 import { useSizes } from '@/hooks/sizes.hook';
 import { useCreateMenu, useUpdateMenu } from '@/hooks/menu.hook';
-import { useAuth } from '@/lib/auth/useAuth';
+import { useAuth } from '@/lib/stores/useAuth';
 import { ITEMS_API } from '@/app/api';
 import {
   Dialog,

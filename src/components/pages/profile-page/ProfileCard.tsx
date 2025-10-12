@@ -3,7 +3,7 @@
 import React from 'react'
 import { Shield, Calendar } from 'lucide-react';
 import ImageUpload from './ImageUpload'
-import { User as UserType } from '@/lib/auth/useAuth'
+import { User as UserType } from '@/lib/stores/useAuth'
 
 interface ProfileCardProps {
   profile: UserType
@@ -37,7 +37,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         {/* Profile Image */}
         <div className="mb-4">
           <ImageUpload
-              currentImage={`${process.env.NEXT_PUBLIC_API_URL}${profile.user_image}` || null}
+              currentImage={profile.user_image ? `${process.env.NEXT_PUBLIC_API_URL}${profile.user_image}` : null}
             imagePreview={imagePreview}
             onImageChange={onImageChange}
             isEditing={isEditing}

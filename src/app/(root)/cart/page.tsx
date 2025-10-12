@@ -4,7 +4,7 @@ import React, { useMemo, useState, useCallback, useEffect, useRef } from "react"
 import Image from "next/image";
 import { User, MapPin, MessageSquare } from "lucide-react";
 import { useCart, useUpdateCartItem, useDeleteCartItem, useDeleteGuestCartItem } from "@/hooks/cart.hook";
-import { useAuth } from "@/lib/auth/useAuth";
+import { useAuth } from "@/lib/stores/useAuth";
 import { useCreateOrder } from "@/hooks/order.hook";
 import { USER_ORDERS_API, USER_STRIPE_CREATE_SESSION_API } from "@/app/api";
 import { useCreateGuestOrder } from "@/hooks/guest-order.hook";

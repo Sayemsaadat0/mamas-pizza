@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from 'react';
-import { useAuth } from '@/lib/auth/useAuth';
+import { useAuth } from '@/lib/stores/useAuth';
 import { 
   STRIPE_CREATE_SESSION_API, 
   STRIPE_VERIFY_PAYMENT_API, 

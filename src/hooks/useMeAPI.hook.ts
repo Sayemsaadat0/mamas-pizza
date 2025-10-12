@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from 'react';
-import { useAuth, authAPI } from '@/lib/auth/useAuth';
+import { useAuth, authAPI } from '@/lib/stores/useAuth';
 
 export interface MeAPIResponse {
   success: boolean;

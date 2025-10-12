@@ -5,7 +5,7 @@ import type { Restaurant } from "@/hooks/restaurant.hook";
 import { RESTAURANTS_API } from "@/app/api";
 import ShopOpenForm from "./_components/ShopOpenForm"
 import RestaurantForms from "./_components/RestaurantForms"
-import { useAuth } from '@/lib/auth/useAuth';
+import { useAuth } from '@/lib/stores/useAuth';
 
 const Settings = () => {
   const { token } = useAuth();

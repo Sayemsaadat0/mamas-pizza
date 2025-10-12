@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 
 import Logo from '@/components/core/Logo'
-import { useAuth, authAPI } from '@/lib/auth/useAuth'
+import { useAuth, authAPI } from '@/lib/stores/useAuth'
 import { useRouter } from 'next/navigation'
 
 const LoginPage = () => {

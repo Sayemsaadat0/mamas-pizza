@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useCategories } from '@/hooks/category.hook';
-import { useAuth } from '@/lib/auth/useAuth';
+import { useAuth } from '@/lib/stores/useAuth';
 import { ADMIN_OFFERS_API, API_BASE_URL } from '@/app/api';
 import {
     Dialog,

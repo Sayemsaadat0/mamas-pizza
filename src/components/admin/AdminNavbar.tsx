@@ -10,7 +10,7 @@ import {
     ChevronDown
 } from 'lucide-react';
 import { useSidebar } from '@/app/(admin)/template';
-import { useAuth } from '@/lib/auth/useAuth';
+import { useAuth } from '@/lib/stores/useAuth';
 import NotificationDropdown from './NotificationDropdown';
 
 const AdminNavbar: React.FC = () => {

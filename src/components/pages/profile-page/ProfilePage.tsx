@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useAuth } from '@/lib/auth/useAuth'
+import { useAuth } from '@/lib/stores/useAuth'
 import ProfileTab from './ProfileTab'
 import ProfileInfoTab from './ProfileInfoTab'
 import DeliveryAddressTab from './DeliveryAddressTab'

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useCategories } from "@/hooks/category.hook";
 import { useMenus } from "@/hooks/menu.hook";
 import { useBogoOffers } from "@/hooks/bogo-offer.hooks";
-import { useAuth } from "@/lib/auth/useAuth";
+import { useAuth } from "@/lib/stores/useAuth";
 import { useGuest } from "@/lib/guest/GuestProvider";
 import MenuCard from "@/components/MenuCard";
 import MenuOfferCards from "@/components/pages/home-page/MenuOfferCards";

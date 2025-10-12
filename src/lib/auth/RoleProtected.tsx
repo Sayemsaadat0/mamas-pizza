@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from './useAuth';
+import { useAuth } from '../stores/useAuth';
 
 interface RoleProtectedProps {
   children: React.ReactNode;

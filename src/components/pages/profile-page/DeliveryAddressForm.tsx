@@ -3,21 +3,24 @@
 import { useState, useEffect } from 'react';
 import { useDeliveryAddresses, useCreateDeliveryAddress, useUpdateDeliveryAddress, DeliveryAddress, CreateDeliveryAddressData } from '@/hooks/delivery-address.hook';
 import { useMeAPI } from '@/hooks/useMeAPI.hook';
-import { useAuth } from '@/lib/auth/useAuth';
+import { useAuth } from '@/lib/stores/useAuth';
 import { useNotification } from '@/components/ui/NotificationProvider';
-import { MapPin, Home, Hash, MessageSquare, Save, Edit3, X } from 'lucide-react';
+import { usePostCodes } from '@/hooks/post-codes.hook';
+import { MapPin, Home, Hash, MessageSquare, Save, Edit3, X, ChevronDown } from 'lucide-react';
 
 const DeliveryAddressForm = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, updateDeliveryAddress } = useAuth();
   const { showNotification } = useNotification();
   const { refetch: refetchMe, loading: meLoading } = useMeAPI();
   const { addresses, loading: fetchLoading, fetchAddresses } = useDeliveryAddresses();
   const { createAddress, loading: createLoading } = useCreateDeliveryAddress();
   const { updateAddress, loading: updateLoading } = useUpdateDeliveryAddress();
+  const { postCodes, loading: postCodesLoading, fetchPostCodes } = usePostCodes();
 
   const [formData, setFormData] = useState({
     address_line_1: '',
     address_line_2: '',
+    city: '',
     post_code: '',
     details: ''
   });
@@ -26,12 +29,13 @@ const DeliveryAddressForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Fetch existing delivery address on component mount
+  // Fetch existing delivery address and post codes on component mount
   useEffect(() => {
     if (isAuthenticated) {
       fetchAddresses();
+      fetchPostCodes();
     }
-  }, [isAuthenticated, fetchAddresses]);
+  }, [isAuthenticated, fetchAddresses, fetchPostCodes]);
 
   // Set form data when addresses are fetched
   useEffect(() => {
@@ -41,6 +45,7 @@ const DeliveryAddressForm = () => {
       setFormData({
         address_line_1: firstAddress.address_line_1 || '',
         address_line_2: firstAddress.address_line_2 || '',
+        city: (firstAddress as any).city || '',
         post_code: firstAddress.post_code || '',
         details: firstAddress.details || ''
       });
@@ -50,6 +55,7 @@ const DeliveryAddressForm = () => {
       setFormData({
         address_line_1: '',
         address_line_2: '',
+        city: '',
         post_code: '',
         details: ''
       });
@@ -57,7 +63,7 @@ const DeliveryAddressForm = () => {
     }
   }, [addresses]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -78,11 +84,11 @@ const DeliveryAddressForm = () => {
     }
 
     // Basic validation
-    if (!formData.address_line_1.trim() || !formData.post_code.trim()) {
+    if (!formData.address_line_1.trim() || !formData.city.trim() || !formData.post_code.trim()) {
       showNotification({
         type: 'error',
         title: 'Validation Error',
-        message: 'Address line 1 and post code are required',
+        message: 'Address line 1, city, and post code are required',
       });
       return;
     }
@@ -92,7 +98,13 @@ const DeliveryAddressForm = () => {
     try {
       if (existingAddress) {
         // Update existing address
-        await updateAddress(existingAddress.id, formData);
+        const updatedAddress = await updateAddress(existingAddress.id, formData);
+        
+        // Store in auth store
+        if (updatedAddress) {
+          updateDeliveryAddress(updatedAddress);
+        }
+        
         showNotification({
           type: 'success',
           title: 'Success',
@@ -103,10 +115,17 @@ const DeliveryAddressForm = () => {
         const addressData: CreateDeliveryAddressData = {
           address_line_1: formData.address_line_1.trim(),
           address_line_2: formData.address_line_2.trim(),
+          city: formData.city.trim(),
           post_code: formData.post_code.trim(),
           details: formData.details.trim()
         };
-        await createAddress(addressData);
+        const result = await createAddress(addressData);
+        
+        // Store in auth store
+        if (result) {
+          updateDeliveryAddress(result);
+        }
+        
         showNotification({
           type: 'success',
           title: 'Success',
@@ -142,6 +161,7 @@ const DeliveryAddressForm = () => {
       setFormData({
         address_line_1: existingAddress.address_line_1 || '',
         address_line_2: existingAddress.address_line_2 || '',
+        city: (existingAddress as any).city || '',
         post_code: existingAddress.post_code || '',
         details: existingAddress.details || ''
       });
@@ -243,13 +263,40 @@ const DeliveryAddressForm = () => {
               type="text"
               value={formData.address_line_2}
               onChange={handleInputChange}
-              placeholder="e.g., Near the main gate, 2nd floor"
+              placeholder="e.g., Apt 4B, Near the main gate"
               disabled={!isEditing || isLoading}
               className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${
                 isEditing 
                   ? 'border-gray-200 bg-white' 
                   : 'border-gray-100 bg-gray-50'
               }`}
+            />
+          </div>
+        </div>
+
+        {/* City */}
+        <div>
+          <label htmlFor="city" className="block text-sm font-semibold text-gray-700 mb-2">
+            City *
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <MapPin size={20} className="text-gray-400" />
+            </div>
+            <input
+              id="city"
+              name="city"
+              type="text"
+              value={formData.city}
+              onChange={handleInputChange}
+              placeholder="e.g., New York"
+              disabled={!isEditing || isLoading}
+              className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${
+                isEditing 
+                  ? 'border-gray-200 bg-white' 
+                  : 'border-gray-100 bg-gray-50'
+              }`}
+              required
             />
           </div>
         </div>
@@ -263,22 +310,33 @@ const DeliveryAddressForm = () => {
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <Hash size={20} className="text-gray-400" />
             </div>
-            <input
+            <select
               id="post_code"
               name="post_code"
-              type="text"
               value={formData.post_code}
               onChange={handleInputChange}
-              placeholder="e.g., 1200"
-              disabled={!isEditing || isLoading}
-              className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${
+              disabled={!isEditing || isLoading || postCodesLoading}
+              className={`w-full rounded-xl border-2 pl-12 pr-10 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 appearance-none ${
                 isEditing 
                   ? 'border-gray-200 bg-white' 
                   : 'border-gray-100 bg-gray-50'
               }`}
               required
-            />
+            >
+              <option value="">Select a post code</option>
+              {postCodes.map((postCode) => (
+                <option key={postCode.id} value={postCode.code}>
+                  {postCode.code} - ${postCode.deliver_charge} delivery charge
+                </option>
+              ))}
+            </select>
+            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+              <ChevronDown size={20} className="text-gray-400" />
+            </div>
           </div>
+          {postCodesLoading && (
+            <p className="text-xs text-gray-500 mt-1">Loading post codes...</p>
+          )}
         </div>
 
         {/* Delivery Instructions */}

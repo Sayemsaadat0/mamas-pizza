@@ -20,10 +20,12 @@ import {
     LogOut,
     UserCircle,
 } from 'lucide-react';
-import { useAuth } from '@/lib/auth/useAuth';
+import { useAuth } from '@/lib/stores/useAuth';
+import { LOGOUT_API } from '@/app/api';
 import { defaultNavMenuData } from '../constant';
 import Image from 'next/image';
 import Logo from './Logo';
+import { toast } from 'sonner';
 // import Logo from './logo/Logo';
 
 // -------------------------
@@ -236,7 +238,7 @@ const Navbar: React.FC = () => {
     
     // Initialize scroll state based on current page
     const [isScrolled, setIsScrolled] = useState(!isLandingPage);
-    const { user, isAuthenticated, clearUser } = useAuth();
+    const { user, isAuthenticated, clearUser, token } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
@@ -254,9 +256,30 @@ const Navbar: React.FC = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, [isLandingPage]);
 
-    const handleLogout = () => {
-        clearUser();
-        router.push('/');
+    const handleLogout = async () => {
+        try {
+            // Call logout API if user is authenticated and has a token
+            if (isAuthenticated && token) {
+                const response = await fetch(LOGOUT_API, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                    },
+                });
+
+                if (response.ok) {
+                    toast.success('Logged out successfully');
+                } else {
+                    console.warn('Logout API call failed, but proceeding with local logout');
+                }
+            }
+        } catch (error) {
+            console.error('Error during logout API call:', error);
+        } finally {
+            clearUser();
+            router.push('/');
+        }
     };
 
     return (

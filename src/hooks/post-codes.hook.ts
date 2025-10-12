@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from 'react';
-import { useAuth } from '@/lib/auth/useAuth';
+import { useAuth } from '@/lib/stores/useAuth';
 import { POST_CODES_API, getPostCodeById, GUEST_POST_CODES_API, getGuestPostCodeById } from '@/app/api';
 
 export interface PostCode {

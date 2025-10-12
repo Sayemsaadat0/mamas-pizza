@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/lib/auth/useAuth";
+import { useAuth } from "@/lib/stores/useAuth";
 import { useGuest } from "@/lib/guest/GuestProvider";
 import { USER_CART_API, GUEST_CART_API, CART_SUMMARY_API, USER_BOGO_OFFERS_API } from "@/app/api";
 

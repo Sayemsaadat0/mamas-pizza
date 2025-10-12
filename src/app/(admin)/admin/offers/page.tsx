@@ -156,7 +156,7 @@ const OffersPage: React.FC = () => {
                                                 <div className="w-12 h-12 rounded overflow-hidden relative flex-shrink-0 bg-gray-100">
                                                     {offer.thumbnail ? (
                                                         <Image
-                                                            src={`${process.env.NEXT_PUBLIC_API_URL}${offer.thumbnail}`}
+                                                            src={offer.thumbnail ? `${process.env.NEXT_PUBLIC_API_URL}${offer.thumbnail}` : '/placeholder-avatar.svg'}
                                                             alt={offer.title}
                                                             width={48}
                                                             height={48}

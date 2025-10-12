@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from 'react';
-import { useAuth } from '@/lib/auth/useAuth';
+import { useAuth } from '@/lib/stores/useAuth';
 import { DELIVERY_ADDRESSES_API, getDeliveryAddressById } from '@/app/api';
 
 export interface DeliveryAddress {
@@ -9,6 +9,7 @@ export interface DeliveryAddress {
   user_id: number;
   address_line_1: string;
   address_line_2: string;
+  city: string; // Added city field for new payload structure
   post_code: string;
   details: string;
   created_at: string;
@@ -18,6 +19,7 @@ export interface DeliveryAddress {
 export interface CreateDeliveryAddressData {
   address_line_1: string;
   address_line_2: string;
+  city: string;
   post_code: string;
   details: string;
 }
@@ -26,6 +28,7 @@ export interface UpdateDeliveryAddressData {
   fields?: string;
   address_line_1?: string;
   address_line_2?: string;
+  city?: string;
   post_code?: string;
   details?: string;
 }

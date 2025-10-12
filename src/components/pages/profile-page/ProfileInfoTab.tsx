@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { User, Mail, Upload, Edit3, Save, X } from 'lucide-react'
-import { useAuth, authAPI } from '@/lib/auth/useAuth'
+import { useAuth, authAPI } from '@/lib/stores/useAuth'
 import { useNotification } from '@/components/ui/NotificationProvider'
 import ProfileCard from './ProfileCard'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
@@ -58,12 +58,10 @@ const ProfileInfoTab: React.FC = () => {
         user_image: selectedImage || undefined,
       })
 
-      console.log('Profile update response:', response)
 
       // Check for success with user data
       if (response.success && response.data?.user) {
         const userData = response.data.user
-        console.log('Updating user with:', userData)
         updateUser(userData)
 
         showNotification({

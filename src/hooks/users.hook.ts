@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/lib/auth/useAuth";
+import { useAuth } from "@/lib/stores/useAuth";
 import { GET_ALL_USERS_API } from "@/app/api";
 
 export interface DeliveryAddress {

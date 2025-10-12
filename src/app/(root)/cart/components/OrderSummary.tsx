@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/lib/auth/useAuth";
+import { useAuth } from "@/lib/stores/useAuth";
 import Link from "next/link";
 import React from "react";
 

@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react'
 import { Lock, Eye, EyeOff, Save, X } from 'lucide-react'
-import { useAuth } from '@/lib/auth/useAuth'
+import { useAuth } from '@/lib/stores/useAuth'
 import { useNotification } from '@/components/ui/NotificationProvider'
+import { CHANGE_PASSWORD_API } from '@/app/api'
 
 const ChangePasswordTab: React.FC = () => {
   const { token } = useAuth()
@@ -51,21 +52,19 @@ const ChangePasswordTab: React.FC = () => {
 
     try {
       setSubmitting(true)
-
-      const base = process.env.NEXT_PUBLIC_API_URL
-      if (!base) throw new Error('Missing NEXT_PUBLIC_API_URL')
+      
       if (!token) throw new Error('Not authenticated')
 
-      const res = await fetch(`${base}/api/change-password`, {
+      const res = await fetch(CHANGE_PASSWORD_API, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          current_password: passwordData.currentPassword,
+          previous_password: passwordData.currentPassword,
           new_password: passwordData.newPassword,
-          new_password_confirmation: passwordData.confirmPassword,
+          confirm_new_password: passwordData.confirmPassword,
         }),
       })
 

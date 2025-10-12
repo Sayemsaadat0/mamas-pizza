@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useGuest } from '@/lib/guest/GuestProvider';
-import { useAuth } from '@/lib/auth/useAuth';
+import { useAuth } from '@/lib/stores/useAuth';
 import { toast } from 'sonner';
 import { GUEST_STRIPE_VERIFY_PAYMENT_API, STRIPE_VERIFY_PAYMENT_API, REGISTER_API } from '@/app/api';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';

@@ -27,6 +27,8 @@ interface AuthState {
 interface AuthActions {
   setUser: (user: User, token: string) => void;
   updateUser: (user: User) => void;
+  updateDeliveryAddress: (deliveryAddress: DeliveryAddress) => void;
+  clearDeliveryAddress: () => void;
   clearUser: () => void;
   setLoading: (loading: boolean) => void;
 }
@@ -54,6 +56,18 @@ export const useAuth = create<AuthState & AuthActions>()(
 
       updateUser: (user: User) => {
         set({ user });
+      },
+
+      updateDeliveryAddress: (deliveryAddress: DeliveryAddress) => {
+        set((state) => ({
+          user: state.user ? { ...state.user, delivery_address: deliveryAddress } : null,
+        }));
+      },
+
+      clearDeliveryAddress: () => {
+        set((state) => ({
+          user: state.user ? { ...state.user, delivery_address: null } : null,
+        }));
       },
 
       clearUser: () => {
@@ -195,10 +209,6 @@ export const authAPI = {
       });
 
       const result = await response.json();
-      console.log('API Response:', result);
-      console.log('Response OK:', response.ok);
-      console.log('Result success:', result.success);
-      console.log('Result data:', result.data);
 
       if (response.ok && result.success && result.data) {
         return {
