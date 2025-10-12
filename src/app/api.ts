@@ -11,7 +11,7 @@ export const LOGOUT_ALL_API = `${API_BASE_URL}/api/v1/logout-all`;
 // ==================== USER MANAGEMENT APIs ====================
 export const ME_API = `${API_BASE_URL}/api/v1/me`;
 export const USER_API = `${API_BASE_URL}/api/v1/user`;
-export const UPDATE_PROFILE_API = `${API_BASE_URL}/api/v1/me`; // POST with user_id
+export const UPDATE_PROFILE_API = `${API_BASE_URL}/api/v1/me`; // POST for profile update with user_id
 export const CHANGE_PASSWORD_API = `${API_BASE_URL}/api/v1/change-password`;
 
 // ==================== DELIVERY ADDRESS APIs ====================
@@ -100,9 +100,6 @@ export const getItemById = (itemId: string) =>
 export const getOrderDetailsByorderNumber = (orderNumber: string) => 
   `${ORDER_DETAILS_API}${orderNumber}`;
 
-// Helper function to update profile with user ID
-export const updateUserProfile = (userId: string) => 
-  `${UPDATE_PROFILE_API}/${userId}`;
 
 // Helper function to get specific order
 export const getOrderById = (orderId: string) => 

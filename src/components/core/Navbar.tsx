@@ -229,20 +229,30 @@ export const DefaultNavMenuList: React.FC<{ isScrolled: boolean }> = ({ isScroll
 // -------------------------
 const Navbar: React.FC = () => {
     const [hideContactNav, setHideContactNav] = useState(false);
-    const [isScrolled, setIsScrolled] = useState(false);
-    const { user, isAuthenticated, clearUser, token } = useAuth();
+    const pathname = usePathname();
+    
+    // Check if current page is landing page
+    const isLandingPage = pathname === '/';
+    
+    // Initialize scroll state based on current page
+    const [isScrolled, setIsScrolled] = useState(!isLandingPage);
+    const { user, isAuthenticated, clearUser } = useAuth();
     const router = useRouter();
-    // console.log(token);
 
     useEffect(() => {
         const handleScroll = () => {
             const scrollY = window.scrollY;
             setHideContactNav(scrollY > 50);
-            setIsScrolled(scrollY > 20);
+            // Only apply scroll effect on landing page
+            if (isLandingPage) {
+                setIsScrolled(scrollY > 20);
+            } else {
+                setIsScrolled(true); // Always white on other pages
+            }
         };
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
+    }, [isLandingPage]);
 
     const handleLogout = () => {
         clearUser();

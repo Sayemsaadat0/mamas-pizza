@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { LOGIN_API, ME_API, REGISTER_API, updateUserProfile } from '@/app/api';
+import { LOGIN_API, ME_API, REGISTER_API, UPDATE_PROFILE_API,  } from '@/app/api';
 import { DeliveryAddress } from '@/hooks/delivery-address.hook';
 
 export interface User {
@@ -13,6 +13,8 @@ export interface User {
   user_image?: string | null;
   created_at: string;
   updated_at: string;
+  // Allow additional fields from API
+  [key: string]: any;
 }
 
 interface AuthState {
@@ -173,7 +175,7 @@ export const authAPI = {
     }
   },
 
-  updateProfile: async (token: string, userId: number, data: { name: string; email: string; user_image?: File }) => {
+  updateProfile: async (token: string,  data: { name: string; email: string; user_image?: File }) => {
     try {
       const formData = new FormData();
       formData.append('name', data.name);
@@ -183,7 +185,7 @@ export const authAPI = {
         formData.append('user_image', data.user_image);
       }
 
-      const response = await fetch(updateUserProfile(userId.toString()), {
+      const response = await fetch(UPDATE_PROFILE_API, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -193,11 +195,15 @@ export const authAPI = {
       });
 
       const result = await response.json();
+      console.log('API Response:', result);
+      console.log('Response OK:', response.ok);
+      console.log('Result success:', result.success);
+      console.log('Result data:', result.data);
 
       if (response.ok && result.success && result.data) {
         return {
           success: true,
-          user: result.data,
+          data: result.data,
           message: result.message || 'Profile updated successfully',
         };
       } else {
