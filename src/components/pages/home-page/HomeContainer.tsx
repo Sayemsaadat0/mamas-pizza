@@ -2,7 +2,7 @@ import HeroSection from "./HeroSection"
 import MenuSection from "./MenuSection"
 import ProcessSection from "./ProcessSection"
 import WhyChooseUsSection from "./WhyChooseUsSection"
-// import MapSection from "./MapSection"
+import MapSection from "./MapSection"
 // import ReviewSection from "./ReviewSection"
 
 const HomeContainer = () => {
@@ -11,7 +11,7 @@ const HomeContainer = () => {
             <HeroSection />
             <ProcessSection />
             <MenuSection />
-            {/* <MapSection /> */}
+            <MapSection />
             <WhyChooseUsSection />
             {/* <ReviewSection /> */}
         </div>

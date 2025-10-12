@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useCallback } from 'react';
-import { useAuth } from '@/lib/stores/useAuth';
-import { RESTAURANTS_API, getRestaurantById } from '@/app/api';
+import { useState, useCallback } from "react";
+import { useAuth } from "@/lib/stores/useAuth";
+import { RESTAURANTS_API, getRestaurantById } from "@/app/api";
 
 export interface Restaurant {
   id: number;
@@ -48,40 +48,34 @@ export interface UpdateRestaurantData {
 
 // GET all restaurants
 export function useRestaurants() {
-  const { token, isAuthenticated } = useAuth();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchRestaurants = useCallback(async () => {
-    if (!isAuthenticated || !token) {
-      setError('User not authenticated');
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
     try {
       const response = await fetch(RESTAURANTS_API, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
+          Accept: "application/json",
         },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch restaurants');
+        throw new Error("Failed to fetch restaurants");
       }
 
       const result = await response.json();
+      console.log(result, "result");
       setRestaurants(result.data || []);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, token]);
+  }, []);
 
   return {
     restaurants,
@@ -100,7 +94,7 @@ export function useRestaurant(restaurantId: string) {
 
   const fetchRestaurant = useCallback(async () => {
     if (!isAuthenticated || !token) {
-      setError('User not authenticated');
+      setError("User not authenticated");
       return;
     }
 
@@ -110,13 +104,13 @@ export function useRestaurant(restaurantId: string) {
     try {
       const response = await fetch(getRestaurantById(restaurantId), {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
         },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch restaurant');
+        throw new Error("Failed to fetch restaurant");
       }
 
       const result = await response.json();
@@ -144,7 +138,7 @@ export function useCreateRestaurant() {
 
   const createRestaurant = async (restaurantData: CreateRestaurantData) => {
     if (!isAuthenticated || !token) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
 
     setLoading(true);
@@ -152,11 +146,11 @@ export function useCreateRestaurant() {
 
     try {
       const response = await fetch(RESTAURANTS_API, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
         },
         body: JSON.stringify(restaurantData),
       });
@@ -166,10 +160,10 @@ export function useCreateRestaurant() {
         // Bubble up validation errors when available
         if (response.status === 422) {
           throw new Error(
-            errorData.message || 'Validation error while creating restaurant'
+            errorData.message || "Validation error while creating restaurant"
           );
         }
-        throw new Error(errorData.message || 'Failed to create restaurant');
+        throw new Error(errorData.message || "Failed to create restaurant");
       }
 
       const result = await response.json();
@@ -195,9 +189,12 @@ export function useUpdateRestaurant() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const updateRestaurant = async (restaurantId: number, restaurantData: UpdateRestaurantData) => {
+  const updateRestaurant = async (
+    restaurantId: number,
+    restaurantData: UpdateRestaurantData
+  ) => {
     if (!isAuthenticated || !token) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
 
     setLoading(true);
@@ -205,11 +202,11 @@ export function useUpdateRestaurant() {
 
     try {
       const response = await fetch(getRestaurantById(restaurantId.toString()), {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
         },
         body: JSON.stringify(restaurantData),
       });
@@ -217,14 +214,14 @@ export function useUpdateRestaurant() {
       if (!response.ok) {
         const errorData = await response.json();
         if (response.status === 404) {
-          throw new Error(errorData.message || 'Restaurant not found');
+          throw new Error(errorData.message || "Restaurant not found");
         }
         if (response.status === 422) {
           throw new Error(
-            errorData.message || 'Validation error while updating restaurant'
+            errorData.message || "Validation error while updating restaurant"
           );
         }
-        throw new Error(errorData.message || 'Failed to update restaurant');
+        throw new Error(errorData.message || "Failed to update restaurant");
       }
 
       const result = await response.json();
@@ -252,7 +249,7 @@ export function useDeleteRestaurant() {
 
   const deleteRestaurant = async (restaurantId: number) => {
     if (!isAuthenticated || !token) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
 
     setLoading(true);
@@ -260,19 +257,19 @@ export function useDeleteRestaurant() {
 
     try {
       const response = await fetch(getRestaurantById(restaurantId.toString()), {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
         },
       });
 
       if (!response.ok) {
         const errorData = await response.json();
         if (response.status === 404) {
-          throw new Error(errorData.message || 'Restaurant not found');
+          throw new Error(errorData.message || "Restaurant not found");
         }
-        throw new Error(errorData.message || 'Failed to delete restaurant');
+        throw new Error(errorData.message || "Failed to delete restaurant");
       }
 
       return true;

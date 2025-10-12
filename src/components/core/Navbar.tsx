@@ -22,12 +22,14 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/stores/useAuth';
 import { useCartStore } from '@/lib/stores/cartStore';
-import { LOGOUT_API } from '@/app/api';
+import { LOGOUT_API, RESTAURANTS_API } from '@/app/api';
 import { defaultNavMenuData } from '../constant';
 import Image from 'next/image';
 import Logo from './Logo';
 import { toast } from 'sonner';
+import { Restaurant, useRestaurants } from '@/hooks/restaurant.hook';
 // import Logo from './logo/Logo';
+
 
 // -------------------------
 // Top Contact Navbar
@@ -37,6 +39,42 @@ interface ContactNavProps {
 }
 
 const ContactNav: React.FC<ContactNavProps> = ({ hide }) => {
+    const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchRestaurantsDirect = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await fetch(RESTAURANTS_API, {
+                headers: {
+                    'Accept': 'application/json',
+                },
+            });
+            if (!response.ok) {
+                throw new Error('Failed to fetch restaurants');
+            }
+            const result = await response.json();
+            setRestaurants(result?.data || []);
+        } catch (err: any) {
+            setError(err?.message || 'Something went wrong');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchRestaurantsDirect();
+    }, []);
+
+
+
+    /* 
+    phone number, 
+    email , 
+    address
+    */
     return (
         <div
             className={`${hide ? "hidden" : "block"
@@ -48,19 +86,23 @@ const ContactNav: React.FC<ContactNavProps> = ({ hide }) => {
                     {/* Phone */}
                     <div className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">
                         <Phone size={14} className="text-orange-500" />
-                        <span>+1 (555) 123-4567</span>
+                        <span>07424 295393</span>
                     </div>
 
                     {/* Email */}
                     <div className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">
                         <Mail size={14} className="text-orange-500" />
-                        <span>hello@foodapp.com</span>
+                        <span>order@mamaspizzalondon.com</span>
                     </div>
 
                     {/* Location */}
                     <div className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">
                         <MapPin size={14} className="text-orange-500" />
-                        <span>123 Food Street, NY</span>
+                        <span
+                          dangerouslySetInnerHTML={{
+                            __html: restaurants[0]?.shop_address || ""
+                          }}
+                        />
                     </div>
                 </div>
 
@@ -233,10 +275,10 @@ export const DefaultNavMenuList: React.FC<{ isScrolled: boolean }> = ({ isScroll
 const Navbar: React.FC = () => {
     const [hideContactNav, setHideContactNav] = useState(false);
     const pathname = usePathname();
-    
+
     // Check if current page is landing page
     const isLandingPage = pathname === '/';
-    
+
     // Initialize scroll state based on current page
     const [isScrolled, setIsScrolled] = useState(!isLandingPage);
     const { user, isAuthenticated, clearUser, token } = useAuth();

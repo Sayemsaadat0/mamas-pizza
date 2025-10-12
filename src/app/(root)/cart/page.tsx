@@ -813,7 +813,7 @@ export default function CartPage() {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Address Line 1 *
+                          House/Flat No. *
                         </label>
                         <input
                           type="text"
@@ -821,7 +821,7 @@ export default function CartPage() {
                           onChange={(e) => handleGuestInputChange('delivery_address.address_line_1', e.target.value)}
                           className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.delivery_address?.address_line_1 ? 'border-red-500' : 'border-gray-300'
                             }`}
-                          placeholder="123 Main Street"
+                          placeholder="House/Flat No."
                         />
                         {guestFormErrors.delivery_address?.address_line_1 && (
                           <p className="text-red-500 text-xs mt-1">{guestFormErrors.delivery_address.address_line_1}</p>
@@ -830,14 +830,14 @@ export default function CartPage() {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Address Line 2
+                          Road/Street Name *
                         </label>
                         <input
                           type="text"
                           value={guestFormData.delivery_address.address_line_2}
                           onChange={(e) => handleGuestInputChange('delivery_address.address_line_2', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-                          placeholder="Apt 4B, Suite 200"
+                          placeholder="Road/Street Name"
                         />
                       </div>
 

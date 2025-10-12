@@ -2,6 +2,9 @@
 import Link from "next/link";
 import { Phone, Mail, MapPin, Facebook, Twitter, Instagram, Youtube } from "lucide-react";
 import Logo from "./Logo";
+import { Restaurant } from "@/hooks/restaurant.hook";
+import { useEffect, useState } from "react";
+import { RESTAURANTS_API } from "@/app/api";
 
 export default function Footer() {
   // const year = new Date().getFullYear();
@@ -28,6 +31,35 @@ export default function Footer() {
     { icon: Instagram, href: "#", label: "Instagram" },
     { icon: Youtube, href: "#", label: "YouTube" }
   ];
+
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchRestaurantsDirect = async () => {
+      try {
+          setLoading(true);
+          setError(null);
+          const response = await fetch(RESTAURANTS_API, {
+              headers: {
+                  'Accept': 'application/json',
+              },
+          });
+          if (!response.ok) {
+              throw new Error('Failed to fetch restaurants');
+          }
+          const result = await response.json();
+          setRestaurants(result?.data || []);
+      } catch (err: any) {
+          setError(err?.message || 'Something went wrong');
+      } finally {
+          setLoading(false);
+      }
+  };
+
+  useEffect(() => {
+      fetchRestaurantsDirect();
+  }, []);
 
   return (
     <footer className="bg-gradient-to-br sticky top-[100%] from-gray-900 via-gray-800 to-gray-900 text-white  overflow-hidden">
@@ -60,15 +92,20 @@ export default function Footer() {
               <div className="space-y-3">
                 <div className="flex items-center gap-3 text-gray-300 justify-center md:justify-start">
                   <Phone size={16} className="text-orange-500" />
-                  <span className="text-sm">+1 (555) 123-4567</span>
+                  <span className="text-sm">07424 295393</span>
                 </div>
                 <div className="flex items-center gap-3 text-gray-300 justify-center md:justify-start">
                   <Mail size={16} className="text-orange-500" />
-                  <span className="text-sm">hello@foodapp.com</span>
+                  <span className="text-sm">order@mamaspizzalondon.com</span>
                 </div>
                 <div className="flex items-center gap-3 text-gray-300 justify-center md:justify-start">
                   <MapPin size={16} className="text-orange-500" />
-                  <span className="text-sm">123 Food Street, NY</span>
+                  <span
+                    className="text-sm"
+                    dangerouslySetInnerHTML={{
+                      __html: restaurants[0]?.shop_address || ""
+                    }}
+                  />
                 </div>
               </div>
             </div>
