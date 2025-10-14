@@ -1,6 +1,11 @@
+import ContactPage from "@/components/pages/contact-page/ContactPage"
+
 const page = () => {
   return (
-    <div className="bg-white mt-[200px]">page</div>
+    <div className="mt-[150px]">
+      <ContactPage />
+    </div>
   )
 }
+
 export default page

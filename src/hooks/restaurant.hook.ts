@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@/lib/stores/useAuth";
 import { RESTAURANTS_API, getRestaurantById } from "@/app/api";
 
@@ -76,6 +76,11 @@ export function useRestaurants() {
       setLoading(false);
     }
   }, []);
+
+  // Auto-fetch on mount
+  useEffect(() => {
+    fetchRestaurants();
+  }, [fetchRestaurants]);
 
   return {
     restaurants,

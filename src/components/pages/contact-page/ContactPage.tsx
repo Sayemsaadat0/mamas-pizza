@@ -1,9 +1,78 @@
-import React from 'react'
-import { Mail, Phone, MapPin, Clock, Send, MessageCircle, Users, Star } from 'lucide-react'
+'use client'
+
+import React, { useState } from 'react'
+import { Mail, Phone, MapPin, Clock, Send, MessageCircle, Users, Star, User } from 'lucide-react'
+import { toast } from 'sonner'
+import { useRestaurants } from '@/hooks/restaurant.hook'
+import { CONTACTS_API } from '@/app/api'
 
 const ContactPage = () => {
+  const { restaurants } = useRestaurants()
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    message: ''
+  })
+  const [loading, setLoading] = useState(false)
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      const response = await fetch(CONTACTS_API, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          message: formData.message
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to send message')
+      }
+
+       await response.json()
+      
+      toast.success("Message sent successfully! We'll get back to you within 24 hours.", {
+        style: { background: "#10b981", color: "#fff" },
+      })
+      
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        message: ''
+      })
+    } catch (error: any) {
+      console.error('Contact form submission error:', error)
+      toast.error(error.message || "Failed to send message. Please try again.", {
+        style: { background: "#ef4444", color: "#fff" },
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
-    <main className="bg-gradient-to-br from-gray-50 to-white min-h-screen py-40">
+    <main className=" min-h-screen py-5 md:py-20">
       {/* Header Section */}
       <section className="ah-container mx-auto text-center mb-20">
         <div className="inline-flex items-center bg-orange-100 text-orange-800 px-4 py-2 rounded-full text-sm font-medium mb-6">
@@ -35,7 +104,7 @@ const ContactPage = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">Phone</h4>
-                    <p className="text-gray-600">+880 1234-567890</p>
+                    <p className="text-gray-600">07424 295393</p>
                     <p className="text-sm text-gray-500">Mon-Sun: 9:00 AM - 10:00 PM</p>
                   </div>
                 </div>
@@ -46,7 +115,7 @@ const ContactPage = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">Email</h4>
-                    <p className="text-gray-600">hello@foodapp.com</p>
+                    <p className="text-gray-600">order@mamaspizzalondon.com</p>
                     <p className="text-sm text-gray-500">We reply within 24 hours</p>
                   </div>
                 </div>
@@ -57,8 +126,13 @@ const ContactPage = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">Address</h4>
-                    <p className="text-gray-600">Mirpur 10, Dhaka</p>
-                    <p className="text-sm text-gray-500">Bangladesh</p>
+                    <div 
+                      className="text-gray-600"
+                      dangerouslySetInnerHTML={{
+                        __html: restaurants[0]?.shop_address || "Loading address..."
+                      }}
+                    />
+                    <p className="text-sm text-gray-500">United Kingdom</p>
                   </div>
                 </div>
               </div>
@@ -106,77 +180,109 @@ const ContactPage = () => {
                 </div>
               </div>
 
-              <form className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
-                      Full Name *
-                    </label>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Name Field */}
+                <div>
+                  <label htmlFor="name" className="block text-xs font-semibold text-gray-700 mb-1">
+                    Full Name *
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <User size={16} className="text-gray-400" />
+                    </div>
                     <input
                       id="name"
                       name="name"
                       type="text"
                       required
+                      value={formData.name}
+                      onChange={handleInputChange}
                       placeholder="Enter your full name"
-                      className="w-full rounded-2xl border-2 border-gray-200 bg-white px-6 py-4 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
+                      className="w-full rounded-xl border-2 border-gray-200 bg-white pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
                     />
                   </div>
+                </div>
 
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                      Email Address *
-                    </label>
+                {/* Email Field */}
+                <div>
+                  <label htmlFor="email" className="block text-xs font-semibold text-gray-700 mb-1">
+                    Email Address *
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Mail size={16} className="text-gray-400" />
+                    </div>
                     <input
                       id="email"
                       name="email"
                       type="email"
                       required
+                      value={formData.email}
+                      onChange={handleInputChange}
                       placeholder="Enter your email"
-                      className="w-full rounded-2xl border-2 border-gray-200 bg-white px-6 py-4 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
+                      className="w-full rounded-xl border-2 border-gray-200 bg-white pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
                     />
                   </div>
                 </div>
 
+                {/* Phone Field */}
                 <div>
-                  <label htmlFor="subject" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Subject *
+                  <label htmlFor="phone" className="block text-xs font-semibold text-gray-700 mb-1">
+                    Phone Number *
                   </label>
-                  <input
-                    id="subject"
-                    name="subject"
-                    type="text"
-                    required
-                    placeholder="What's this about?"
-                    className="w-full rounded-2xl border-2 border-gray-200 bg-white px-6 py-4 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
-                  />
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Phone size={16} className="text-gray-400" />
+                    </div>
+                    <input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      required
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      placeholder="Enter your phone number"
+                      className="w-full rounded-xl border-2 border-gray-200 bg-white pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
+                    />
+                  </div>
                 </div>
 
+                {/* Message Field */}
                 <div>
-                  <label htmlFor="message" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="message" className="block text-xs font-semibold text-gray-700 mb-1">
                     Message *
                   </label>
-                  <textarea
-                    id="message"
-                    name="message"
-                    rows={6}
-                    required
-                    placeholder="Tell us more about your inquiry..."
-                    className="w-full rounded-2xl border-2 border-gray-200 bg-white px-6 py-4 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 resize-none"
-                  />
+                  <div className="relative">
+                    <div className="absolute top-3 left-3 flex items-start pointer-events-none">
+                      <MessageCircle size={16} className="text-gray-400" />
+                    </div>
+                    <textarea
+                      id="message"
+                      name="message"
+                      rows={6}
+                      required
+                      value={formData.message}
+                      onChange={handleInputChange}
+                      placeholder="Tell us more about your inquiry..."
+                      className="w-full rounded-xl border-2 border-gray-200 bg-white pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 resize-none"
+                    />
+                  </div>
                 </div>
 
-                <div className="pt-4">
+                {/* Submit Button */}
+                <div className="pt-2">
                   <button
                     type="submit"
-                    className="group w-full bg-gradient-to-r from-orange-600 to-red-500 text-white px-8 py-4 rounded-2xl text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3"
+                    disabled={loading}
+                    className="group w-full bg-gradient-to-r from-orange-600 to-red-500 disabled:opacity-60 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2"
                   >
-                    <Send size={20} className="group-hover:translate-x-1 transition-transform duration-300" />
-                    Send Message
+                    <Send size={16} className="group-hover:translate-x-1 transition-transform duration-300" />
+                    {loading ? 'Sending Message...' : 'Send Message'}
                   </button>
                 </div>
 
-                <div className="text-center pt-4">
-                  <p className="text-sm text-gray-500">
+                <div className="text-center pt-2">
+                  <p className="text-xs text-gray-500">
                     <span className="text-orange-600 font-medium">*</span> Required fields. 
                     We typically respond within 24 hours.
                   </p>

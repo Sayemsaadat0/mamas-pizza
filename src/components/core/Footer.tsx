@@ -1,13 +1,12 @@
-'use client';;
+'use client';
 import Link from "next/link";
 import { Phone, Mail, MapPin, Facebook, Twitter, Instagram, Youtube } from "lucide-react";
 import Logo from "./Logo";
-import { Restaurant } from "@/hooks/restaurant.hook";
-import { useEffect, useState } from "react";
-import { RESTAURANTS_API } from "@/app/api";
+import { useRestaurants } from "@/hooks/restaurant.hook";
 
 export default function Footer() {
   // const year = new Date().getFullYear();
+  const { restaurants } = useRestaurants();
 
   const quickLinks = [
     { name: "Home", href: "/" },
@@ -31,35 +30,6 @@ export default function Footer() {
     { icon: Instagram, href: "#", label: "Instagram" },
     { icon: Youtube, href: "#", label: "YouTube" }
   ];
-
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchRestaurantsDirect = async () => {
-      try {
-          setLoading(true);
-          setError(null);
-          const response = await fetch(RESTAURANTS_API, {
-              headers: {
-                  'Accept': 'application/json',
-              },
-          });
-          if (!response.ok) {
-              throw new Error('Failed to fetch restaurants');
-          }
-          const result = await response.json();
-          setRestaurants(result?.data || []);
-      } catch (err: any) {
-          setError(err?.message || 'Something went wrong');
-      } finally {
-          setLoading(false);
-      }
-  };
-
-  useEffect(() => {
-      fetchRestaurantsDirect();
-  }, []);
 
   return (
     <footer className="bg-gradient-to-br sticky top-[100%] from-gray-900 via-gray-800 to-gray-900 text-white  overflow-hidden">

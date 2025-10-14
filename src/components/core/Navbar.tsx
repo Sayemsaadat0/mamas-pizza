@@ -22,12 +22,20 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/stores/useAuth';
 import { useCartStore } from '@/lib/stores/cartStore';
-import { LOGOUT_API, RESTAURANTS_API } from '@/app/api';
+import { LOGOUT_API } from '@/app/api';
 import { defaultNavMenuData } from '../constant';
 import Image from 'next/image';
 import Logo from './Logo';
 import { toast } from 'sonner';
-import { Restaurant, useRestaurants } from '@/hooks/restaurant.hook';
+import { useRestaurants } from '@/hooks/restaurant.hook';
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from '@/components/ui/navigation-menu';
 // import Logo from './logo/Logo';
 
 
@@ -39,34 +47,7 @@ interface ContactNavProps {
 }
 
 const ContactNav: React.FC<ContactNavProps> = ({ hide }) => {
-    const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    const fetchRestaurantsDirect = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const response = await fetch(RESTAURANTS_API, {
-                headers: {
-                    'Accept': 'application/json',
-                },
-            });
-            if (!response.ok) {
-                throw new Error('Failed to fetch restaurants');
-            }
-            const result = await response.json();
-            setRestaurants(result?.data || []);
-        } catch (err: any) {
-            setError(err?.message || 'Something went wrong');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchRestaurantsDirect();
-    }, []);
+    const { restaurants } = useRestaurants();
 
 
 
@@ -165,11 +146,11 @@ const DefaultHamburgerMenu: React.FC = () => {
                         <MenuIcon size={20} className="text-gray-800 group-hover:text-black sm:w-6 sm:h-6" />
                     </button>
                 </SheetTrigger>
-                <SheetContent className="bg-white border-l border-gray-200 p-0 overflow-hidden w-[320px] sm:w-[380px]">
+                <SheetContent className="bg-white border-l border-gray-200 p-0 w-[320px] sm:w-[380px]">
                     <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                     <div className="h-full flex flex-col">
                         {/* Header */}
-                        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
+                        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0">
                             <div className="w-[80px] sm:w-[100px]">
                                 <Logo />
                             </div>
@@ -180,8 +161,8 @@ const DefaultHamburgerMenu: React.FC = () => {
                             </SheetClose>
                         </div>
 
-                        {/* Menu Content */}
-                        <div className="flex-1 flex flex-col justify-between p-4 sm:p-6">
+                        {/* Menu Content - Scrollable */}
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                             <div className="space-y-2">
                                 <h3 className="text-lg font-semibold text-gray-800 mb-4 sm:mb-6 flex items-center gap-2">
                                     <div className="w-8 h-0.5 bg-orange-500 rounded-full"></div>
@@ -194,6 +175,35 @@ const DefaultHamburgerMenu: React.FC = () => {
                                             <DefaultNavMenuItem item={item} index={index} />
                                         </div>
                                     ))}
+                                </div>
+
+                                {/* Area We Serve Mobile Menu */}
+                                <div className="mt-8 space-y-1">
+                                    <div className="mb-4">
+                                        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Delivery Areas</h3>
+                                        <div className="space-y-1">
+                                            {areas.map((area) => (
+                                                <Link 
+                                                    key={area.name}
+                                                    href={area.href} 
+                                                    className="group flex items-center gap-3 p-3 rounded-xl text-gray-600 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:text-orange-700 border border-transparent hover:border-orange-200 transition-all duration-300"
+                                                >
+                                                    <div className="w-8 h-8 bg-gradient-to-r from-orange-100 to-red-100 rounded-lg flex items-center justify-center group-hover:from-orange-200 group-hover:to-red-200 transition-colors duration-300">
+                                                        <MapPin size={14} className="text-orange-600" />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="text-sm font-medium">{area.name}</div>
+                                                        <div className="text-xs text-gray-500 group-hover:text-orange-600 transition-colors duration-300">
+                                                            Fast delivery available
+                                                        </div>
+                                                    </div>
+                                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                        <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                                    </div>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {/* Additional Mobile Menu Items */}
@@ -240,11 +250,85 @@ const DefaultNavMenuItem: React.FC<{ item: any; index: number }> = ({ item }) =>
 };
 
 // -------------------------
+// Areas Data
+// -------------------------
+const areas = [
+    { name: "Central London", href: "/#" },
+    { name: "West London", href: "/#" },
+    { name: "East London", href: "/#" },
+    { name: "North London", href: "/#" },
+    { name: "South London", href: "/#" },
+];
+
+// -------------------------
+// Area We Serve Menu
+// -------------------------
+const AreaWeServeMenu: React.FC<{ isScrolled: boolean }> = ({ isScrolled }) => {
+
+    return (
+        <NavigationMenu>
+            <NavigationMenuList>
+                <NavigationMenuItem>
+                    <NavigationMenuTrigger 
+                        className={`group font-semibold uppercase px-4 py-2 rounded-full transition-all duration-300 tracking-widest hover:shadow-lg ${
+                            isScrolled
+                                ? 'text-gray-700 hover:text-orange-600 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 border border-transparent hover:border-orange-200'
+                                : 'text-white hover:text-orange-600 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 border border-transparent hover:border-orange-200'
+                        }`}
+                    >
+                        <div className="flex items-center gap-2">
+                            <MapPin size={14} className="group-hover:scale-110 transition-transform duration-300" />
+                            <span>Area We Serve</span>
+                        </div>
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent className="bg-white  shadow-xl rounded-2xl p-0 overflow-hidden w-[380px]">
+                        <div className="p-6">
+                            <div className="mb-4">
+                                <h3 className="text-lg font-bold text-gray-900 mb-1">Delivery Areas</h3>
+                                <p className="text-sm text-gray-500">Choose your location for fast delivery</p>
+                            </div>
+                            <div className="grid gap-2">
+                                {areas.map((area) => (
+                                    <NavigationMenuLink key={area.name} asChild>
+                                        <Link
+                                            href={area.href}
+                                            className="group block select-none space-y-1 rounded-xl p-4 leading-none no-underline outline-none transition-all duration-300 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:shadow-md focus:bg-gradient-to-r focus:from-orange-50 focus:to-red-50 focus:shadow-md border border-transparent hover:border-orange-200"
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 bg-gradient-to-r from-orange-100 to-red-100 rounded-lg flex items-center justify-center group-hover:from-orange-200 group-hover:to-red-200 transition-colors duration-300">
+                                                        <MapPin size={16} className="text-orange-600" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-sm font-semibold leading-none text-gray-900 group-hover:text-orange-700 transition-colors duration-300">
+                                                            {area.name}
+                                                        </div>
+                                                        <p className="text-xs leading-snug text-gray-500 group-hover:text-orange-600 transition-colors duration-300 mt-1">
+                                                            We deliver delicious pizza to {area.name}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    </NavigationMenuLink>
+                                ))}
+                            </div>
+                        </div>
+                    </NavigationMenuContent>
+                </NavigationMenuItem>
+            </NavigationMenuList>
+        </NavigationMenu>
+    );
+};
+
+// -------------------------
 // Desktop Menu
 // -------------------------
 export const DefaultNavMenuList: React.FC<{ isScrolled: boolean }> = ({ isScrolled }) => {
     const pathname = usePathname();
-
 
     return (
         <div className="flex flex-col pl-7 py-16 lg:gap-6 lg:pl-0 lg:py-0 lg:flex-row lg:items-center whitespace-nowrap">
@@ -265,6 +349,8 @@ export const DefaultNavMenuList: React.FC<{ isScrolled: boolean }> = ({ isScroll
                     </Link>
                 </div>
             ))}
+            {/* Area We Serve Menu */}
+            <AreaWeServeMenu isScrolled={isScrolled} />
         </div>
     );
 };

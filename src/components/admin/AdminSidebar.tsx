@@ -14,6 +14,7 @@ import {
     Percent,
     // Menu,
     LogOut,
+    Mail,
 } from 'lucide-react';
 // import Logo from '../core/Logo';
 import { useSidebar } from '@/app/(admin)/template';
@@ -89,6 +90,11 @@ const sidebarItems: SidebarItem[] = [
         title: 'Profile',
         href: '/admin/profile',
         icon: User,
+    },
+    {
+        title: 'Contact',
+        href: '/admin/contact-management',
+        icon: Mail,
     },
     {
         title: 'Settings',

@@ -24,7 +24,6 @@ export const GUEST_POST_CODE_BY_ID_API = `${API_BASE_URL}/api/v1/guest-post-code
 
 
 // users api  
-
 export const GET_ALL_USERS_API = `${API_BASE_URL}/api/v1/users`; // GET with user_id/delivery-addresses
 
 // ==================== RESTAURANT MANAGEMENT APIs ====================
@@ -172,6 +171,8 @@ export const ADMIN_DASHBOARD_API = `${API_BASE_URL}/api/v1/admin/dashboard`; // 
 
 export const ADMIN_OFFERS_API = `${API_BASE_URL}/api/v1/bogo-offers`;
 export const USER_BOGO_OFFERS_API = `${API_BASE_URL}/api/v1/user/bogo-offers`;
-
 export const CREATE_ORDER_FROM_OFFER_API = `${API_BASE_URL}/api/v1/offers/add-to-cart`; 
-export const CREATE_ORDER_FROM_OFFER_API_USER = `${API_BASE_URL}/api/v1/offers/user/add-to-cart`; 
+export const CREATE_ORDER_FROM_OFFER_API_USER = `${API_BASE_URL}/api/v1/offers/user/add-to-cart`;
+
+// ==================== CONTACT APIs ====================
+export const CONTACTS_API = `${API_BASE_URL}/api/v1/contacts`; 
