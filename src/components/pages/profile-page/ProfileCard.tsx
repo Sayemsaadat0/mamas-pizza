@@ -37,7 +37,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         {/* Profile Image */}
         <div className="mb-4">
           <ImageUpload
-              currentImage={profile.user_image ? `${process.env.NEXT_PUBLIC_API_URL}${profile.user_image}` : null}
+              currentImage={profile.user_image ? `${profile.user_image}` : null}
             imagePreview={imagePreview}
             onImageChange={onImageChange}
             isEditing={isEditing}

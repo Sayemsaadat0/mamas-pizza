@@ -1,9 +1,28 @@
 "use client";
 
-import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import React, {
+  useMemo,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import Image from "next/image";
-import { User, MapPin, MessageSquare } from "lucide-react";
-import { useCart, useUpdateCartItem, useDeleteCartItem, useDeleteGuestCartItem } from "@/hooks/cart.hook";
+import Link from "next/link";
+import {
+  User,
+  MapPin,
+  MessageSquare,
+  ShoppingCart,
+  ArrowRight,
+  Utensils,
+} from "lucide-react";
+import {
+  useCart,
+  useUpdateCartItem,
+  useDeleteCartItem,
+  useDeleteGuestCartItem,
+} from "@/hooks/cart.hook";
 import { useAuth } from "@/lib/stores/useAuth";
 import { useCreateOrder } from "@/hooks/order.hook";
 import { USER_ORDERS_API, USER_STRIPE_CREATE_SESSION_API } from "@/app/api";
@@ -55,7 +74,9 @@ interface GuestOrderFormErrors {
 
 export default function CartPage() {
   const [loadingItems, setLoadingItems] = useState<Set<number>>(new Set());
-  const [quantityInputs, setQuantityInputs] = useState<{ [key: number]: string }>({});
+  const [quantityInputs, setQuantityInputs] = useState<{
+    [key: number]: string;
+  }>({});
 
   // Guest form state
   const [guestFormData, setGuestFormData] = useState<GuestOrderData>({
@@ -71,22 +92,36 @@ export default function CartPage() {
     },
     special_instructions: "",
   });
-  const [guestFormErrors, setGuestFormErrors] = useState<GuestOrderFormErrors>({});
+  const [guestFormErrors, setGuestFormErrors] = useState<GuestOrderFormErrors>(
+    {}
+  );
 
   // Auth hook
   const { isAuthenticated, user, token } = useAuth();
   const { guestId } = useGuest();
 
   // Cart hooks
-  const { cartItems, bogoOffers, bogoBundles, loading, error, grandTotal, refetch, updateCartItemLocally, removeCartItemLocally } = useCart();
-  const { updateCartItem, } = useUpdateCartItem();
-  const { deleteCartItem, } = useDeleteCartItem();
-  const { deleteGuestCartItem, } = useDeleteGuestCartItem();
+  const {
+    cartItems,
+    bogoOffers,
+    bogoBundles,
+    loading,
+    error,
+    grandTotal,
+    refetch,
+    updateCartItemLocally,
+    removeCartItemLocally,
+  } = useCart();
+  const { updateCartItem } = useUpdateCartItem();
+  const { deleteCartItem } = useDeleteCartItem();
+  const { deleteGuestCartItem } = useDeleteGuestCartItem();
 
   // Order creation hooks
   const { loading: createOrderLoading } = useCreateOrder();
-  const { createGuestOrder, loading: createGuestOrderLoading } = useCreateGuestOrder();
-  const { createSession, loading: createSessionLoading } = useCreateGuestStripeSession();
+  const { createGuestOrder, loading: createGuestOrderLoading } =
+    useCreateGuestOrder();
+  const { createSession, loading: createSessionLoading } =
+    useCreateGuestStripeSession();
   const { loading: paymentLoading } = usePaymentWorkflow();
 
   // Separate regular items from BOGO items and create BOGO bundles
@@ -98,11 +133,14 @@ export default function CartPage() {
     // Group BOGO items by offer_id
     const bogoGroups: { [key: number]: any[] } = {};
 
-    cartItems.forEach(item => {
+    cartItems.forEach((item) => {
       const itemData = {
         id: item.id,
         name: item.item.name,
-        price: item.is_bogo_item && item.bogo_price ? parseFloat(item.bogo_price) : parseFloat(item.item.main_price),
+        price:
+          item.is_bogo_item && item.bogo_price
+            ? parseFloat(item.bogo_price)
+            : parseFloat(item.item.main_price),
         image: `${process.env.NEXT_PUBLIC_API_URL}/${item.item.thumbnail}`,
         qty: item.quantity,
         description: item.item.details,
@@ -111,7 +149,7 @@ export default function CartPage() {
         bogoOfferId: item.bogo_offer_id,
         originalPrice: parseFloat(item.item.main_price),
         // Add raw item data for bundle creation
-        rawItem: item
+        rawItem: item,
       };
 
       if (item.is_bogo_item && item.bogo_offer_id) {
@@ -128,46 +166,57 @@ export default function CartPage() {
     });
 
     // Create BOGO bundles from grouped items
-    Object.keys(bogoGroups).forEach(offerId => {
+    Object.keys(bogoGroups).forEach((offerId) => {
       const items = bogoGroups[parseInt(offerId)];
-      const offer = bogoOffers.find(o => o.id === parseInt(offerId));
+      const offer = bogoOffers.find((o) => o.id === parseInt(offerId));
 
       if (offer && items.length > 0) {
         // Separate buy items and free items based on bogo_price
-        const buyItems = items.filter(item => !item.bogo_price || parseFloat(item.bogo_price) > 0);
-        const freeItems = items.filter(item => item.bogo_price && parseFloat(item.bogo_price) === 0);
+        const buyItems = items.filter(
+          (item) => !item.bogo_price || parseFloat(item.bogo_price) > 0
+        );
+        const freeItems = items.filter(
+          (item) => item.bogo_price && parseFloat(item.bogo_price) === 0
+        );
 
         // Calculate offer price (sum of buy items)
-        const offerPrice = buyItems.reduce((sum, item) => sum + parseFloat(item.item.main_price), 0);
+        const offerPrice = buyItems.reduce(
+          (sum, item) => sum + parseFloat(item.item.main_price),
+          0
+        );
 
         const bundle = {
           bogo_offer_id: parseInt(offerId),
-          buy_items: buyItems.map(item => ({
+          buy_items: buyItems.map((item) => ({
             id: item.item_id,
             quantity: item.quantity,
             name: item.item.name,
             main_price: item.item.main_price,
             category_id: item.item.category_id,
-            thumbnail: item.item.thumbnail
+            thumbnail: item.item.thumbnail,
           })),
-          free_items: freeItems.map(item => ({
+          free_items: freeItems.map((item) => ({
             id: item.item_id,
             quantity: item.quantity,
             name: item.item.name,
             main_price: item.item.main_price,
             category_id: item.item.category_id,
-            thumbnail: item.item.thumbnail
+            thumbnail: item.item.thumbnail,
           })),
           user_id: items[0].user_id,
           guest_id: items[0].guest_id,
-          offer_price: offerPrice
+          offer_price: offerPrice,
         };
 
         bundles.push(bundle);
       }
     });
 
-    return { regularItems: regular, bogoItems: bogo, processedBogoBundles: bundles };
+    return {
+      regularItems: regular,
+      bogoItems: bogo,
+      processedBogoBundles: bundles,
+    };
   }, [cartItems, bogoOffers]);
 
   const summary = useMemo(() => {
@@ -180,27 +229,27 @@ export default function CartPage() {
 
   // Guest form handlers
   const handleGuestInputChange = (field: string, value: string) => {
-    if (field.includes('.')) {
-      const [parent, child] = field.split('.');
-      setGuestFormData(prev => ({
+    if (field.includes(".")) {
+      const [parent, child] = field.split(".");
+      setGuestFormData((prev) => ({
         ...prev,
         [parent]: {
           ...(prev[parent as keyof GuestOrderData] as any),
-          [child]: value
-        }
+          [child]: value,
+        },
       }));
     } else {
-      setGuestFormData(prev => ({
+      setGuestFormData((prev) => ({
         ...prev,
-        [field]: value
+        [field]: value,
       }));
     }
 
     // Clear error when user starts typing
     if (guestFormErrors[field as keyof GuestOrderData]) {
-      setGuestFormErrors(prev => ({
+      setGuestFormErrors((prev) => ({
         ...prev,
-        [field]: undefined
+        [field]: undefined,
       }));
     }
   };
@@ -220,20 +269,31 @@ export default function CartPage() {
 
     if (!guestFormData.customer_email.trim()) {
       newErrors.customer_email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestFormData.customer_email)) {
+    } else if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestFormData.customer_email)
+    ) {
       newErrors.customer_email = "Please enter a valid email address";
     }
 
     if (!guestFormData.delivery_address.address_line_1.trim()) {
-      newErrors.delivery_address = { ...newErrors.delivery_address, address_line_1: "Address line 1 is required" };
+      newErrors.delivery_address = {
+        ...newErrors.delivery_address,
+        address_line_1: "Address line 1 is required",
+      };
     }
 
     if (!guestFormData.delivery_address.city.trim()) {
-      newErrors.delivery_address = { ...newErrors.delivery_address, city: "City is required" };
+      newErrors.delivery_address = {
+        ...newErrors.delivery_address,
+        city: "City is required",
+      };
     }
 
     if (!guestFormData.delivery_address.post_code.trim()) {
-      newErrors.delivery_address = { ...newErrors.delivery_address, post_code: "Post Code is required" };
+      newErrors.delivery_address = {
+        ...newErrors.delivery_address,
+        post_code: "Post Code is required",
+      };
     }
 
     setGuestFormErrors(newErrors);
@@ -244,11 +304,11 @@ export default function CartPage() {
     if (isAuthenticated) return true;
     return Boolean(
       guestFormData.customer_name.trim() &&
-      guestFormData.customer_phone.trim() &&
-      guestFormData.customer_email.trim() &&
-      guestFormData.delivery_address.address_line_1.trim() &&
-      guestFormData.delivery_address.city.trim() &&
-      guestFormData.delivery_address.post_code.trim()
+        guestFormData.customer_phone.trim() &&
+        guestFormData.customer_email.trim() &&
+        guestFormData.delivery_address.address_line_1.trim() &&
+        guestFormData.delivery_address.city.trim() &&
+        guestFormData.delivery_address.post_code.trim()
     );
   }, [isAuthenticated, guestFormData]);
 
@@ -256,46 +316,49 @@ export default function CartPage() {
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Debounced update function
-  const debouncedUpdateQty = useCallback((cartItemId: number, newQuantity: number) => {
-    // Clear existing timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Set new timer
-    debounceTimerRef.current = setTimeout(async () => {
-      try {
-        // Set loading state
-        setLoadingItems(prev => new Set(prev).add(cartItemId));
-
-        // Update UI immediately for better UX
-        updateCartItemLocally(cartItemId, newQuantity);
-
-        // Make API call
-        await updateCartItem(cartItemId, newQuantity);
-
-        toast.success('Cart updated successfully');
-      } catch (error) {
-        console.error('Error updating cart item:', error);
-        // Revert the local change if API call fails
-        const currentItem = cartItems.find(item => item.id === cartItemId);
-        if (currentItem) {
-          updateCartItemLocally(cartItemId, currentItem.quantity);
-        }
-        toast.error('Failed to update cart item');
-      } finally {
-        // Remove loading state
-        setLoadingItems(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(cartItemId);
-          return newSet;
-        });
+  const debouncedUpdateQty = useCallback(
+    (cartItemId: number, newQuantity: number) => {
+      // Clear existing timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
       }
-    }, 1000);
-  }, [cartItems, updateCartItemLocally, updateCartItem]);
+
+      // Set new timer
+      debounceTimerRef.current = setTimeout(async () => {
+        try {
+          // Set loading state
+          setLoadingItems((prev) => new Set(prev).add(cartItemId));
+
+          // Update UI immediately for better UX
+          updateCartItemLocally(cartItemId, newQuantity);
+
+          // Make API call
+          await updateCartItem(cartItemId, newQuantity);
+
+          toast.success("Cart updated successfully");
+        } catch (error) {
+          console.error("Error updating cart item:", error);
+          // Revert the local change if API call fails
+          const currentItem = cartItems.find((item) => item.id === cartItemId);
+          if (currentItem) {
+            updateCartItemLocally(cartItemId, currentItem.quantity);
+          }
+          toast.error("Failed to update cart item");
+        } finally {
+          // Remove loading state
+          setLoadingItems((prev) => {
+            const newSet = new Set(prev);
+            newSet.delete(cartItemId);
+            return newSet;
+          });
+        }
+      }, 1000);
+    },
+    [cartItems, updateCartItemLocally, updateCartItem]
+  );
 
   const updateQty = (cartItemId: number, delta: number) => {
-    const currentItem = cartItems.find(item => item.id === cartItemId);
+    const currentItem = cartItems.find((item) => item.id === cartItemId);
     if (!currentItem) return;
 
     const newQuantity = Math.max(1, currentItem.quantity + delta);
@@ -303,7 +366,7 @@ export default function CartPage() {
   };
 
   const handleQuantityInputChange = (cartItemId: number, value: string) => {
-    setQuantityInputs(prev => ({ ...prev, [cartItemId]: value }));
+    setQuantityInputs((prev) => ({ ...prev, [cartItemId]: value }));
   };
 
   const handleQuantityInputBlur = (cartItemId: number) => {
@@ -326,7 +389,7 @@ export default function CartPage() {
   const removeItem = async (cartItemId: number) => {
     try {
       // Set loading state
-      setLoadingItems(prev => new Set(prev).add(cartItemId));
+      setLoadingItems((prev) => new Set(prev).add(cartItemId));
 
       // Update UI immediately for better UX
       removeCartItemLocally(cartItemId);
@@ -338,15 +401,15 @@ export default function CartPage() {
         await deleteGuestCartItem(cartItemId);
       }
 
-      toast.success('Item removed from cart');
+      toast.success("Item removed from cart");
     } catch (error) {
-      console.error('Error removing item from cart:', error);
+      console.error("Error removing item from cart:", error);
       // Revert the local change if API call fails - refetch to restore original state
       refetch();
-      toast.error('Failed to remove item from cart');
+      toast.error("Failed to remove item from cart");
     } finally {
       // Remove loading state
-      setLoadingItems(prev => {
+      setLoadingItems((prev) => {
         const newSet = new Set(prev);
         newSet.delete(cartItemId);
         return newSet;
@@ -357,16 +420,16 @@ export default function CartPage() {
   const removeBogoBundle = async (bundleId: string) => {
     try {
       // Find all BOGO items for this bundle and remove them
-      const bundleOfferId = parseInt(bundleId.split('-')[0]);
-      const bogoItemsToRemove = cartItems.filter(item =>
-        item.is_bogo_item && item.bogo_offer_id === bundleOfferId
+      const bundleOfferId = parseInt(bundleId.split("-")[0]);
+      const bogoItemsToRemove = cartItems.filter(
+        (item) => item.is_bogo_item && item.bogo_offer_id === bundleOfferId
       );
 
       // Set loading state for all items in the bundle
-      const itemIds = bogoItemsToRemove.map(item => item.id);
-      setLoadingItems(prev => {
+      const itemIds = bogoItemsToRemove.map((item) => item.id);
+      setLoadingItems((prev) => {
         const newSet = new Set(prev);
-        itemIds.forEach(id => newSet.add(id));
+        itemIds.forEach((id) => newSet.add(id));
         return newSet;
       });
 
@@ -389,12 +452,12 @@ export default function CartPage() {
       // Refetch cart data to ensure UI is in sync
       await refetch();
 
-      toast.success('BOGO offer removed from cart');
+      toast.success("BOGO offer removed from cart");
     } catch (error) {
-      console.error('Error removing BOGO bundle:', error);
+      console.error("Error removing BOGO bundle:", error);
       // Refetch to restore original state
       await refetch();
-      toast.error('Failed to remove BOGO offer');
+      toast.error("Failed to remove BOGO offer");
     } finally {
       // Clear loading state for all items
       setLoadingItems(new Set());
@@ -412,7 +475,9 @@ export default function CartPage() {
       if (isAuthenticated) {
         // Validate required user information
         if (!user?.name || !user?.email) {
-          toast.error("User profile information is incomplete. Please update your profile.");
+          toast.error(
+            "User profile information is incomplete. Please update your profile."
+          );
           return;
         }
 
@@ -437,17 +502,19 @@ export default function CartPage() {
           total_amount: grandTotal,
 
           // Delivery address - always include full details as required by API
-          delivery_address: user?.delivery_address ? {
-            address_line_1: user.delivery_address.address_line_1,
-            address_line_2: user.delivery_address.address_line_2 || "",
-            post_code: user.delivery_address.post_code,
-            details: user.delivery_address.details || "",
-          } : {
-            address_line_1: "Default Address",
-            address_line_2: "",
-            post_code: "00000",
-            details: "",
-          }
+          delivery_address: user?.delivery_address
+            ? {
+                address_line_1: user.delivery_address.address_line_1,
+                address_line_2: user.delivery_address.address_line_2 || "",
+                post_code: user.delivery_address.post_code,
+                details: user.delivery_address.details || "",
+              }
+            : {
+                address_line_1: "Default Address",
+                address_line_2: "",
+                post_code: "00000",
+                details: "",
+              },
         };
 
         // Make API call to USER_ORDERS_API
@@ -455,7 +522,7 @@ export default function CartPage() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(orderData),
         });
@@ -479,17 +546,19 @@ export default function CartPage() {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`,
+              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
-              order_id: orderId
+              order_id: orderId,
             }),
           });
 
           const paymentResult = await paymentResponse.json();
 
           if (!paymentResponse.ok || !paymentResult.success) {
-            throw new Error(paymentResult.message || "Failed to create payment session");
+            throw new Error(
+              paymentResult.message || "Failed to create payment session"
+            );
           }
           if (paymentResult.data.session_url) {
             toast.success("Redirecting to payment...");
@@ -500,7 +569,9 @@ export default function CartPage() {
           }
         } catch (paymentError: any) {
           console.error("Error creating payment session:", paymentError);
-          toast.error(paymentError.message || "Failed to create payment session");
+          toast.error(
+            paymentError.message || "Failed to create payment session"
+          );
         }
       } else {
         // Create order for guest user
@@ -550,7 +621,9 @@ export default function CartPage() {
           }
         } catch (paymentError: any) {
           console.error("Error creating payment session:", paymentError);
-          toast.error("Order created but payment session failed. Please contact support.");
+          toast.error(
+            "Order created but payment session failed. Please contact support."
+          );
         }
       }
     } catch (error: any) {
@@ -569,7 +642,9 @@ export default function CartPage() {
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-500"></div>
-              <p className="text-orange-600 mt-4 font-medium">Loading your cart...</p>
+              <p className="text-orange-600 mt-4 font-medium">
+                Loading your cart...
+              </p>
             </div>
           </div>
         </div>
@@ -581,10 +656,11 @@ export default function CartPage() {
   if (error) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 mt-[200px]">
-  
         <div className="ah-container px-4 sm:px-6 lg:px-8 py-8 sm:py-16 lg:py-24 xl:py-40">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-            <h3 className="text-lg font-semibold text-red-800 mb-2">Error Loading Cart</h3>
+            <h3 className="text-lg font-semibold text-red-800 mb-2">
+              Error Loading Cart
+            </h3>
             <p className="text-red-600 mb-4">{error}</p>
             <button
               onClick={refetch}
@@ -599,8 +675,51 @@ export default function CartPage() {
   }
   return (
     <main className="min-h-screen ">
-      <div className="ah-container px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-12 mt-[200px]">
+      {regularItems.length === 0 &&
+        bogoBundles.length === 0 &&
+        processedBogoBundles.length === 0 && (
+          <div className="  p-8 sm:p-12 mt-[200px] text-center">
+            <div className="max-w-md mx-auto">
+              {/* Empty Cart Icon */}
+              <div className="w-20 h-20 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+                <ShoppingCart className="w-10 h-10 text-gray-400" />
+              </div>
 
+              {/* Empty Cart Message */}
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+                Your Cart is Empty
+              </h2>
+              <p className="text-gray-600 mb-8 text-base sm:text-lg">
+               {` Looks like you haven't added any items to your cart yet. Browse
+                our delicious menu and add some items to get started!`}
+              </p>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link
+                  href="/menu"
+                  className="flex justify-center items-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-xl font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                >
+                  <Utensils className="w-5 h-5" />
+                  Browse Menu
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+
+      
+              </div>
+
+              {/* Additional Info */}
+              <div className="mt-8 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                <p className="text-sm text-orange-700">
+                  <strong>Pro Tip:</strong> Check out our special BOGO offers
+                  for great deals on your favorite items!
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      {/*  */}
+      <div className="ah-container px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-12 mt-[200px]">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
             {/* Left Side - Cart Items and Guest Form (7/12 width on desktop) */}
@@ -608,21 +727,29 @@ export default function CartPage() {
               {/* BOGO Bundles - Grouped Display */}
               {(bogoBundles.length > 0 || processedBogoBundles.length > 0) && (
                 <div className="mb-6">
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Special Offers</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
+                    Special Offers
+                  </h2>
                   <div className="space-y-4">
                     {/* Use processed bundles for authenticated users, API bundles for guests */}
-                    {(processedBogoBundles.length > 0 ? processedBogoBundles : bogoBundles).map((bundle, index) => {
-                      const offer = bogoOffers.find(offer => offer.id === bundle.bogo_offer_id);
+                    {(processedBogoBundles.length > 0
+                      ? processedBogoBundles
+                      : bogoBundles
+                    ).map((bundle, index) => {
+                      const offer = bogoOffers.find(
+                        (offer) => offer.id === bundle.bogo_offer_id
+                      );
                       return offer ? (
                         <OfferGroupCard
                           key={`bundle-${bundle.bogo_offer_id}-${index}`}
                           bundle={bundle}
                           offer={offer}
                           onRemoveBundle={removeBogoBundle}
-                          isLoading={cartItems.some(item =>
-                            item.is_bogo_item &&
-                            item.bogo_offer_id === bundle.bogo_offer_id &&
-                            loadingItems.has(item.id)
+                          isLoading={cartItems.some(
+                            (item) =>
+                              item.is_bogo_item &&
+                              item.bogo_offer_id === bundle.bogo_offer_id &&
+                              loadingItems.has(item.id)
                           )}
                           loadingItems={loadingItems}
                         />
@@ -632,13 +759,20 @@ export default function CartPage() {
                 </div>
               )}
 
+              {/* Empty Cart State */}
+
               {/* Regular Cart Items */}
               {regularItems.length > 0 && (
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Cart Items</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
+                    Cart Items
+                  </h2>
                   <div className="space-y-3 sm:space-y-4">
                     {regularItems.map((item) => (
-                      <div key={item.id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4">
+                      <div
+                        key={item.id}
+                        className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4"
+                      >
                         <div className="flex items-center space-x-3 sm:space-x-4 mb-3">
                           <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden flex-shrink-0">
                             <Image
@@ -650,16 +784,26 @@ export default function CartPage() {
                             />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="text-sm sm:text-lg font-medium text-gray-900 truncate">{item.name}</h4>
+                            <h4 className="text-sm sm:text-lg font-medium text-gray-900 truncate">
+                              {item.name}
+                            </h4>
                             <div className="flex items-center gap-2">
                               {item.isBogoItem ? (
                                 <>
-                                  <p className="text-xs sm:text-sm text-green-600 font-medium">BOGO Item</p>
-                                  <p className="text-xs sm:text-sm text-gray-500 line-through">${item.originalPrice.toFixed(2)}</p>
-                                  <p className="text-xs sm:text-sm text-green-600 font-medium">${item.price.toFixed(2)} each</p>
+                                  <p className="text-xs sm:text-sm text-green-600 font-medium">
+                                    BOGO Item
+                                  </p>
+                                  <p className="text-xs sm:text-sm text-gray-500 line-through">
+                                    ${item.originalPrice.toFixed(2)}
+                                  </p>
+                                  <p className="text-xs sm:text-sm text-green-600 font-medium">
+                                    ${item.price.toFixed(2)} each
+                                  </p>
                                 </>
                               ) : (
-                                <p className="text-xs sm:text-sm text-gray-500">${item.price.toFixed(2)} each</p>
+                                <p className="text-xs sm:text-sm text-gray-500">
+                                  ${item.price.toFixed(2)} each
+                                </p>
                               )}
                             </div>
                           </div>
@@ -681,16 +825,35 @@ export default function CartPage() {
                                 {loadingItems.has(item.id) ? (
                                   <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
                                 ) : (
-                                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                                  <svg
+                                    className="w-3 h-3 sm:w-4 sm:h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M20 12H4"
+                                    />
                                   </svg>
                                 )}
                               </button>
                               <input
                                 type="number"
                                 min="1"
-                                value={quantityInputs[item.id] !== undefined ? quantityInputs[item.id] : item.qty}
-                                onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
+                                value={
+                                  quantityInputs[item.id] !== undefined
+                                    ? quantityInputs[item.id]
+                                    : item.qty
+                                }
+                                onChange={(e) =>
+                                  handleQuantityInputChange(
+                                    item.id,
+                                    e.target.value
+                                  )
+                                }
                                 onBlur={() => handleQuantityInputBlur(item.id)}
                                 className="min-w-6 sm:min-w-8 max-w-[60px] sm:max-w-[80px] text-center font-semibold text-xs sm:text-sm text-gray-900 bg-transparent border-none outline-none"
                                 disabled={loadingItems.has(item.id)}
@@ -704,8 +867,18 @@ export default function CartPage() {
                                 {loadingItems.has(item.id) ? (
                                   <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
                                 ) : (
-                                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                  <svg
+                                    className="w-3 h-3 sm:w-4 sm:h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                    />
                                   </svg>
                                 )}
                               </button>
@@ -725,8 +898,18 @@ export default function CartPage() {
                             {loadingItems.has(item.id) ? (
                               <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
                             ) : (
-                              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              <svg
+                                className="w-4 h-4 sm:w-5 sm:h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
                               </svg>
                             )}
                           </button>
@@ -740,7 +923,9 @@ export default function CartPage() {
               {/* Guest Form - Only show if not authenticated */}
               {!isAuthenticated && (
                 <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-xl border border-orange-100">
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">Delivery Information</h3>
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">
+                    Delivery Information
+                  </h3>
 
                   <div className="space-y-4">
                     {/* Customer Information */}
@@ -758,13 +943,23 @@ export default function CartPage() {
                           <input
                             type="text"
                             value={guestFormData.customer_name}
-                            onChange={(e) => handleGuestInputChange('customer_name', e.target.value)}
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.customer_name ? 'border-red-500' : 'border-gray-300'
-                              }`}
+                            onChange={(e) =>
+                              handleGuestInputChange(
+                                "customer_name",
+                                e.target.value
+                              )
+                            }
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
+                              guestFormErrors.customer_name
+                                ? "border-red-500"
+                                : "border-gray-300"
+                            }`}
                             placeholder="Enter your full name"
                           />
                           {guestFormErrors.customer_name && (
-                            <p className="text-red-500 text-xs mt-1">{guestFormErrors.customer_name}</p>
+                            <p className="text-red-500 text-xs mt-1">
+                              {guestFormErrors.customer_name}
+                            </p>
                           )}
                         </div>
 
@@ -775,13 +970,23 @@ export default function CartPage() {
                           <input
                             type="tel"
                             value={guestFormData.customer_phone}
-                            onChange={(e) => handleGuestInputChange('customer_phone', e.target.value)}
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.customer_phone ? 'border-red-500' : 'border-gray-300'
-                              }`}
+                            onChange={(e) =>
+                              handleGuestInputChange(
+                                "customer_phone",
+                                e.target.value
+                              )
+                            }
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
+                              guestFormErrors.customer_phone
+                                ? "border-red-500"
+                                : "border-gray-300"
+                            }`}
                             placeholder="+1234567890"
                           />
                           {guestFormErrors.customer_phone && (
-                            <p className="text-red-500 text-xs mt-1">{guestFormErrors.customer_phone}</p>
+                            <p className="text-red-500 text-xs mt-1">
+                              {guestFormErrors.customer_phone}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -793,13 +998,23 @@ export default function CartPage() {
                         <input
                           type="email"
                           value={guestFormData.customer_email}
-                          onChange={(e) => handleGuestInputChange('customer_email', e.target.value)}
-                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.customer_email ? 'border-red-500' : 'border-gray-300'
-                            }`}
+                          onChange={(e) =>
+                            handleGuestInputChange(
+                              "customer_email",
+                              e.target.value
+                            )
+                          }
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
+                            guestFormErrors.customer_email
+                              ? "border-red-500"
+                              : "border-gray-300"
+                          }`}
                           placeholder="john@example.com"
                         />
                         {guestFormErrors.customer_email && (
-                          <p className="text-red-500 text-xs mt-1">{guestFormErrors.customer_email}</p>
+                          <p className="text-red-500 text-xs mt-1">
+                            {guestFormErrors.customer_email}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -818,13 +1033,23 @@ export default function CartPage() {
                         <input
                           type="text"
                           value={guestFormData.delivery_address.address_line_1}
-                          onChange={(e) => handleGuestInputChange('delivery_address.address_line_1', e.target.value)}
-                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.delivery_address?.address_line_1 ? 'border-red-500' : 'border-gray-300'
-                            }`}
+                          onChange={(e) =>
+                            handleGuestInputChange(
+                              "delivery_address.address_line_1",
+                              e.target.value
+                            )
+                          }
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
+                            guestFormErrors.delivery_address?.address_line_1
+                              ? "border-red-500"
+                              : "border-gray-300"
+                          }`}
                           placeholder="House/Flat No."
                         />
                         {guestFormErrors.delivery_address?.address_line_1 && (
-                          <p className="text-red-500 text-xs mt-1">{guestFormErrors.delivery_address.address_line_1}</p>
+                          <p className="text-red-500 text-xs mt-1">
+                            {guestFormErrors.delivery_address.address_line_1}
+                          </p>
                         )}
                       </div>
 
@@ -835,7 +1060,12 @@ export default function CartPage() {
                         <input
                           type="text"
                           value={guestFormData.delivery_address.address_line_2}
-                          onChange={(e) => handleGuestInputChange('delivery_address.address_line_2', e.target.value)}
+                          onChange={(e) =>
+                            handleGuestInputChange(
+                              "delivery_address.address_line_2",
+                              e.target.value
+                            )
+                          }
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                           placeholder="Road/Street Name"
                         />
@@ -849,13 +1079,23 @@ export default function CartPage() {
                           <input
                             type="text"
                             value={guestFormData.delivery_address.city}
-                            onChange={(e) => handleGuestInputChange('delivery_address.city', e.target.value)}
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.delivery_address?.city ? 'border-red-500' : 'border-gray-300'
-                              }`}
+                            onChange={(e) =>
+                              handleGuestInputChange(
+                                "delivery_address.city",
+                                e.target.value
+                              )
+                            }
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
+                              guestFormErrors.delivery_address?.city
+                                ? "border-red-500"
+                                : "border-gray-300"
+                            }`}
                             placeholder="New York"
                           />
                           {guestFormErrors.delivery_address?.city && (
-                            <p className="text-red-500 text-xs mt-1">{guestFormErrors.delivery_address.city}</p>
+                            <p className="text-red-500 text-xs mt-1">
+                              {guestFormErrors.delivery_address.city}
+                            </p>
                           )}
                         </div>
 
@@ -866,13 +1106,23 @@ export default function CartPage() {
                           <input
                             type="text"
                             value={guestFormData.delivery_address.post_code}
-                            onChange={(e) => handleGuestInputChange('delivery_address.post_code', e.target.value)}
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${guestFormErrors.delivery_address?.post_code ? 'border-red-500' : 'border-gray-300'
-                              }`}
+                            onChange={(e) =>
+                              handleGuestInputChange(
+                                "delivery_address.post_code",
+                                e.target.value
+                              )
+                            }
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
+                              guestFormErrors.delivery_address?.post_code
+                                ? "border-red-500"
+                                : "border-gray-300"
+                            }`}
                             placeholder="12345"
                           />
                           {guestFormErrors.delivery_address?.post_code && (
-                            <p className="text-red-500 text-xs mt-1">{guestFormErrors.delivery_address.post_code}</p>
+                            <p className="text-red-500 text-xs mt-1">
+                              {guestFormErrors.delivery_address.post_code}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -884,7 +1134,12 @@ export default function CartPage() {
                         <input
                           type="text"
                           value={guestFormData.delivery_address.details}
-                          onChange={(e) => handleGuestInputChange('delivery_address.details', e.target.value)}
+                          onChange={(e) =>
+                            handleGuestInputChange(
+                              "delivery_address.details",
+                              e.target.value
+                            )
+                          }
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                           placeholder="Ring doorbell twice"
                         />
@@ -904,7 +1159,12 @@ export default function CartPage() {
                         </label>
                         <textarea
                           value={guestFormData.special_instructions}
-                          onChange={(e) => handleGuestInputChange('special_instructions', e.target.value)}
+                          onChange={(e) =>
+                            handleGuestInputChange(
+                              "special_instructions",
+                              e.target.value
+                            )
+                          }
                           rows={2}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors resize-none"
                           placeholder="Extra napkins please, or any other special requests..."
@@ -916,21 +1176,33 @@ export default function CartPage() {
               )}
             </div>
 
-            {/* Right Side - Order Summary (5/12 width on desktop) */}
-            <div className="lg:col-span-5 order-2 lg:order-2">
-              <OrderSummary
-                summary={summary}
-                onCheckout={handleCheckout}
-                isFormValid={isGuestFormValid}
-                isLoading={Boolean(createOrderLoading || createGuestOrderLoading || createSessionLoading || paymentLoading)}
-                bogoBundles={processedBogoBundles.length > 0 ? processedBogoBundles : bogoBundles}
-                bogoOffers={bogoOffers}
-              />
-            </div>
+            {/* Right Side - Order Summary (5/12 width on desktop) - Only show when cart has items */}
+            {(regularItems.length > 0 ||
+              bogoBundles.length > 0 ||
+              processedBogoBundles.length > 0) && (
+              <div className="lg:col-span-5 order-2 lg:order-2">
+                <OrderSummary
+                  summary={summary}
+                  onCheckout={handleCheckout}
+                  isFormValid={isGuestFormValid}
+                  isLoading={Boolean(
+                    createOrderLoading ||
+                      createGuestOrderLoading ||
+                      createSessionLoading ||
+                      paymentLoading
+                  )}
+                  bogoBundles={
+                    processedBogoBundles.length > 0
+                      ? processedBogoBundles
+                      : bogoBundles
+                  }
+                  bogoOffers={bogoOffers}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
-
     </main>
   );
 }

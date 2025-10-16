@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
     LayoutDashboard,
     Users,
@@ -18,6 +18,9 @@ import {
 } from 'lucide-react';
 // import Logo from '../core/Logo';
 import { useSidebar } from '@/app/(admin)/template';
+import { LOGOUT_API } from '@/app/api';
+import { useAuth } from '@/lib/stores/useAuth';
+import { toast } from 'sonner';
 
 interface SidebarItem {
     title: string;
@@ -109,6 +112,8 @@ const sidebarItems: SidebarItem[] = [
 ];
 
 const AdminSidebar: React.FC = () => {
+    const router = useRouter();
+
     const { isCollapsed } = useSidebar();
     const [expandedItems, setExpandedItems] = useState<string[]>([]);
     const [isClient, setIsClient] = useState(false);
@@ -140,6 +145,36 @@ const AdminSidebar: React.FC = () => {
         }
         return pathname.startsWith(href);
     };
+    const {  isAuthenticated, clearUser, token } = useAuth();
+
+    const handleLogout = async () => {
+        try {
+          // Call logout API if user is authenticated and has a token
+          if (isAuthenticated && token) {
+            const response = await fetch(LOGOUT_API, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: "application/json",
+              },
+            });
+    
+            if (response.ok) {
+              toast.success("Logged out successfully");
+            } else {
+              console.warn(
+                "Logout API call failed, but proceeding with local logout"
+              );
+            }
+          }
+        } catch (error) {
+          console.error("Error during logout API call:", error);
+        } finally {
+          clearUser();
+          router.push("/");
+        }
+      };
+    
 
     const renderSidebarItem = (item: SidebarItem, level = 0) => {
         const hasChildren = item.children && item.children.length > 0;
@@ -222,7 +257,7 @@ const AdminSidebar: React.FC = () => {
 
             {/* Footer */}
             <div className="flex-shrink-0 border-t border-gray-100">
-                <button className="group flex items-center gap-3 px-3 py-2.5 mx-2 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200 w-full">
+                <button onClick={handleLogout} className="group flex items-center gap-3 px-3 py-2.5 mx-2 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200 w-full">
                     <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-500 group-hover:text-gray-700">
                         <LogOut size={18} />
                     </div>

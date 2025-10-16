@@ -7,9 +7,7 @@ import ErrorBoundary from "@/components/ui/ErrorBoundary";
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary>
-      <NotificationProvider>
-        {children}
-      </NotificationProvider>
+      <NotificationProvider>{children}</NotificationProvider>
     </ErrorBoundary>
   );
 }

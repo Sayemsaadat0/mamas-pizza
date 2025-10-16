@@ -34,7 +34,7 @@ const PostCodesPage: React.FC = () => {
 
   const [form, setForm] = useState<{ code: string; deliver_charge: string; status: 'active' | 'inactive'; }>({
     code: '',
-    deliver_charge: '',
+    deliver_charge: '0',
     status: 'active',
   });
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -54,7 +54,7 @@ const PostCodesPage: React.FC = () => {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ code: '', deliver_charge: '', status: 'active' });
+    setForm({ code: '', deliver_charge: '0', status: 'active' });
     setShowForm(true);
   };
 
@@ -65,8 +65,8 @@ const PostCodesPage: React.FC = () => {
   };
 
   const onSubmit = async () => {
-    const deliverChargeNum = parseFloat(form.deliver_charge);
-    if (!form.code.trim() || Number.isNaN(deliverChargeNum)) {
+    const deliverChargeNum = parseFloat(form.deliver_charge) || 0;
+    if (!form.code.trim()) {
       return;
     }
 
@@ -267,10 +267,11 @@ const PostCodesPage: React.FC = () => {
                 <input
                   type="number"
                   step="0.01"
+                  min="0"
                   value={form.deliver_charge}
                   onChange={(e) => setForm((prev) => ({ ...prev, deliver_charge: e.target.value }))}
                   className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 border-gray-200 bg-white`}
-                  placeholder="e.g., 5.00"
+                  placeholder="0.00"
                 />
               </div>
             </div>
