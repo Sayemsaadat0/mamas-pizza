@@ -125,7 +125,7 @@ export const getPostCodeById = (postCodeId: string) =>
   `${POST_CODE_BY_ID_API}/${postCodeId}`;
 
 export const getPostCodeByCode = (code: string) => 
-  `${POST_CODES_API}/isCodeMatched/?code=${code}`;
+  `${POST_CODES_API}/isCodeMatched?code=${code}`;
 
 // Helper function to get specific guest post code
 export const getGuestPostCodeById = (postCodeId: string) => 
