@@ -7,6 +7,7 @@ import { CATEGORIES_API } from '@/app/api';
 export interface Category {
   id: string;
   name: string;
+  status: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -25,16 +26,28 @@ export function useCategories() {
     setError(null);
     
     try {
-      const response = await fetch(CATEGORIES_API);
+      const response = await fetch(CATEGORIES_API, {
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+      }
       
       const responseData = await response.json();
+      console.log('Categories API Response:', responseData); // Debug logging
+      
       // Handle the API response structure: {success: true, message: "...", data: []}
       if (responseData.success && Array.isArray(responseData.data)) {
         setCategories(responseData.data);
       } else {
+        console.warn('Categories API returned unexpected structure:', responseData);
         setCategories([]);
       }
     } catch (err: any) {
+      console.error('Categories API Error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -66,6 +79,7 @@ export function useCreateCategory() {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
         },
         body: JSON.stringify(categoryData),
       });
@@ -101,6 +115,7 @@ export function useUpdateCategory() {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
         },
         body: JSON.stringify(categoryData),
       });

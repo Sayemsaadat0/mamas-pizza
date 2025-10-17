@@ -221,7 +221,11 @@ export function useCart() {
           return;
         }
         
-        const response = await fetch(`${GUEST_CART_API}?guest_id=${guestId}`);
+        const response = await fetch(`${GUEST_CART_API}?guest_id=${guestId}`, {
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
         
         if (!response.ok) {
           throw new Error('Failed to fetch guest cart');
@@ -294,7 +298,8 @@ export function useUpdateCartItem() {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
           },
           body: JSON.stringify({ quantity })
         });
@@ -313,7 +318,8 @@ export function useUpdateCartItem() {
         const response = await fetch(`${GUEST_CART_API}/${cartItemId}`, {
           method: 'PUT',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
           },
           body: JSON.stringify({ 
             guest_id: guestId,
@@ -374,7 +380,8 @@ export function useDeleteCartItem() {
         const response = await fetch(`${GUEST_CART_API}/${cartItemId}?guest_id=${guestId}`, {
           method: 'DELETE',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
           }
         });
         

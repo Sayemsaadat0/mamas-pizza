@@ -173,6 +173,7 @@ export function useCreateUser() {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          "Accept": "application/json",
         },
         body: JSON.stringify(userData),
       });
@@ -217,6 +218,7 @@ export function useUpdateUser() {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          "Accept": "application/json",
         },
         body: JSON.stringify(userData),
       });

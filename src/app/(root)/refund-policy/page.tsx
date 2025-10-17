@@ -9,7 +9,10 @@ export default function RefundPolicyPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+
+
   const fetchRestaurantsDirect = async () => {
+    
     try {
       setLoading(true);
       setError(null);

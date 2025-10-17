@@ -124,7 +124,11 @@ export function useMenus(params?: {
       const queryString = searchParams.toString();
         const url = `${ITEMS_API}${queryString ? `?${queryString}` : ''}`;
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
       const responseData = await response.json();
       // console.log('API Response:', responseData);
       
@@ -195,6 +199,7 @@ export function useCreateMenu() {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          "Accept": "application/json",
         },
         body: JSON.stringify(menuData),
       });
@@ -258,6 +263,7 @@ export function useUpdateMenu() {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
+          'Accept': 'application/json',
         },
         body: formData,
       });
@@ -300,6 +306,7 @@ export function useDeleteMenu() {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
+          'Accept': 'application/json',
         },
         body: formData,
       });
