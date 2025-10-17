@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useCategories } from '@/hooks/category.hook';
-import { useSizes } from '@/hooks/sizes.hook';
-import { useCreateMenu, useUpdateMenu } from '@/hooks/menu.hook';
-import { useAuth } from '@/lib/stores/useAuth';
-import { ITEMS_API } from '@/app/api';
+import React, { useState, useEffect } from "react";
+import { useCategories } from "@/hooks/category.hook";
+import { useSizes } from "@/hooks/sizes.hook";
+import { useCreateMenu, useUpdateMenu } from "@/hooks/menu.hook";
+import { useAuth } from "@/lib/stores/useAuth";
+import { ITEMS_API } from "@/app/api";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Loader2, Upload, X } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { Loader2, Upload, X } from "lucide-react";
 
 interface AddItemFormProps {
   open: boolean;
@@ -22,21 +22,21 @@ interface AddItemFormProps {
   onSuccess?: () => void;
 }
 
-const AddItemForm: React.FC<AddItemFormProps> = ({ 
-  open, 
-  onOpenChange, 
-  instance, 
-  onSuccess 
+const AddItemForm: React.FC<AddItemFormProps> = ({
+  open,
+  onOpenChange,
+  instance,
+  onSuccess,
 }) => {
   // Form states
   const [formData, setFormData] = useState({
-    name: '',
-    main_price: '',
-    prev_price: '',
-    details: '',
-    category_id: '',
-    size_id: '',
-    status: true
+    name: "",
+    main_price: "",
+    prev_price: "",
+    details: "",
+    category_id: "",
+    size_id: "",
+    status: true,
   });
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
@@ -57,25 +57,25 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
 
     try {
       const response = await fetch(ITEMS_API, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
         },
         body: formData,
       });
 
       const data = await response.json();
-      console.log('Create response:', data);
-      
+      console.log("Create response:", data);
+
       if (data.success) {
         return data.data;
       } else {
-        console.error('Create validation errors:', data.errors);
-        throw new Error(data.message || 'Failed to create menu item');
+        console.error("Create validation errors:", data.errors);
+        throw new Error(data.message || "Failed to create menu item");
       }
     } catch (error) {
-      console.error('Error creating menu item:', error);
+      console.error("Error creating menu item:", error);
       throw error;
     }
   };
@@ -85,24 +85,24 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
 
     try {
       const response = await fetch(`${ITEMS_API}/${id}`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
         },
         body: formData,
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         return data.data;
       } else {
-        console.error('Update validation errors:', data.errors);
-        throw new Error(data.message || 'Failed to update menu item');
+        console.error("Update validation errors:", data.errors);
+        throw new Error(data.message || "Failed to update menu item");
       }
     } catch (error) {
-      console.error('Error updating menu item:', error);
+      console.error("Error updating menu item:", error);
       throw error;
     }
   };
@@ -111,40 +111,51 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
   useEffect(() => {
     if (instance) {
       setFormData({
-        name: instance.name || '',
-        main_price: instance.main_price || '',
-        prev_price: instance.prev_price || '',
-        details: instance.details || '',
-        category_id: instance.category_id?.toString() || '',
-        size_id: instance.size_id?.toString() || '',
-        status: instance.status === 'active' || instance.status === 1 || instance.status === '1' || instance.status === true || instance.status === 'true'
+        name: instance.name || "",
+        main_price: instance.main_price || "",
+        prev_price: instance.prev_price || "",
+        details: instance.details || "",
+        category_id: instance.category_id?.toString() || "",
+        size_id: instance.size_id?.toString() || "",
+        status:
+          instance.status === "active" ||
+          instance.status === 1 ||
+          instance.status === "1" ||
+          instance.status === true ||
+          instance.status === "true",
       });
-      
+
       // Set thumbnail preview if exists
       if (instance.thumbnail) {
-        setThumbnailPreview(`${process.env.NEXT_PUBLIC_API_URL}/${instance.thumbnail}`);
+        setThumbnailPreview(
+          `${process.env.NEXT_PUBLIC_API_URL}/public/${instance.thumbnail}`
+        );
       }
     } else {
       // Reset form for new item
       setFormData({
-        name: '',
-        main_price: '',
-        prev_price: '',
-        details: '',
-        category_id: '',
-        size_id: '',
-        status: true
+        name: "",
+        main_price: "",
+        prev_price: "",
+        details: "",
+        category_id: "",
+        size_id: "",
+        status: true,
       });
       setThumbnail(null);
       setThumbnailPreview(null);
     }
   }, [instance]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -167,25 +178,30 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.name.trim() || !formData.main_price || !formData.category_id || !formData.size_id) {
+
+    if (
+      !formData.name.trim() ||
+      !formData.main_price ||
+      !formData.category_id ||
+      !formData.size_id
+    ) {
       return;
     }
 
     try {
       // Create FormData
       const submitData = new FormData();
-      submitData.append('name', formData.name.trim());
-      submitData.append('main_price', formData.main_price);
-      submitData.append('prev_price', formData.prev_price || '0');
-      submitData.append('details', formData.details.trim());
-      submitData.append('category_id', formData.category_id);
-      submitData.append('size_id', formData.size_id);
+      submitData.append("name", formData.name.trim());
+      submitData.append("main_price", formData.main_price);
+      submitData.append("prev_price", formData.prev_price || "0");
+      submitData.append("details", formData.details.trim());
+      submitData.append("category_id", formData.category_id);
+      submitData.append("size_id", formData.size_id);
       // Send status as 0 or 1 for API
-      submitData.append('status', formData.status ? '1' : '0');
-      
+      submitData.append("status", formData.status ? "1" : "0");
+
       if (thumbnail) {
-        submitData.append('thumbnail', thumbnail);
+        submitData.append("thumbnail", thumbnail);
       }
 
       // Debug: Log FormData contents
@@ -197,7 +213,10 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
       let result;
       if (isEdit) {
         // Update existing item - use FormData for PUT request
-        result = await updateMenuWithFormData(instance.id.toString(), submitData);
+        result = await updateMenuWithFormData(
+          instance.id.toString(),
+          submitData
+        );
       } else {
         // Create new item - use FormData for POST request
         result = await createMenuWithFormData(submitData);
@@ -208,35 +227,35 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
         onOpenChange(false);
         // Reset form
         setFormData({
-          name: '',
-          main_price: '',
-          prev_price: '',
-          details: '',
-          category_id: '',
-          size_id: '',
-          status: true
+          name: "",
+          main_price: "",
+          prev_price: "",
+          details: "",
+          category_id: "",
+          size_id: "",
+          status: true,
         });
         setThumbnail(null);
         setThumbnailPreview(null);
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error("Error submitting form:", error);
     }
   };
 
   const handleClose = () => {
     onOpenChange(false);
-      // Reset form when closing
-      if (!isEdit) {
-        setFormData({
-          name: '',
-          main_price: '',
-          prev_price: '',
-          details: '',
-          category_id: '',
-          size_id: '',
-          status: true
-        });
+    // Reset form when closing
+    if (!isEdit) {
+      setFormData({
+        name: "",
+        main_price: "",
+        prev_price: "",
+        details: "",
+        category_id: "",
+        size_id: "",
+        status: true,
+      });
       setThumbnail(null);
       setThumbnailPreview(null);
     }
@@ -247,13 +266,12 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isEdit ? 'Edit Menu Item' : 'Add New Menu Item'}
+            {isEdit ? "Edit Menu Item" : "Add New Menu Item"}
           </DialogTitle>
           <DialogDescription>
-            {isEdit 
-              ? 'Update the menu item information below.' 
-              : 'Fill in the details to create a new menu item.'
-            }
+            {isEdit
+              ? "Update the menu item information below."
+              : "Fill in the details to create a new menu item."}
           </DialogDescription>
         </DialogHeader>
 
@@ -281,8 +299,13 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
               </label>
               <select
                 name="status"
-                value={formData.status ? 'true' : 'false'}
-                onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value === 'true' }))}
+                value={formData.status ? "true" : "false"}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    status: e.target.value === "true",
+                  }))
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               >
                 <option value="true">Active</option>
@@ -347,7 +370,9 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
                 ))}
               </select>
               {categoriesLoading && (
-                <p className="text-sm text-gray-500 mt-1">Loading categories...</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Loading categories...
+                </p>
               )}
             </div>
 
@@ -403,9 +428,12 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <Upload className="w-8 h-8 mb-2 text-gray-400" />
                     <p className="mb-2 text-sm text-gray-500">
-                      <span className="font-semibold">Click to upload</span> or drag and drop
+                      <span className="font-semibold">Click to upload</span> or
+                      drag and drop
                     </p>
-                    <p className="text-xs text-gray-500">PNG, JPG or JPEG (MAX. 2MB)</p>
+                    <p className="text-xs text-gray-500">
+                      PNG, JPG or JPEG (MAX. 2MB)
+                    </p>
                   </div>
                   <input
                     type="file"
@@ -449,11 +477,17 @@ const AddItemForm: React.FC<AddItemFormProps> = ({
             </button>
             <button
               type="submit"
-              disabled={isLoading || !formData.name.trim() || !formData.main_price || !formData.category_id || !formData.size_id}
+              disabled={
+                isLoading ||
+                !formData.name.trim() ||
+                !formData.main_price ||
+                !formData.category_id ||
+                !formData.size_id
+              }
               className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-              {isEdit ? 'Update Item' : 'Create Item'}
+              {isEdit ? "Update Item" : "Create Item"}
             </button>
           </div>
         </form>

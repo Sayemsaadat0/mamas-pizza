@@ -31,6 +31,15 @@ const MenuCard: React.FC<MenuCardProps> = ({
   onRetry 
 }) => {
   const { canOrder } = useOrderStore();
+  
+  // Debug logging for thumbnail
+  console.log('MenuCard Debug:', {
+    menuId: menu.id,
+    menuName: menu.name,
+    thumbnail: menu.thumbnail,
+    constructedUrl: menu.thumbnail ? `${process.env.NEXT_PUBLIC_API_URL}/public/${menu.thumbnail}` : '/placeholder-avatar.svg',
+    apiUrl: process.env.NEXT_PUBLIC_API_URL
+  });
   // const [sizes, setSizes] = useState<Size[]>([]); // Currently unused
   // const [sizesLoading, setSizesLoading] = useState(false); // Currently unused
   // const [sizesError, setSizesError] = useState<string | null>(null); // Currently unused
@@ -99,10 +108,25 @@ const MenuCard: React.FC<MenuCardProps> = ({
         <Image
           width={400}
           height={300}
-          src={`${process.env.NEXT_PUBLIC_API_URL}/${menu.thumbnail}`}
+          src={menu.thumbnail ? `${process.env.NEXT_PUBLIC_API_URL}/public/${menu.thumbnail}` : '/placeholder-avatar.svg'}
+          // src={`${process.env.NEXT_PUBLIC_API_URL}/public/${menu.thumbnail}`}
           alt={menu.name}
           className="w-full h-40 object-cover"
+          onError={(e) => {
+            console.log('MenuCard Image load error:', {
+              menuId: menu.id,
+              menuName: menu.name,
+              thumbnail: menu.thumbnail,
+              constructedUrl: menu.thumbnail ? `${process.env.NEXT_PUBLIC_API_URL}/public/${menu.thumbnail}` : '/placeholder-avatar.svg',
+              error: e
+            });
+            e.currentTarget.style.display = 'none';
+            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+          }}
         />
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400 text-xs hidden">
+          <span>No Image</span>
+        </div>
         <div className="absolute top-3 right-3 ">
         {menu.category.name.toLowerCase() === 'pizza' && menu.size && (
             <div className="mb-2">

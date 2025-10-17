@@ -175,7 +175,8 @@ export function useCart() {
         // Fetch user cart
         const response = await fetch(USER_CART_API, {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
           }
         });
         

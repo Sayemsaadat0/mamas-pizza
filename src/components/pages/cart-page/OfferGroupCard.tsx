@@ -45,15 +45,17 @@ interface OfferGroupCardProps {
   loadingItems?: Set<number>;
 }
 
-const OfferGroupCard: React.FC<OfferGroupCardProps> = ({ 
-  bundle, 
-  offer, 
+const OfferGroupCard: React.FC<OfferGroupCardProps> = ({
+  bundle,
+  offer,
   onRemoveBundle,
   isLoading = false,
   // loadingItems = new Set() // Currently unused
 }) => {
-  const bundleId = `${bundle.bogo_offer_id}-${bundle.user_id || bundle.guest_id}`;
-  
+  const bundleId = `${bundle.bogo_offer_id}-${
+    bundle.user_id || bundle.guest_id
+  }`;
+
   // Check if any items in this bundle are currently being removed
   // Note: We need to check against the actual cart item IDs, not the menu item IDs
   const isBundleLoading = isLoading;
@@ -96,15 +98,20 @@ const OfferGroupCard: React.FC<OfferGroupCardProps> = ({
         <div className="space-y-3">
           <div className="flex items-center gap-2 mb-2">
             <ShoppingCart className="w-4 h-4 text-orange-600" />
-            <h4 className="text-sm font-semibold text-gray-700">Items to Buy</h4>
+            <h4 className="text-sm font-semibold text-gray-700">
+              Items to Buy
+            </h4>
           </div>
           <div className="space-y-2">
             {bundle.buy_items.map((item, index) => (
-              <div key={`buy-${item.id}-${index}`} className="flex items-center gap-2 p-2 bg-white rounded-lg border border-orange-100">
+              <div
+                key={`buy-${item.id}-${index}`}
+                className="flex items-center gap-2 p-2 bg-white rounded-lg border border-orange-100"
+              >
                 {item.thumbnail && (
                   <div className="w-8 h-8 rounded-md overflow-hidden flex-shrink-0">
                     <Image
-                      src={`${process.env.NEXT_PUBLIC_API_URL}/${item.thumbnail}`}
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/public/${item.thumbnail}`}
                       alt={item.name}
                       width={32}
                       height={32}
@@ -113,7 +120,9 @@ const OfferGroupCard: React.FC<OfferGroupCardProps> = ({
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-gray-800 truncate">{item.name}</p>
+                  <p className="text-xs font-medium text-gray-800 truncate">
+                    {item.name}
+                  </p>
                   <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
                 </div>
                 <span className="text-xs font-semibold text-orange-600">
@@ -132,11 +141,14 @@ const OfferGroupCard: React.FC<OfferGroupCardProps> = ({
           </div>
           <div className="space-y-2">
             {bundle.free_items.map((item, index) => (
-              <div key={`free-${item.id}-${index}`} className="flex items-center gap-2 p-2 bg-white rounded-lg border border-green-100">
+              <div
+                key={`free-${item.id}-${index}`}
+                className="flex items-center gap-2 p-2 bg-white rounded-lg border border-green-100"
+              >
                 {item.thumbnail && (
                   <div className="w-8 h-8 rounded-md overflow-hidden flex-shrink-0">
                     <Image
-                      src={`${process.env.NEXT_PUBLIC_API_URL}/${item.thumbnail}`}
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/public/${item.thumbnail}`}
                       alt={item.name}
                       width={32}
                       height={32}
@@ -145,7 +157,9 @@ const OfferGroupCard: React.FC<OfferGroupCardProps> = ({
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-gray-800 truncate">{item.name}</p>
+                  <p className="text-xs font-medium text-gray-800 truncate">
+                    {item.name}
+                  </p>
                   <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
                 </div>
                 <span className="text-xs font-semibold text-green-600">
@@ -165,9 +179,20 @@ const OfferGroupCard: React.FC<OfferGroupCardProps> = ({
             <span className="text-sm font-medium text-green-700">You Save</span>
           </div>
           <span className="text-lg font-bold text-green-600">
-            ${(bundle.buy_items.reduce((sum, item) => sum + parseFloat(item.main_price) * item.quantity, 0) + 
-                bundle.free_items.reduce((sum, item) => sum + parseFloat(item.main_price) * item.quantity, 0) - 
-                bundle.offer_price).toFixed(2)}
+            $
+            {(
+              bundle.buy_items.reduce(
+                (sum, item) =>
+                  sum + parseFloat(item.main_price) * item.quantity,
+                0
+              ) +
+              bundle.free_items.reduce(
+                (sum, item) =>
+                  sum + parseFloat(item.main_price) * item.quantity,
+                0
+              ) -
+              bundle.offer_price
+            ).toFixed(2)}
           </span>
         </div>
       </div>

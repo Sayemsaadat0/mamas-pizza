@@ -38,7 +38,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     
     // If it starts with storage/, add the API URL
     if (imagePath.startsWith('storage/')) {
-      return `${process.env.NEXT_PUBLIC_API_URL}/${imagePath}`
+      return `${process.env.NEXT_PUBLIC_API_URL}/public/${imagePath}`
     }
     
     // If it's a malformed URL like "http://localhost:8000storage/", fix it
@@ -52,7 +52,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     }
     
     // Default: prepend API URL
-    return `${process.env.NEXT_PUBLIC_API_URL}/${imagePath}`
+    return `${process.env.NEXT_PUBLIC_API_URL}/public/${imagePath}`
   }
 
   const getSizeClasses = () => {
