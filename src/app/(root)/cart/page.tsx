@@ -718,12 +718,16 @@ export default function CartPage() {
             </div>
           </div>
         )}
-      {/*  */}
-      <div className="ah-container px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-12 mt-[200px]">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-            {/* Left Side - Cart Items and Guest Form (7/12 width on desktop) */}
-            <div className="lg:col-span-7 order-1 space-y-6">
+      
+      {/* Only show cart content when there are items */}
+      {(regularItems.length > 0 ||
+        bogoBundles.length > 0 ||
+        processedBogoBundles.length > 0) && (
+        <div className="ah-container px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-12 mt-[200px]">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+              {/* Left Side - Cart Items and Guest Form (7/12 width on desktop) */}
+              <div className="lg:col-span-7 order-1 space-y-6">
               {/* BOGO Bundles - Grouped Display */}
               {(bogoBundles.length > 0 || processedBogoBundles.length > 0) && (
                 <div className="mb-6">
@@ -1203,6 +1207,7 @@ export default function CartPage() {
           </div>
         </div>
       </div>
+      )}
     </main>
   );
 }

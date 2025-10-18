@@ -1,9 +1,9 @@
-import ProfilePage from "@/components/pages/profile-page/ProfilePage"
+import AdminProfilePage from "@/components/admin/AdminProfilePage"
 
 const page = () => {
   return (
-    <div>
-      <ProfilePage />
+    <div className="max-w-2xl">
+      <AdminProfilePage />
     </div>
   )
 }

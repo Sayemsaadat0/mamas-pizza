@@ -50,7 +50,7 @@ const Template = ({ children }: { children: React.ReactNode }) => {
                         
                         {/* Page Content */}
                         <main className="p-6 min-h-screen">
-                            <div className="max-w-7xl mx-auto">
+                            <div className="">
                                 {children}
                             </div>
                         </main>

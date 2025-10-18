@@ -68,7 +68,6 @@ export function useRestaurants() {
       }
 
       const result = await response.json();
-      console.log(result, "result");
       setRestaurants(result.data || []);
     } catch (err: any) {
       setError(err.message);

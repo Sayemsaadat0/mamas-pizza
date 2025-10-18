@@ -8,6 +8,8 @@ interface CartState {
   decrementItemCount: (decrement?: number) => void
   resetCartCount: () => void
   lastUpdated?: number
+  isHydrated: boolean
+  setHydrated: (hydrated: boolean) => void
 }
 
 export const useCartStore = create<CartState>()(
@@ -15,6 +17,7 @@ export const useCartStore = create<CartState>()(
     (set) => ({
       itemCount: 0,
       lastUpdated: undefined,
+      isHydrated: false,
       setItemCount: (count: number) => set({ 
         itemCount: Math.max(0, count), // Ensure count is never negative
         lastUpdated: Date.now() 
@@ -31,6 +34,7 @@ export const useCartStore = create<CartState>()(
         itemCount: 0, 
         lastUpdated: Date.now() 
       }),
+      setHydrated: (hydrated: boolean) => set({ isHydrated: hydrated }),
     }),
     {
       name: 'mamas-pizza-cart-storage', // unique name for localStorage key
@@ -42,6 +46,9 @@ export const useCartStore = create<CartState>()(
           return persistedState
         }
         return persistedState
+      },
+      onRehydrateStorage: () => (state) => {
+        state?.setHydrated(true)
       },
     }
   )

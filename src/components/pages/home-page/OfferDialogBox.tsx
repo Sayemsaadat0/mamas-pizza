@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { BogoOffer } from "@/hooks/bogo-offer.hooks"
 import type React from "react"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { type MenuItem, useMenus } from "@/hooks/menu.hook"
 import { useSizes } from "@/hooks/sizes.hook"
 import { useGuest } from "@/lib/guest/GuestProvider"
@@ -24,6 +24,20 @@ interface OfferDialogBoxProps {
 
 type SelectionStep = "size" | "items"
 
+// Helper function to convert numbers to ordinal format
+const getOrdinalNumber = (num: number): string => {
+  const ordinals = [
+    '', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth',
+    'eleventh', 'twelfth', 'thirteenth', 'fourteenth', 'fifteenth', 'sixteenth', 'seventeenth', 'eighteenth', 'nineteenth', 'twentieth'
+  ]
+  
+  if (num <= 20) {
+    return ordinals[num]
+  }
+  
+  // For numbers above 20, we'll use a simple approach
+  return `${num}th`
+}
 
 const OfferDialogBox: React.FC<OfferDialogBoxProps> = ({ offer, open, setOpen }) => {
   const { guestId } = useGuest()
@@ -39,19 +53,13 @@ const OfferDialogBox: React.FC<OfferDialogBoxProps> = ({ offer, open, setOpen })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [itemsStepMode, setItemsStepMode] = useState<"buy" | "free">("buy")
   const [itemsStepIndex, setItemsStepIndex] = useState<number>(0)
+  // console.log(selectedSi ze)
 
-  const { menus: apiMenus, loading: menusLoading } = useMenus({
+  const { menus: visibleMenus, loading: menusLoading } = useMenus({
     category_id: offer.category_id?.toString(),
     size_id: selectedSize ? Number.parseInt(selectedSize) : undefined,
     per_page: 50,
   })
-
-  // Client-side fallback filtering by size_id to ensure menus reflect chosen size
-  const visibleMenus = useMemo(() => {
-    const sizeIdNum = selectedSize ? Number.parseInt(selectedSize) : undefined
-    if (!sizeIdNum) return apiMenus
-    return apiMenus.filter(m => m.size_id === sizeIdNum)
-  }, [apiMenus, selectedSize])
 
   useEffect(() => {
     if (open) {
@@ -192,7 +200,6 @@ const OfferDialogBox: React.FC<OfferDialogBoxProps> = ({ offer, open, setOpen })
   const isSelectionComplete =
     selectedBuyItems.filter(Boolean).length === offer.buy_quantity && selectedFreeItems.filter(Boolean).length === offer.get_quantity
 
-  console.log(visibleMenus)
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -256,7 +263,7 @@ const OfferDialogBox: React.FC<OfferDialogBoxProps> = ({ offer, open, setOpen })
                       ← Back
                     </Button>
                     <h3 className="text-base font-bold text-gray-800">
-                      {itemsStepMode === "buy" ? `Select buy item ${itemsStepIndex + 1} of ${offer.buy_quantity}` : `Select free item ${itemsStepIndex + 1} of ${offer.get_quantity}`}
+                      Select your {getOrdinalNumber(itemsStepMode === "buy" ? itemsStepIndex + 1 : offer.buy_quantity + itemsStepIndex + 1)} item
                     </h3>
                   </div>
                   <Button
@@ -335,7 +342,7 @@ const OfferDialogBox: React.FC<OfferDialogBoxProps> = ({ offer, open, setOpen })
                 ) : (
                   <Button
                     disabled={itemsStepMode === "buy" ? !selectedBuyItems[itemsStepIndex] : !selectedFreeItems[itemsStepIndex]}
-                    className="ml-auto h-10 bg-gray-900 hover:bg-black text-white rounded-lg px-4 text-sm font-semibold"
+                    className="ml-auto h-10 bg-orange-500 hover:bg-orange-600 text-white rounded-lg px-4 text-sm font-semibold"
                     onClick={goNextStep}
                   >
                     Next

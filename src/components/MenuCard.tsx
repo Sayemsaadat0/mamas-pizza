@@ -1,18 +1,18 @@
-'use client'
+"use client";
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { useCallback} from "react";
+import { useCallback } from "react";
 import { useOrderStore } from "@/lib/stores/orderStore";
 import { MenuItem } from "@/hooks/menu.hook";
 
-interface Size {
-  id: string;
-  size: number;
-  status: 'active' | 'inactive' | string | number;
-  created_at: string;
-  updated_at: string;
-}
+// interface Size {
+//   id: string;
+//   size: number;
+//   status: "active" | "inactive" | string | number;
+//   created_at: string;
+//   updated_at: string;
+// }
 
 interface MenuCardProps {
   menu: MenuItem;
@@ -23,23 +23,16 @@ interface MenuCardProps {
   onRetry?: () => void;
 }
 
-const MenuCard: React.FC<MenuCardProps> = ({ 
-  menu, 
-  onAddToCart, 
-  isLoading = false, 
-  error = null, 
-  onRetry 
+const MenuCard: React.FC<MenuCardProps> = ({
+  menu,
+  onAddToCart,
+  isLoading = false,
+  error = null,
+  onRetry,
 }) => {
   const { canOrder } = useOrderStore();
-  
-  // Debug logging for thumbnail
-  console.log('MenuCard Debug:', {
-    menuId: menu.id,
-    menuName: menu.name,
-    thumbnail: menu.thumbnail,
-    constructedUrl: menu.thumbnail ? `${process.env.NEXT_PUBLIC_API_URL}/public/${menu.thumbnail}` : '/placeholder-avatar.svg',
-    apiUrl: process.env.NEXT_PUBLIC_API_URL
-  });
+
+
   // const [sizes, setSizes] = useState<Size[]>([]); // Currently unused
   // const [sizesLoading, setSizesLoading] = useState(false); // Currently unused
   // const [sizesError, setSizesError] = useState<string | null>(null); // Currently unused
@@ -49,7 +42,7 @@ const MenuCard: React.FC<MenuCardProps> = ({
   //   const fetchSizes = async () => {
   //     setSizesLoading(true);
   //     setSizesError(null);
-      
+
   //     try {
   //       const response = await fetch(SIZES_API, {
   //         headers: {
@@ -81,20 +74,23 @@ const MenuCard: React.FC<MenuCardProps> = ({
   //   fetchSizes();
   // }, []);
 
-  const handleAddToCart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (!canOrder || isLoading) {
-      return; // Don't proceed if canOrder is false or already loading
-    }
-    
-    if (onAddToCart) {
-      onAddToCart(menu);
-    } else {
-      // console.log('MenuCard: onAddToCart function is not provided');
-    }
-  }, [canOrder, isLoading, onAddToCart, menu]);
+  const handleAddToCart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!canOrder || isLoading) {
+        return; // Don't proceed if canOrder is false or already loading
+      }
+
+      if (onAddToCart) {
+        onAddToCart(menu);
+      } else {
+        // console.log('MenuCard: onAddToCart function is not provided');
+      }
+    },
+    [canOrder, isLoading, onAddToCart, menu]
+  );
 
   return (
     <motion.div
@@ -108,37 +104,33 @@ const MenuCard: React.FC<MenuCardProps> = ({
         <Image
           width={400}
           height={300}
-          src={menu.thumbnail ? `${process.env.NEXT_PUBLIC_API_URL}/public/${menu.thumbnail}` : '/placeholder-avatar.svg'}
+          src={
+            menu.thumbnail
+              ? `${process.env.NEXT_PUBLIC_API_URL}/public/${menu.thumbnail}`
+              : "/placeholder-avatar.svg"
+          }
           // src={`${process.env.NEXT_PUBLIC_API_URL}/public/${menu.thumbnail}`}
           alt={menu.name}
           className="w-full h-40 object-cover"
           onError={(e) => {
-            console.log('MenuCard Image load error:', {
-              menuId: menu.id,
-              menuName: menu.name,
-              thumbnail: menu.thumbnail,
-              constructedUrl: menu.thumbnail ? `${process.env.NEXT_PUBLIC_API_URL}/public/${menu.thumbnail}` : '/placeholder-avatar.svg',
-              error: e
-            });
-            e.currentTarget.style.display = 'none';
-            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+            e.currentTarget.style.display = "none";
+            e.currentTarget.nextElementSibling?.classList.remove("hidden");
           }}
         />
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400 text-xs hidden">
           <span>No Image</span>
         </div>
         <div className="absolute top-3 right-3 ">
-        {menu.category.name.toLowerCase() === 'pizza' && menu.size && (
+          {menu.category.name.toLowerCase() === "pizza" && menu.size && (
             <div className="mb-2">
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                 {menu.size.size}&quot; Size
               </span>
             </div>
           )}
-
         </div>
       </div>
-      
+
       <div className="p-4 flex flex-col flex-grow">
         <div className="mb-3 flex-grow">
           <h3 className="text-lg font-semibold text-gray-900 mb-1">
@@ -147,22 +139,23 @@ const MenuCard: React.FC<MenuCardProps> = ({
           <p className="text-sm text-gray-500 line-clamp-2 mb-3">
             {menu.details}
           </p>
-          
+
           {/* Size Section - Only show for Pizza category */}
- 
+
           {/* Price Section */}
           <div className="flex items-center gap-2">
             <span className="text-xl font-bold text-orange-600">
               ${parseFloat(menu.main_price).toFixed(2)}
             </span>
-            {menu.prev_price && parseFloat(menu.prev_price) > parseFloat(menu.main_price) && (
-              <span className="text-sm text-gray-400 line-through">
-                ${parseFloat(menu.prev_price).toFixed(2)}
-              </span>
-            )}
+            {menu.prev_price &&
+              parseFloat(menu.prev_price) > parseFloat(menu.main_price) && (
+                <span className="text-sm text-gray-400 line-through">
+                  ${parseFloat(menu.prev_price).toFixed(2)}
+                </span>
+              )}
           </div>
         </div>
-        
+
         {/* Error Display */}
         {error && (
           <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg">
@@ -178,17 +171,17 @@ const MenuCard: React.FC<MenuCardProps> = ({
           </div>
         )}
 
-        <button 
+        <button
           onClick={handleAddToCart}
           disabled={isLoading || !canOrder || !!error}
           className={`w-full py-2.5 rounded-lg font-medium text-sm transition-colors ${
-            isLoading 
-              ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+            isLoading
+              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
               : !canOrder
-              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
               : error
-              ? 'bg-red-100 text-red-400 cursor-not-allowed'
-              : 'bg-orange-500 text-white hover:bg-orange-600'
+              ? "bg-red-100 text-red-400 cursor-not-allowed"
+              : "bg-orange-500 text-white hover:bg-orange-600"
           }`}
         >
           {isLoading ? (
@@ -197,11 +190,11 @@ const MenuCard: React.FC<MenuCardProps> = ({
               Adding...
             </div>
           ) : !canOrder ? (
-            'Not Available'
+            "Not Available"
           ) : error ? (
-            'Error - Try Again'
+            "Error - Try Again"
           ) : (
-            'Add to Cart'
+            "Add to Cart"
           )}
         </button>
       </div>

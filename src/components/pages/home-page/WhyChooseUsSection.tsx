@@ -1,4 +1,5 @@
 import { Clock,  Star, Heart, Shield,  CheckCircle } from "lucide-react"
+import Link from "next/link"
 
 const WhyChooseUsSection = () => {
     const features = [
@@ -32,12 +33,7 @@ const WhyChooseUsSection = () => {
         },
     ]
 
-    const stats = [
-        { number: "50K+", label: "Happy Customers" },
-        { number: "25+", label: "Restaurant Partners" },
-        { number: "4.9★", label: "Average Rating" },
-        { number: "30min", label: "Delivery Time" }
-    ]
+
 
     return (
         <section className="bg-gradient-to-br fade-top-mask from-gray-50 to-white py-20">
@@ -58,19 +54,7 @@ const WhyChooseUsSection = () => {
                     </p>
                 </div>
 
-                {/* Stats Section */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
-                    {stats.map((stat, index) => (
-                        <div key={index} className="text-center p-6 bg-white rounded-2xl shadow-lg border border-gray-100">
-                            <div className="text-2xl md:text-3xl font-bold text-orange-600 mb-2">
-                                {stat.number}
-                            </div>
-                            <div className="text-sm text-gray-600 font-medium">
-                                {stat.label}
-                            </div>
-                        </div>
-                    ))}
-                </div>
+      
 
                 {/* Features Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
@@ -121,9 +105,9 @@ const WhyChooseUsSection = () => {
                                 Join thousands of satisfied customers who choose us for their daily meals. 
                                 Start your journey with us today!
                             </p>
-                            <button className="bg-white text-orange-600 px-8 py-3 rounded-full text-lg font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:-translate-y-1 shadow-lg">
+                            <Link href="/menu" className="bg-white text-orange-600 px-8 py-3 rounded-full text-lg font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:-translate-y-1 shadow-lg">
                                 Start Ordering Now
-                            </button>
+                            </Link>
                         </div>
                     </div>
                 </div>
