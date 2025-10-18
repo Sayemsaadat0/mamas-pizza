@@ -405,7 +405,7 @@ export default function CartPage() {
     } catch (error) {
       console.error("Error removing item from cart:", error);
       // Revert the local change if API call fails - refetch to restore original state
-      refetch();
+      await refetch();
       toast.error("Failed to remove item from cart");
     } finally {
       // Remove loading state
@@ -421,9 +421,35 @@ export default function CartPage() {
     try {
       // Find all BOGO items for this bundle and remove them
       const bundleOfferId = parseInt(bundleId.split("-")[0]);
-      const bogoItemsToRemove = cartItems.filter(
+      
+      // First, try to find items in cartItems with is_bogo_item and bogo_offer_id
+      let bogoItemsToRemove = cartItems.filter(
         (item) => item.is_bogo_item && item.bogo_offer_id === bundleOfferId
       );
+
+      // If no items found in cartItems, check if we need to remove items from bogoBundles
+      if (bogoItemsToRemove.length === 0) {
+        // Check if this is a bundle from the API (bogoBundles)
+        const bundleFromAPI = bogoBundles.find(bundle => bundle.bogo_offer_id === bundleOfferId);
+        
+        if (bundleFromAPI) {
+          // For API bundles, we need to remove the individual items that make up this bundle
+          // Find cart items that match the bundle's buy_items and free_items
+          const allBundleItemIds = [
+            ...bundleFromAPI.buy_items.map(item => item.id),
+            ...bundleFromAPI.free_items.map(item => item.id)
+          ];
+          
+          bogoItemsToRemove = cartItems.filter(item => 
+            allBundleItemIds.includes(item.item_id)
+          );
+        }
+      }
+
+      if (bogoItemsToRemove.length === 0) {
+        toast.error("No BOGO items found to remove");
+        return;
+      }
 
       // Set loading state for all items in the bundle
       const itemIds = bogoItemsToRemove.map((item) => item.id);
@@ -433,12 +459,13 @@ export default function CartPage() {
         return newSet;
       });
 
-      // Remove all BOGO items for this bundle
-      const deletePromises = bogoItemsToRemove.map(async (item) => {
-        // Update UI immediately for better UX
+      // Remove all BOGO items for this bundle locally first
+      bogoItemsToRemove.forEach((item) => {
         removeCartItemLocally(item.id);
+      });
 
-        // Make API call
+      // Make API calls for all items
+      const deletePromises = bogoItemsToRemove.map(async (item) => {
         if (isAuthenticated) {
           return deleteCartItem(item.id);
         } else {
@@ -448,9 +475,6 @@ export default function CartPage() {
 
       // Wait for all deletions to complete
       await Promise.all(deletePromises);
-
-      // Refetch cart data to ensure UI is in sync
-      await refetch();
 
       toast.success("BOGO offer removed from cart");
     } catch (error) {
@@ -723,7 +747,7 @@ export default function CartPage() {
       {(regularItems.length > 0 ||
         bogoBundles.length > 0 ||
         processedBogoBundles.length > 0) && (
-        <div className="ah-container px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-12 mt-[200px]">
+        <div className="ah-container px-4 sm:px-6 lg:px-8 py-4 sm:py-8 lg:py-12 mt-[150px] md:mt-[200px]">
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
               {/* Left Side - Cart Items and Guest Form (7/12 width on desktop) */}
@@ -743,6 +767,7 @@ export default function CartPage() {
                       const offer = bogoOffers.find(
                         (offer) => offer.id === bundle.bogo_offer_id
                       );
+                      
                       return offer ? (
                         <OfferGroupCard
                           key={`bundle-${bundle.bogo_offer_id}-${index}`}

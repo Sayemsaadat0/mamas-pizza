@@ -109,42 +109,46 @@ export function useCart() {
 
   // Function to update cart item quantity locally
   const updateCartItemLocally = (cartItemId: number, newQuantity: number) => {
-    setCartItems(prev => 
-      prev.map(item => 
+    setCartItems(prev => {
+      const updatedItems = prev.map(item => 
         item.id === cartItemId 
           ? { ...item, quantity: newQuantity, total_price: parseFloat(item.item.main_price) * newQuantity }
           : item
-      )
-    );
-    
-    // Recalculate totals
-    const updatedItems = cartItems.map(item => 
-      item.id === cartItemId 
-        ? { ...item, quantity: newQuantity, total_price: parseFloat(item.item.main_price) * newQuantity }
-        : item
-    );
-    
-    const newGrandTotal = updatedItems.reduce((sum, item) => sum + item.total_price, 0);
-    const newItemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
-    
-    setGrandTotal(newGrandTotal);
-    setItemCountLocal(newItemCount);
-    setItemCount(newItemCount); // Update global store
+      );
+      
+      // Recalculate totals using the updated items
+      const newGrandTotal = updatedItems.reduce((sum, item) => sum + item.total_price, 0);
+      const newItemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
+      
+      // Update local state
+      setGrandTotal(newGrandTotal);
+      setItemCountLocal(newItemCount);
+      
+      return updatedItems;
+    });
   };
 
   // Function to remove cart item locally
   const removeCartItemLocally = (cartItemId: number) => {
-    setCartItems(prev => prev.filter(item => item.id !== cartItemId));
-    
-    // Recalculate totals
-    const updatedItems = cartItems.filter(item => item.id !== cartItemId);
-    const newGrandTotal = updatedItems.reduce((sum, item) => sum + item.total_price, 0);
-    const newItemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
-    
-    setGrandTotal(newGrandTotal);
-    setItemCountLocal(newItemCount);
-    setItemCount(newItemCount); // Update global store
+    setCartItems(prev => {
+      const updatedItems = prev.filter(item => item.id !== cartItemId);
+      
+      // Recalculate totals using the updated items
+      const newGrandTotal = updatedItems.reduce((sum, item) => sum + item.total_price, 0);
+      const newItemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
+      
+      // Update local state
+      setGrandTotal(newGrandTotal);
+      setItemCountLocal(newItemCount);
+      
+      return updatedItems;
+    });
   };
+
+  // Update global store when itemCount changes
+  useEffect(() => {
+    setItemCount(itemCount);
+  }, [itemCount, setItemCount]);
 
   // Function to fetch BOGO offers for authenticated users
   const fetchUserBogoOffers = async () => {

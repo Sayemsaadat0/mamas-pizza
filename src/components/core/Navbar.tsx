@@ -18,10 +18,6 @@ import {
   Mail,
   MapPin,
   Truck,
-  Facebook,
-  Twitter,
-  Instagram,
-  Youtube,
   LogIn,
   LogOut,
   UserCircle,
@@ -68,12 +64,6 @@ const ContactNav: React.FC<ContactNavProps> = ({ hide }) => {
       <div className="w-full ah-container text-xs md:text-sm flex justify-between items-center py-2 md:py-3 px-4 sm:px-6 lg:px-8">
         {/* Left Side - Contact Info */}
         <div className="hidden md:flex items-center gap-6">
-          {/* Phone */}
-          <div className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">
-            <Phone size={14} className="text-orange-500" />
-            <span>07424 295393</span>
-          </div>
-
           {/* Email */}
           <div className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">
             <Mail size={14} className="text-orange-500" />
@@ -98,50 +88,22 @@ const ContactNav: React.FC<ContactNavProps> = ({ hide }) => {
           <span className="sm:hidden">Fast Delivery</span>
         </div>
 
-        {/* Right Side - Social Media & Payment */}
+        {/* Right Side - Phone */}
         <div className="flex items-center gap-4">
-          {/* Social Media */}
-          <div className="hidden lg:flex items-center gap-3">
-            <Link
-              href="#"
-              className="text-gray-400 hover:text-orange-500 transition-colors"
-            >
-              <Facebook size={14} />
-            </Link>
-            <Link
-              href="#"
-              className="text-gray-400 hover:text-orange-500 transition-colors"
-            >
-              <Twitter size={14} />
-            </Link>
-            <Link
-              href="#"
-              className="text-gray-400 hover:text-orange-500 transition-colors"
-            >
-              <Instagram size={14} />
-            </Link>
-            <Link
-              href="#"
-              className="text-gray-400 hover:text-orange-500 transition-colors"
-            >
-              <Youtube size={14} />
-            </Link>
-          </div>
-
-          {/* Divider */}
-          <div className="hidden lg:block w-px h-4 bg-gray-600"></div>
-
-          {/* Payment Methods */}
-          <div className="flex items-center gap-2">
-            <span className="text-gray-400 text-xs">We Accept:</span>
-            <Image
-              width={100}
-              height={30}
-              src="/payments/paymen.jpg"
-              alt="Payment Methods"
-              className="object-contain rounded-md"
-            />
-          </div>
+          {/* Phone Number */}
+          <a 
+            href="tel:07424295393"
+            className="group flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out"
+          >
+            <div className="relative">
+              <Phone size={16} className="text-white group-hover:animate-pulse" />
+              <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-ping"></div>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-white font-bold text-sm tracking-wide">Call Now</span>
+              <span className="text-orange-100 text-xs font-medium">07424 295393</span>
+            </div>
+          </a>
         </div>
       </div>
     </div>

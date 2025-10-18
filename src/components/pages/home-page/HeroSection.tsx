@@ -187,10 +187,7 @@ const HeroSection = () => {
                                     className="w-full pl-10 pr-12 py-3 text-base border-2 border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all duration-300 shadow-inner"
                                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                                 />
-                                {/* Character counter for mobile */}
-                                <div className="absolute top-2 right-3 text-xs text-gray-400">
-                                    {postCode.length < 5 ? `${postCode.length}/5+` : `${postCode.length}/7`}
-                                </div>
+                              
                             </div>
                             <button
                                 onClick={handleSearch}

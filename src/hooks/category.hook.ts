@@ -37,7 +37,6 @@ export function useCategories() {
       }
       
       const responseData = await response.json();
-      console.log('Categories API Response:', responseData); // Debug logging
       
       // Handle the API response structure: {success: true, message: "...", data: []}
       if (responseData.success && Array.isArray(responseData.data)) {
