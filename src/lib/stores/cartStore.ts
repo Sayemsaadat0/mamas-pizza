@@ -7,6 +7,7 @@ interface CartState {
   incrementItemCount: (increment?: number) => void
   decrementItemCount: (decrement?: number) => void
   resetCartCount: () => void
+  clearCart: () => void
   lastUpdated?: number
   isHydrated: boolean
   setHydrated: (hydrated: boolean) => void
@@ -31,6 +32,10 @@ export const useCartStore = create<CartState>()(
         lastUpdated: Date.now() 
       })),
       resetCartCount: () => set({ 
+        itemCount: 0, 
+        lastUpdated: Date.now() 
+      }),
+      clearCart: () => set({ 
         itemCount: 0, 
         lastUpdated: Date.now() 
       }),

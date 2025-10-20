@@ -111,6 +111,7 @@ export default function CartPage() {
     refetch,
     updateCartItemLocally,
     removeCartItemLocally,
+    clearCartItems,
   } = useCart();
   const { updateCartItem } = useUpdateCartItem();
   const { deleteCartItem } = useDeleteCartItem();
@@ -530,12 +531,14 @@ export default function CartPage() {
             ? {
                 address_line_1: user.delivery_address.address_line_1,
                 address_line_2: user.delivery_address.address_line_2 || "",
+                city: user.delivery_address.city || "",
                 post_code: user.delivery_address.post_code,
                 details: user.delivery_address.details || "",
               }
             : {
                 address_line_1: "Default Address",
                 address_line_2: "",
+                city: "Default City",
                 post_code: "00000",
                 details: "",
               },
@@ -557,6 +560,9 @@ export default function CartPage() {
           throw new Error(result.message || "Failed to create order");
         }
         toast.success("Order created successfully!");
+        
+        // Clear the cart after successful order creation
+        clearCartItems();
 
         // Create Stripe payment session for authenticated user
         try {
@@ -627,6 +633,9 @@ export default function CartPage() {
 
         const orderResult = await createGuestOrder(guestOrderData);
         toast.success("Order created successfully!");
+        
+        // Clear the cart after successful order creation
+        clearCartItems();
 
         // Create payment session for guest order
         try {

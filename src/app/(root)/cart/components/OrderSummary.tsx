@@ -119,7 +119,8 @@ export default function OrderSummary({ summary, onCheckout, isFormValid = true, 
         {/* Checkout Button */}
         <button
           onClick={onCheckout}
-          disabled={!isFormValid || isLoading}
+          // (user && user.delivery_address === null ? true : false)
+          disabled={!isFormValid || isLoading }
           className="w-full mt-6 sm:mt-8 bg-gradient-to-r from-orange-600 to-red-500 text-white py-2.5 sm:py-4 px-4 sm:px-8 rounded-lg sm:rounded-xl font-semibold text-base sm:text-xl hover:from-orange-700 hover:to-red-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
         >
           {isLoading ? (

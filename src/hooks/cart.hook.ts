@@ -98,7 +98,7 @@ export interface CartResponse {
 export function useCart() {
   const { token, isAuthenticated } = useAuth();
   const { guestId } = useGuest();
-  const { setItemCount } = useCartStore();
+  const { setItemCount, clearCart } = useCartStore();
   const [cartItems, setCartItems] = useState<CartItemData[]>([]);
   const [bogoOffers, setBogoOffers] = useState<BogoOffer[]>([]);
   const [bogoBundles, setBogoBundles] = useState<BogoBundle[]>([]);
@@ -149,6 +149,16 @@ export function useCart() {
   useEffect(() => {
     setItemCount(itemCount);
   }, [itemCount, setItemCount]);
+
+  // Function to clear the entire cart
+  const clearCartItems = () => {
+    setCartItems([]);
+    setBogoOffers([]);
+    setBogoBundles([]);
+    setGrandTotal(0);
+    setItemCountLocal(0);
+    clearCart(); // Clear the global store as well
+  };
 
   // Function to fetch BOGO offers for authenticated users
   const fetchUserBogoOffers = async () => {
@@ -280,7 +290,8 @@ export function useCart() {
     itemCount: itemCount, 
     refetch: fetchCart,
     updateCartItemLocally,
-    removeCartItemLocally
+    removeCartItemLocally,
+    clearCartItems
   };
 }
 

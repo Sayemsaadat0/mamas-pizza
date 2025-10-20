@@ -316,16 +316,16 @@ const DeliveryAddressForm = () => {
               value={formData.post_code}
               onChange={handleInputChange}
               disabled={!isEditing || isLoading || postCodesLoading}
-              className={`w-full rounded-xl border-2 pl-12 pr-10 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 appearance-none ${
+              className={`w-full rounded-xl bg-white border-2 pl-12 pr-10 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 appearance-none ${
                 isEditing 
                   ? 'border-gray-200 bg-white' 
                   : 'border-gray-100 bg-gray-50'
               }`}
               required
             >
-              <option value="">Select a post code</option>
+              <option className='bg-white' value="">Select a post code</option>
               {postCodes.map((postCode) => (
-                <option key={postCode.id} value={postCode.code}>
+                <option className='bg-white' key={postCode.id} value={postCode.code}>
                   {postCode.code} - ${postCode.deliver_charge} delivery charge
                 </option>
               ))}

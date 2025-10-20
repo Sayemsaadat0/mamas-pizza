@@ -91,18 +91,18 @@ const ContactNav: React.FC<ContactNavProps> = ({ hide }) => {
         {/* Right Side - Phone */}
         <div className="flex items-center gap-4">
           {/* Phone Number */}
-          <a 
+          <a
             href="tel:07424295393"
             className="group flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out"
           >
             <div className="relative">
-              <Phone size={16} className="text-white group-hover:animate-pulse" />
+              <Phone
+                size={16}
+                className="text-white group-hover:animate-pulse"
+              />
               <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-ping"></div>
             </div>
-            <div className="flex flex-col">
-              <span className="text-white font-bold text-sm tracking-wide">Call Now</span>
-              <span className="text-orange-100 text-xs font-medium">07424 295393</span>
-            </div>
+            <div className="flex flex-col">07424 295393</div>
           </a>
         </div>
       </div>
@@ -115,6 +115,37 @@ const ContactNav: React.FC<ContactNavProps> = ({ hide }) => {
 // -------------------------
 const DefaultHamburgerMenu: React.FC = () => {
   const [open, setOpen] = useState(false);
+  const { user, isAuthenticated, clearUser, token } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      // Call logout API if user is authenticated and has a token
+      if (isAuthenticated && token) {
+        const response = await fetch(LOGOUT_API, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        });
+
+        if (response.ok) {
+          toast.success("Logged out successfully");
+        } else {
+          console.warn(
+            "Logout API call failed, but proceeding with local logout"
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error during logout API call:", error);
+    } finally {
+      clearUser();
+      router.push("/");
+      setOpen(false); // Close the mobile menu
+    }
+  };
 
   return (
     <aside>
@@ -190,6 +221,85 @@ const DefaultHamburgerMenu: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* User Authentication Section */}
+                {isAuthenticated ? (
+                  <div className="mt-8 space-y-1">
+                    <div className="mb-4">
+                      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                        Account
+                      </h3>
+                      <div className="space-y-1">
+                        {/* User Profile */}
+                        <Link
+                          href="/profile"
+                          className="group flex items-center gap-3 p-3 rounded-xl text-gray-600 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:text-orange-700 border border-transparent hover:border-orange-200 transition-all duration-300"
+                        >
+                          <div className="w-8 h-8 bg-gradient-to-r from-orange-100 to-red-100 rounded-lg flex items-center justify-center group-hover:from-orange-200 group-hover:to-red-200 transition-colors duration-300">
+                            <UserCircle size={14} className="text-orange-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">
+                              {user?.name || "Profile"}
+                            </div>
+                            <div className="text-xs text-gray-500 group-hover:text-orange-600 transition-colors duration-300">
+                              Manage your account
+                            </div>
+                          </div>
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                          </div>
+                        </Link>
+
+                        {/* Logout Button */}
+                        <button
+                          onClick={handleLogout}
+                          className="group flex items-center gap-3 p-3 rounded-xl text-gray-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-50 hover:text-red-700 border border-transparent hover:border-red-200 transition-all duration-300 w-full"
+                        >
+                          <div className="w-8 h-8 bg-gradient-to-r from-red-100 to-red-100 rounded-lg flex items-center justify-center group-hover:from-red-200 group-hover:to-red-200 transition-colors duration-300">
+                            <LogOut size={14} className="text-red-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">Logout</div>
+                            <div className="text-xs text-gray-500 group-hover:text-red-600 transition-colors duration-300">
+                              Sign out of your account
+                            </div>
+                          </div>
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-8 space-y-1">
+                    <div className="mb-4">
+                      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                        Account
+                      </h3>
+                      <div className="space-y-1">
+                        <Link
+                          href="/login"
+                          className="group flex items-center gap-3 p-3 rounded-xl text-gray-600 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:text-orange-700 border border-transparent hover:border-orange-200 transition-all duration-300"
+                        >
+                          <div className="w-8 h-8 bg-gradient-to-r from-orange-100 to-red-100 rounded-lg flex items-center justify-center group-hover:from-orange-200 group-hover:to-red-200 transition-colors duration-300">
+                            <LogIn size={14} className="text-orange-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">Login</div>
+                            <div className="text-xs text-gray-500 group-hover:text-orange-600 transition-colors duration-300">
+                              Sign in to your account
+                            </div>
+                          </div>
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                          </div>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Additional Mobile Menu Items */}
                 <div className="mt-8 space-y-1">
@@ -459,6 +569,17 @@ const Navbar: React.FC = () => {
                       className="text-gray-600 group-hover:text-orange-600"
                     />
                   </Link>
+
+                  {/* Mobile Logout Button */}
+                  <button
+                    onClick={handleLogout}
+                    className="md:hidden p-2 rounded-full bg-red-100 hover:bg-red-200 transition-colors group"
+                  >
+                    <LogOut
+                      size={18}
+                      className="text-red-600 group-hover:text-red-700"
+                    />
+                  </button>
 
                   {/* Desktop Profile */}
                   <div className="hidden md:flex items-center gap-2">

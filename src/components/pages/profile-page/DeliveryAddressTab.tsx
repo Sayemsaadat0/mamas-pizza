@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const DeliveryAddressTab: React.FC = () => {
   const { isAuthenticated, updateDeliveryAddress } = useAuth()
   const { showNotification } = useNotification()
-  const { loading: meLoading } = useMeAPI()
+  const { loading: meLoading, refetch: refetchMe } = useMeAPI()
   const { addresses, loading: fetchLoading, fetchAddresses } = useDeliveryAddresses()
   const { createAddress, loading: createLoading } = useCreateDeliveryAddress()
   const { updateAddress, loading: updateLoading } = useUpdateDeliveryAddress()
@@ -127,13 +127,12 @@ const DeliveryAddressTab: React.FC = () => {
           post_code: formData.post_code.trim(),
           details: formData.details.trim()
         }
-         await createAddress(addressData)
-        
+        const result = await createAddress(addressData)
         
         // Store in auth store
-        // if (result) {
-        //   updateDeliveryAddress(result)
-        // }
+        if (result) {
+          updateDeliveryAddress(result)
+        }
         
         showNotification({
           type: 'success',
@@ -143,10 +142,10 @@ const DeliveryAddressTab: React.FC = () => {
       }
 
       // Refresh addresses and user data after successful operation
-      // await Promise.all([
-      //   fetchAddresses(),
-      //   // refetchMe() 
-      // ])
+      await Promise.all([
+        fetchAddresses(),
+        refetchMe() 
+      ])
       setIsEditing(false)
     } catch (error: any) {
       showNotification({
@@ -334,7 +333,7 @@ const DeliveryAddressTab: React.FC = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {postCodes.map((postCode) => (
-                      <SelectItem key={postCode.id} value={postCode.code}>
+                      <SelectItem key={postCode.id} value={postCode.code} className="bg-white">
                         {postCode.code}
                       </SelectItem>
                     ))}
