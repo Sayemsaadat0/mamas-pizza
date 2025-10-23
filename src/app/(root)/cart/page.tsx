@@ -96,9 +96,44 @@ export default function CartPage() {
     {}
   );
 
+  // Authenticated user form state
+  const [specialInstructions, setSpecialInstructions] = useState("");
+  const [authFormData, setAuthFormData] = useState({
+    customer_name: "",
+    customer_phone: "",
+    customer_email: "",
+    delivery_address: {
+      address_line_1: "",
+      address_line_2: "",
+      city: "",
+      post_code: "",
+      details: "",
+    },
+  });
+
   // Auth hook
   const { isAuthenticated, user, token } = useAuth();
   const { guestId } = useGuest();
+
+  // Populate authenticated user form with their data
+  useEffect(() => {
+    if (isAuthenticated && user) {
+    
+
+      setAuthFormData({
+        customer_name: user.name || "",
+        customer_phone: user.phone || "",
+        customer_email: user.email || "",
+        delivery_address: {
+          address_line_1: user.delivery_address?.address_line_1 || "",
+          address_line_2: user.delivery_address?.address_line_2 || "",
+          city: user.delivery_address?.city || "",
+          post_code: user.delivery_address?.post_code || "",
+          details: user.delivery_address?.details || "",
+        },
+      });
+    }
+  }, [isAuthenticated, user, user?.delivery_address]);
 
   // Cart hooks
   const {
@@ -227,6 +262,25 @@ export default function CartPage() {
     const total = subtotal - discount + delivery;
     return { subtotal, discount, delivery, total };
   }, [grandTotal]);
+
+  // Authenticated user form handlers
+  const handleAuthInputChange = (field: string, value: string) => {
+    if (field.includes(".")) {
+      const [parent, child] = field.split(".");
+      setAuthFormData((prev) => ({
+        ...prev,
+        [parent]: {
+          ...(prev[parent as keyof typeof prev] as any),
+          [child]: value,
+        },
+      }));
+    } else {
+      setAuthFormData((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    }
+  };
 
   // Guest form handlers
   const handleGuestInputChange = (field: string, value: string) => {
@@ -422,7 +476,7 @@ export default function CartPage() {
     try {
       // Find all BOGO items for this bundle and remove them
       const bundleOfferId = parseInt(bundleId.split("-")[0]);
-      
+
       // First, try to find items in cartItems with is_bogo_item and bogo_offer_id
       let bogoItemsToRemove = cartItems.filter(
         (item) => item.is_bogo_item && item.bogo_offer_id === bundleOfferId
@@ -431,17 +485,19 @@ export default function CartPage() {
       // If no items found in cartItems, check if we need to remove items from bogoBundles
       if (bogoItemsToRemove.length === 0) {
         // Check if this is a bundle from the API (bogoBundles)
-        const bundleFromAPI = bogoBundles.find(bundle => bundle.bogo_offer_id === bundleOfferId);
-        
+        const bundleFromAPI = bogoBundles.find(
+          (bundle) => bundle.bogo_offer_id === bundleOfferId
+        );
+
         if (bundleFromAPI) {
           // For API bundles, we need to remove the individual items that make up this bundle
           // Find cart items that match the bundle's buy_items and free_items
           const allBundleItemIds = [
-            ...bundleFromAPI.buy_items.map(item => item.id),
-            ...bundleFromAPI.free_items.map(item => item.id)
+            ...bundleFromAPI.buy_items.map((item) => item.id),
+            ...bundleFromAPI.free_items.map((item) => item.id),
           ];
-          
-          bogoItemsToRemove = cartItems.filter(item => 
+
+          bogoItemsToRemove = cartItems.filter((item) =>
             allBundleItemIds.includes(item.item_id)
           );
         }
@@ -509,14 +565,14 @@ export default function CartPage() {
         // Create order for authenticated user using USER_ORDERS_API
         const orderData = {
           // Customer information (required by API)
-          customer_name: user.name,
-          customer_phone: user.phone || "000-000-0000", // Default phone if not available
-          customer_email: user.email,
+          customer_name: authFormData.customer_name,
+          customer_phone: authFormData.customer_phone,
+          customer_email: authFormData.customer_email,
 
           // Order details
           delivery_type: "delivery" as const,
           payment_method: "stripe" as const,
-          special_instructions: "",
+          special_instructions: specialInstructions,
 
           // Pricing details
           tax_rate: 0,
@@ -526,22 +582,14 @@ export default function CartPage() {
           tax_amount: 0,
           total_amount: grandTotal,
 
-          // Delivery address - always include full details as required by API
-          delivery_address: user?.delivery_address
-            ? {
-                address_line_1: user.delivery_address.address_line_1,
-                address_line_2: user.delivery_address.address_line_2 || "",
-                city: user.delivery_address.city || "",
-                post_code: user.delivery_address.post_code,
-                details: user.delivery_address.details || "",
-              }
-            : {
-                address_line_1: "Default Address",
-                address_line_2: "",
-                city: "Default City",
-                post_code: "00000",
-                details: "",
-              },
+          // Delivery address - use form data
+          delivery_address: {
+            address_line_1: authFormData.delivery_address.address_line_1,
+            address_line_2: authFormData.delivery_address.address_line_2 || "",
+            city: authFormData.delivery_address.city || "",
+            post_code: authFormData.delivery_address.post_code,
+            details: authFormData.delivery_address.details || "",
+          },
         };
 
         // Make API call to USER_ORDERS_API
@@ -560,7 +608,7 @@ export default function CartPage() {
           throw new Error(result.message || "Failed to create order");
         }
         toast.success("Order created successfully!");
-        
+
         // Clear the cart after successful order creation
         clearCartItems();
 
@@ -633,7 +681,7 @@ export default function CartPage() {
 
         const orderResult = await createGuestOrder(guestOrderData);
         toast.success("Order created successfully!");
-        
+
         // Clear the cart after successful order creation
         clearCartItems();
 
@@ -665,7 +713,7 @@ export default function CartPage() {
     }
   };
 
-  // Loading state
+  // Loading stateHouse/Flat No. *
   if (loading) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 mt-[200px]">
@@ -723,7 +771,7 @@ export default function CartPage() {
                 Your Cart is Empty
               </h2>
               <p className="text-gray-600 mb-8 text-base sm:text-lg">
-               {` Looks like you haven't added any items to your cart yet. Browse
+                {` Looks like you haven't added any items to your cart yet. Browse
                 our delicious menu and add some items to get started!`}
               </p>
 
@@ -737,8 +785,6 @@ export default function CartPage() {
                   Browse Menu
                   <ArrowRight className="w-4 h-4" />
                 </Link>
-
-      
               </div>
 
               {/* Additional Info */}
@@ -751,7 +797,7 @@ export default function CartPage() {
             </div>
           </div>
         )}
-      
+
       {/* Only show cart content when there are items */}
       {(regularItems.length > 0 ||
         bogoBundles.length > 0 ||
@@ -761,486 +807,696 @@ export default function CartPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
               {/* Left Side - Cart Items and Guest Form (7/12 width on desktop) */}
               <div className="lg:col-span-7 order-1 space-y-6">
-              {/* BOGO Bundles - Grouped Display */}
-              {(bogoBundles.length > 0 || processedBogoBundles.length > 0) && (
-                <div className="mb-6">
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
-                    Special Offers
-                  </h2>
-                  <div className="space-y-4">
-                    {/* Use processed bundles for authenticated users, API bundles for guests */}
-                    {(processedBogoBundles.length > 0
-                      ? processedBogoBundles
-                      : bogoBundles
-                    ).map((bundle, index) => {
-                      const offer = bogoOffers.find(
-                        (offer) => offer.id === bundle.bogo_offer_id
-                      );
-                      
-                      return offer ? (
-                        <OfferGroupCard
-                          key={`bundle-${bundle.bogo_offer_id}-${index}`}
-                          bundle={bundle}
-                          offer={offer}
-                          onRemoveBundle={removeBogoBundle}
-                          isLoading={cartItems.some(
-                            (item) =>
-                              item.is_bogo_item &&
-                              item.bogo_offer_id === bundle.bogo_offer_id &&
-                              loadingItems.has(item.id)
-                          )}
-                          loadingItems={loadingItems}
-                        />
-                      ) : null;
-                    })}
+                {/* BOGO Bundles - Grouped Display */}
+                {(bogoBundles.length > 0 ||
+                  processedBogoBundles.length > 0) && (
+                  <div className="mb-6">
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
+                      Special Offers
+                    </h2>
+                    <div className="space-y-4">
+                      {/* Use processed bundles for authenticated users, API bundles for guests */}
+                      {(processedBogoBundles.length > 0
+                        ? processedBogoBundles
+                        : bogoBundles
+                      ).map((bundle, index) => {
+                        const offer = bogoOffers.find(
+                          (offer) => offer.id === bundle.bogo_offer_id
+                        );
+
+                        return offer ? (
+                          <OfferGroupCard
+                            key={`bundle-${bundle.bogo_offer_id}-${index}`}
+                            bundle={bundle}
+                            offer={offer}
+                            onRemoveBundle={removeBogoBundle}
+                            isLoading={cartItems.some(
+                              (item) =>
+                                item.is_bogo_item &&
+                                item.bogo_offer_id === bundle.bogo_offer_id &&
+                                loadingItems.has(item.id)
+                            )}
+                            loadingItems={loadingItems}
+                          />
+                        ) : null;
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Empty Cart State */}
+                {/* Empty Cart State */}
 
-              {/* Regular Cart Items */}
-              {regularItems.length > 0 && (
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
-                    Cart Items
-                  </h2>
-                  <div className="space-y-3 sm:space-y-4">
-                    {regularItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4"
-                      >
-                        <div className="flex items-center space-x-3 sm:space-x-4 mb-3">
-                          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden flex-shrink-0">
-                            <Image
-                              src={item.image}
-                              alt={item.name}
-                              width={64}
-                              height={64}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-sm sm:text-lg font-medium text-gray-900 truncate">
-                              {item.name}
-                            </h4>
-                            <div className="flex items-center gap-2">
-                              {item.isBogoItem ? (
-                                <>
-                                  <p className="text-xs sm:text-sm text-green-600 font-medium">
-                                    BOGO Item
-                                  </p>
-                                  <p className="text-xs sm:text-sm text-gray-500 line-through">
-                                    ${item.originalPrice.toFixed(2)}
-                                  </p>
-                                  <p className="text-xs sm:text-sm text-green-600 font-medium">
+                {/* Regular Cart Items */}
+                {regularItems.length > 0 && (
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
+                      Cart Items
+                    </h2>
+                    <div className="space-y-3 sm:space-y-4">
+                      {regularItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4"
+                        >
+                          <div className="flex items-center space-x-3 sm:space-x-4 mb-3">
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden flex-shrink-0">
+                              <Image
+                                src={item.image}
+                                alt={item.name}
+                                width={64}
+                                height={64}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm sm:text-lg font-medium text-gray-900 truncate">
+                                {item.name}
+                              </h4>
+                              <div className="flex items-center gap-2">
+                                {item.isBogoItem ? (
+                                  <>
+                                    <p className="text-xs sm:text-sm text-green-600 font-medium">
+                                      BOGO Item
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-500 line-through">
+                                      ${item.originalPrice.toFixed(2)}
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-green-600 font-medium">
+                                      ${item.price.toFixed(2)} each
+                                    </p>
+                                  </>
+                                ) : (
+                                  <p className="text-xs sm:text-sm text-gray-500">
                                     ${item.price.toFixed(2)} each
                                   </p>
-                                </>
-                              ) : (
-                                <p className="text-xs sm:text-sm text-gray-500">
-                                  ${item.price.toFixed(2)} each
-                                </p>
-                              )}
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-sm sm:text-lg font-semibold text-orange-600">
+                              ${(item.price * item.qty).toFixed(2)}
                             </div>
                           </div>
-                          <div className="text-sm sm:text-lg font-semibold text-orange-600">
-                            ${(item.price * item.qty).toFixed(2)}
-                          </div>
-                        </div>
 
-                        {/* Quantity Controls - Hide for BOGO items */}
-                        <div className="flex items-center justify-between">
-                          {!item.isBogoItem ? (
-                            <div className="flex items-center gap-1 sm:gap-2 border-2 border-orange-200 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white shadow-sm">
-                              <button
-                                onClick={() => updateQty(item.id, -1)}
-                                disabled={loadingItems.has(item.id)}
-                                className="w-5 h-5 sm:w-6 sm:h-6 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                aria-label="Decrease quantity"
-                              >
-                                {loadingItems.has(item.id) ? (
-                                  <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
-                                ) : (
-                                  <svg
-                                    className="w-3 h-3 sm:w-4 sm:h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M20 12H4"
-                                    />
-                                  </svg>
-                                )}
-                              </button>
-                              <input
-                                type="number"
-                                min="1"
-                                value={
-                                  quantityInputs[item.id] !== undefined
-                                    ? quantityInputs[item.id]
-                                    : item.qty
-                                }
-                                onChange={(e) =>
-                                  handleQuantityInputChange(
-                                    item.id,
-                                    e.target.value
-                                  )
-                                }
-                                onBlur={() => handleQuantityInputBlur(item.id)}
-                                className="min-w-6 sm:min-w-8 max-w-[60px] sm:max-w-[80px] text-center font-semibold text-xs sm:text-sm text-gray-900 bg-transparent border-none outline-none"
-                                disabled={loadingItems.has(item.id)}
-                              />
-                              <button
-                                onClick={() => updateQty(item.id, +1)}
-                                disabled={loadingItems.has(item.id)}
-                                className="w-5 h-5 sm:w-6 sm:h-6 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                aria-label="Increase quantity"
-                              >
-                                {loadingItems.has(item.id) ? (
-                                  <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
-                                ) : (
-                                  <svg
-                                    className="w-3 h-3 sm:w-4 sm:h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                    />
-                                  </svg>
-                                )}
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="text-sm text-gray-500 font-medium">
-                              BOGO Item - Fixed Quantity
-                            </div>
-                          )}
-
-                          <button
-                            onClick={() => removeItem(item.id)}
-                            disabled={loadingItems.has(item.id)}
-                            className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                            aria-label="Remove item"
-                          >
-                            {loadingItems.has(item.id) ? (
-                              <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
-                            ) : (
-                              <svg
-                                className="w-4 h-4 sm:w-5 sm:h-5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          {/* Quantity Controls - Hide for BOGO items */}
+                          <div className="flex items-center justify-between">
+                            {!item.isBogoItem ? (
+                              <div className="flex items-center gap-1 sm:gap-2 border-2 border-orange-200 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white shadow-sm">
+                                <button
+                                  onClick={() => updateQty(item.id, -1)}
+                                  disabled={loadingItems.has(item.id)}
+                                  className="w-5 h-5 sm:w-6 sm:h-6 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  aria-label="Decrease quantity"
+                                >
+                                  {loadingItems.has(item.id) ? (
+                                    <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
+                                  ) : (
+                                    <svg
+                                      className="w-3 h-3 sm:w-4 sm:h-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M20 12H4"
+                                      />
+                                    </svg>
+                                  )}
+                                </button>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={
+                                    quantityInputs[item.id] !== undefined
+                                      ? quantityInputs[item.id]
+                                      : item.qty
+                                  }
+                                  onChange={(e) =>
+                                    handleQuantityInputChange(
+                                      item.id,
+                                      e.target.value
+                                    )
+                                  }
+                                  onBlur={() =>
+                                    handleQuantityInputBlur(item.id)
+                                  }
+                                  className="min-w-6 sm:min-w-8 max-w-[60px] sm:max-w-[80px] text-center font-semibold text-xs sm:text-sm text-gray-900 bg-transparent border-none outline-none"
+                                  disabled={loadingItems.has(item.id)}
                                 />
-                              </svg>
+                                <button
+                                  onClick={() => updateQty(item.id, +1)}
+                                  disabled={loadingItems.has(item.id)}
+                                  className="w-5 h-5 sm:w-6 sm:h-6 grid place-items-center rounded-md hover:bg-orange-100 transition-colors text-orange-600 hover:text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  aria-label="Increase quantity"
+                                >
+                                  {loadingItems.has(item.id) ? (
+                                    <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
+                                  ) : (
+                                    <svg
+                                      className="w-3 h-3 sm:w-4 sm:h-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                      />
+                                    </svg>
+                                  )}
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="text-sm text-gray-500 font-medium">
+                                BOGO Item - Fixed Quantity
+                              </div>
                             )}
-                          </button>
+
+                            <button
+                              onClick={() => removeItem(item.id)}
+                              disabled={loadingItems.has(item.id)}
+                              className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                              aria-label="Remove item"
+                            >
+                              {loadingItems.has(item.id) ? (
+                                <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
+                              ) : (
+                                <svg
+                                  className="w-4 h-4 sm:w-5 sm:h-5"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                  />
+                                </svg>
+                              )}
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Guest Form - Only show if not authenticated */}
-              {!isAuthenticated && (
-                <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-xl border border-orange-100">
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">
-                    Delivery Information
-                  </h3>
-
-                  <div className="space-y-4">
-                    {/* Customer Information */}
-                    <div className="space-y-3">
-                      <h4 className="text-base font-semibold text-gray-800 flex items-center gap-2">
-                        <User className="w-4 h-4 text-orange-600" />
-                        Customer Information
-                      </h4>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Full Name *
-                          </label>
-                          <input
-                            type="text"
-                            value={guestFormData.customer_name}
-                            onChange={(e) =>
-                              handleGuestInputChange(
-                                "customer_name",
-                                e.target.value
-                              )
-                            }
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
-                              guestFormErrors.customer_name
-                                ? "border-red-500"
-                                : "border-gray-300"
-                            }`}
-                            placeholder="Enter your full name"
-                          />
-                          {guestFormErrors.customer_name && (
-                            <p className="text-red-500 text-xs mt-1">
-                              {guestFormErrors.customer_name}
-                            </p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Phone Number *
-                          </label>
-                          <input
-                            type="tel"
-                            value={guestFormData.customer_phone}
-                            onChange={(e) =>
-                              handleGuestInputChange(
-                                "customer_phone",
-                                e.target.value
-                              )
-                            }
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
-                              guestFormErrors.customer_phone
-                                ? "border-red-500"
-                                : "border-gray-300"
-                            }`}
-                            placeholder="+1234567890"
-                          />
-                          {guestFormErrors.customer_phone && (
-                            <p className="text-red-500 text-xs mt-1">
-                              {guestFormErrors.customer_phone}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Email Address *
-                        </label>
-                        <input
-                          type="email"
-                          value={guestFormData.customer_email}
-                          onChange={(e) =>
-                            handleGuestInputChange(
-                              "customer_email",
-                              e.target.value
-                            )
-                          }
-                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
-                            guestFormErrors.customer_email
-                              ? "border-red-500"
-                              : "border-gray-300"
-                          }`}
-                          placeholder="john@example.com"
-                        />
-                        {guestFormErrors.customer_email && (
-                          <p className="text-red-500 text-xs mt-1">
-                            {guestFormErrors.customer_email}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Delivery Address */}
-                    <div className="space-y-3">
-                      <h4 className="text-base font-semibold text-gray-800 flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-orange-600" />
-                        Delivery Address
-                      </h4>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          House/Flat No. *
-                        </label>
-                        <input
-                          type="text"
-                          value={guestFormData.delivery_address.address_line_1}
-                          onChange={(e) =>
-                            handleGuestInputChange(
-                              "delivery_address.address_line_1",
-                              e.target.value
-                            )
-                          }
-                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
-                            guestFormErrors.delivery_address?.address_line_1
-                              ? "border-red-500"
-                              : "border-gray-300"
-                          }`}
-                          placeholder="House/Flat No."
-                        />
-                        {guestFormErrors.delivery_address?.address_line_1 && (
-                          <p className="text-red-500 text-xs mt-1">
-                            {guestFormErrors.delivery_address.address_line_1}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Road/Street Name *
-                        </label>
-                        <input
-                          type="text"
-                          value={guestFormData.delivery_address.address_line_2}
-                          onChange={(e) =>
-                            handleGuestInputChange(
-                              "delivery_address.address_line_2",
-                              e.target.value
-                            )
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-                          placeholder="Road/Street Name"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            City *
-                          </label>
-                          <input
-                            type="text"
-                            value={guestFormData.delivery_address.city}
-                            onChange={(e) =>
-                              handleGuestInputChange(
-                                "delivery_address.city",
-                                e.target.value
-                              )
-                            }
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
-                              guestFormErrors.delivery_address?.city
-                                ? "border-red-500"
-                                : "border-gray-300"
-                            }`}
-                            placeholder="New York"
-                          />
-                          {guestFormErrors.delivery_address?.city && (
-                            <p className="text-red-500 text-xs mt-1">
-                              {guestFormErrors.delivery_address.city}
-                            </p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Post Code *
-                          </label>
-                          <input
-                            type="text"
-                            value={guestFormData.delivery_address.post_code}
-                            onChange={(e) =>
-                              handleGuestInputChange(
-                                "delivery_address.post_code",
-                                e.target.value
-                              )
-                            }
-                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
-                              guestFormErrors.delivery_address?.post_code
-                                ? "border-red-500"
-                                : "border-gray-300"
-                            }`}
-                            placeholder="12345"
-                          />
-                          {guestFormErrors.delivery_address?.post_code && (
-                            <p className="text-red-500 text-xs mt-1">
-                              {guestFormErrors.delivery_address.post_code}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Additional Details
-                        </label>
-                        <input
-                          type="text"
-                          value={guestFormData.delivery_address.details}
-                          onChange={(e) =>
-                            handleGuestInputChange(
-                              "delivery_address.details",
-                              e.target.value
-                            )
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-                          placeholder="Ring doorbell twice"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Special Instructions */}
-                    <div className="space-y-3">
-                      <h4 className="text-base font-semibold text-gray-800 flex items-center gap-2">
-                        <MessageSquare className="w-4 h-4 text-orange-600" />
-                        Special Instructions
-                      </h4>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Additional Notes
-                        </label>
-                        <textarea
-                          value={guestFormData.special_instructions}
-                          onChange={(e) =>
-                            handleGuestInputChange(
-                              "special_instructions",
-                              e.target.value
-                            )
-                          }
-                          rows={2}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors resize-none"
-                          placeholder="Extra napkins please, or any other special requests..."
-                        />
-                      </div>
+                      ))}
                     </div>
                   </div>
+                )}
+
+                {/* Guest Form - Only show if not authenticated */}
+                {!isAuthenticated && (
+                  <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-xl border border-orange-100">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4">
+                      Delivery Information
+                    </h3>
+
+                    <div className="space-y-4">
+                      {/* Customer Information */}
+                      <div className="space-y-3">
+                        <h4 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+                          <User className="w-4 h-4 text-orange-600" />
+                          Customer Information
+                        </h4>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Full Name *
+                            </label>
+                            <input
+                              type="text"
+                              value={guestFormData.customer_name}
+                              onChange={(e) =>
+                                handleGuestInputChange(
+                                  "customer_name",
+                                  e.target.value
+                                )
+                              }
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
+                                guestFormErrors.customer_name
+                                  ? "border-red-500"
+                                  : "border-gray-300"
+                              }`}
+                              placeholder="Enter your full name"
+                            />
+                            {guestFormErrors.customer_name && (
+                              <p className="text-red-500 text-xs mt-1">
+                                {guestFormErrors.customer_name}
+                              </p>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Phone Number *
+                            </label>
+                            <input
+                              type="tel"
+                              value={guestFormData.customer_phone}
+                              onChange={(e) =>
+                                handleGuestInputChange(
+                                  "customer_phone",
+                                  e.target.value
+                                )
+                              }
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
+                                guestFormErrors.customer_phone
+                                  ? "border-red-500"
+                                  : "border-gray-300"
+                              }`}
+                              placeholder="+1234567890"
+                            />
+                            {guestFormErrors.customer_phone && (
+                              <p className="text-red-500 text-xs mt-1">
+                                {guestFormErrors.customer_phone}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Email Address *
+                          </label>
+                          <input
+                            type="email"
+                            value={guestFormData.customer_email}
+                            onChange={(e) =>
+                              handleGuestInputChange(
+                                "customer_email",
+                                e.target.value
+                              )
+                            }
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
+                              guestFormErrors.customer_email
+                                ? "border-red-500"
+                                : "border-gray-300"
+                            }`}
+                            placeholder="john@example.com"
+                          />
+                          {guestFormErrors.customer_email && (
+                            <p className="text-red-500 text-xs mt-1">
+                              {guestFormErrors.customer_email}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Delivery Address */}
+                      <div className="space-y-3">
+                        <h4 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-orange-600" />
+                          Delivery Address
+                        </h4>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            House/Flat No. *
+                          </label>
+                          <input
+                            type="text"
+                            value={
+                              guestFormData.delivery_address.address_line_1
+                            }
+                            onChange={(e) =>
+                              handleGuestInputChange(
+                                "delivery_address.address_line_1",
+                                e.target.value
+                              )
+                            }
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
+                              guestFormErrors.delivery_address?.address_line_1
+                                ? "border-red-500"
+                                : "border-gray-300"
+                            }`}
+                            placeholder="House/Flat No."
+                          />
+                          {guestFormErrors.delivery_address?.address_line_1 && (
+                            <p className="text-red-500 text-xs mt-1">
+                              {guestFormErrors.delivery_address.address_line_1}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Road/Street Name *
+                          </label>
+                          <input
+                            type="text"
+                            value={
+                              guestFormData.delivery_address.address_line_2
+                            }
+                            onChange={(e) =>
+                              handleGuestInputChange(
+                                "delivery_address.address_line_2",
+                                e.target.value
+                              )
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                            placeholder="Road/Street Name"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              City *
+                            </label>
+                            <input
+                              type="text"
+                              value={guestFormData.delivery_address.city}
+                              onChange={(e) =>
+                                handleGuestInputChange(
+                                  "delivery_address.city",
+                                  e.target.value
+                                )
+                              }
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
+                                guestFormErrors.delivery_address?.city
+                                  ? "border-red-500"
+                                  : "border-gray-300"
+                              }`}
+                              placeholder="New York"
+                            />
+                            {guestFormErrors.delivery_address?.city && (
+                              <p className="text-red-500 text-xs mt-1">
+                                {guestFormErrors.delivery_address.city}
+                              </p>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Post Code *
+                            </label>
+                            <input
+                              type="text"
+                              value={guestFormData.delivery_address.post_code}
+                              onChange={(e) =>
+                                handleGuestInputChange(
+                                  "delivery_address.post_code",
+                                  e.target.value
+                                )
+                              }
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
+                                guestFormErrors.delivery_address?.post_code
+                                  ? "border-red-500"
+                                  : "border-gray-300"
+                              }`}
+                              placeholder="12345"
+                            />
+                            {guestFormErrors.delivery_address?.post_code && (
+                              <p className="text-red-500 text-xs mt-1">
+                                {guestFormErrors.delivery_address.post_code}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Additional Details
+                          </label>
+                          <input
+                            type="text"
+                            value={guestFormData.delivery_address.details}
+                            onChange={(e) =>
+                              handleGuestInputChange(
+                                "delivery_address.details",
+                                e.target.value
+                              )
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                            placeholder="Ring doorbell twice"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Special Instructions */}
+                      <div className="space-y-3">
+                        <h4 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+                          <MessageSquare className="w-4 h-4 text-orange-600" />
+                          Special Instructions
+                        </h4>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Additional Notes
+                          </label>
+                          <textarea
+                            value={guestFormData.special_instructions}
+                            onChange={(e) =>
+                              handleGuestInputChange(
+                                "special_instructions",
+                                e.target.value
+                              )
+                            }
+                            rows={2}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors resize-none"
+                            placeholder="Extra napkins please, or any other special requests..."
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Authenticated User Form - Editable form like guest form */}
+                {isAuthenticated && (
+                  <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-xl border border-orange-100">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4">
+                      Delivery Information
+                    </h3>
+
+                    <div className="space-y-4">
+                      {/* Customer Information */}
+                      <div className="space-y-3">
+                        <h4 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+                          <User className="w-4 h-4 text-orange-600" />
+                          Customer Information
+                        </h4>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Full Name *
+                            </label>
+                            <input
+                              type="text"
+                              value={authFormData.customer_name}
+                              onChange={(e) =>
+                                handleAuthInputChange(
+                                  "customer_name",
+                                  e.target.value
+                                )
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                              placeholder="Enter your full name"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Phone Number *
+                            </label>
+                            <input
+                              type="tel"
+                              value={authFormData.customer_phone}
+                              onChange={(e) =>
+                                handleAuthInputChange(
+                                  "customer_phone",
+                                  e.target.value
+                                )
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                              placeholder="+1234567890"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Email Address *
+                          </label>
+                          <input
+                            type="email"
+                            value={authFormData.customer_email}
+                            onChange={(e) =>
+                              handleAuthInputChange(
+                                "customer_email",
+                                e.target.value
+                              )
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                            placeholder="john@example.com"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Delivery Address */}
+                      <div className="space-y-3">
+                        <h4 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-orange-600" />
+                          Delivery Address
+                        </h4>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            House/Flat No. *
+                          
+                          </label>
+                          <input
+                            type="text"
+                            value={authFormData.delivery_address.address_line_1}
+                            onChange={(e) =>
+                              handleAuthInputChange(
+                                "delivery_address.address_line_1",
+                                e.target.value
+                              )
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                            placeholder="House/Flat No."
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Road/Street Name
+                         
+                          </label>
+                          <input
+                            type="text"
+                            value={authFormData.delivery_address.address_line_2}
+                            onChange={(e) =>
+                              handleAuthInputChange(
+                                "delivery_address.address_line_2",
+                                e.target.value
+                              )
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                            placeholder="Road/Street Name"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              City *
+                          
+                            </label>
+                            <input
+                              type="text"
+                              value={authFormData.delivery_address.city}
+                              onChange={(e) =>
+                                handleAuthInputChange(
+                                  "delivery_address.city",
+                                  e.target.value
+                                )
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                              placeholder="New York"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Post Code *
+                            
+                            </label>
+                            <input
+                              type="text"
+                              value={authFormData.delivery_address.post_code}
+                              onChange={(e) =>
+                                handleAuthInputChange(
+                                  "delivery_address.post_code",
+                                  e.target.value
+                                )
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                              placeholder="12345"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Additional Details
+                        
+                          </label>
+                          <input
+                            type="text"
+                            value={authFormData.delivery_address.details}
+                            onChange={(e) =>
+                              handleAuthInputChange(
+                                "delivery_address.details",
+                                e.target.value
+                              )
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                            placeholder="Ring doorbell twice"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Special Instructions */}
+                      <div className="space-y-3">
+                        <h4 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+                          <MessageSquare className="w-4 h-4 text-orange-600" />
+                          Special Instructions
+                        </h4>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Additional Notes
+                          </label>
+                          <textarea
+                            value={specialInstructions}
+                            onChange={(e) =>
+                              setSpecialInstructions(e.target.value)
+                            }
+                            rows={2}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors resize-none"
+                            placeholder="Extra napkins please, or any other special requests..."
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Side - Order Summary (5/12 width on desktop) - Only show when cart has items */}
+              {(regularItems.length > 0 ||
+                bogoBundles.length > 0 ||
+                processedBogoBundles.length > 0) && (
+                <div className="lg:col-span-5 order-2 lg:order-2">
+                  <OrderSummary
+                    summary={summary}
+                    onCheckout={handleCheckout}
+                    isFormValid={isGuestFormValid}
+                    isLoading={Boolean(
+                      createOrderLoading ||
+                        createGuestOrderLoading ||
+                        createSessionLoading ||
+                        paymentLoading
+                    )}
+                    bogoBundles={
+                      processedBogoBundles.length > 0
+                        ? processedBogoBundles
+                        : bogoBundles
+                    }
+                    bogoOffers={bogoOffers}
+                  />
                 </div>
               )}
             </div>
-
-            {/* Right Side - Order Summary (5/12 width on desktop) - Only show when cart has items */}
-            {(regularItems.length > 0 ||
-              bogoBundles.length > 0 ||
-              processedBogoBundles.length > 0) && (
-              <div className="lg:col-span-5 order-2 lg:order-2">
-                <OrderSummary
-                  summary={summary}
-                  onCheckout={handleCheckout}
-                  isFormValid={isGuestFormValid}
-                  isLoading={Boolean(
-                    createOrderLoading ||
-                      createGuestOrderLoading ||
-                      createSessionLoading ||
-                      paymentLoading
-                  )}
-                  bogoBundles={
-                    processedBogoBundles.length > 0
-                      ? processedBogoBundles
-                      : bogoBundles
-                  }
-                  bogoOffers={bogoOffers}
-                />
-              </div>
-            )}
           </div>
         </div>
-      </div>
       )}
     </main>
   );

@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { 
-  CheckCircle, 
-  Clock, 
-  Eye, 
+import React, { useEffect, useState, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import Image from "next/image";
+import {
+  CheckCircle,
+  Clock,
+  Eye,
   EyeOff,
   Sparkles,
   Award,
@@ -23,13 +23,17 @@ import {
   CreditCard,
   Mail,
   ExternalLink,
-  RefreshCw
-} from 'lucide-react';
-import Link from 'next/link';
-import { useGuest } from '@/lib/guest/GuestProvider';
-import { useAuth } from '@/lib/stores/useAuth';
-import { toast } from 'sonner';
-import { GUEST_STRIPE_VERIFY_PAYMENT_API, STRIPE_VERIFY_PAYMENT_API, REGISTER_API } from '@/app/api';
+  RefreshCw,
+} from "lucide-react";
+import Link from "next/link";
+import { useGuest } from "@/lib/guest/GuestProvider";
+import { useAuth } from "@/lib/stores/useAuth";
+import { toast } from "sonner";
+import {
+  GUEST_STRIPE_VERIFY_PAYMENT_API,
+  STRIPE_VERIFY_PAYMENT_API,
+  REGISTER_API,
+} from "@/app/api";
 // import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'; // No longer needed
 
 interface PaymentVerificationResult {
@@ -65,24 +69,25 @@ function PaymentSuccessContent() {
   const { guestId } = useGuest();
   const { isAuthenticated, token } = useAuth();
 
-  const [verificationResult, setVerificationResult] = useState<PaymentVerificationResult | null>(null);
+  const [verificationResult, setVerificationResult] =
+    useState<PaymentVerificationResult | null>(null);
   const [isVerifying, setIsVerifying] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Signup form state
   const [signupFormData, setSignupFormData] = useState<SignupFormData>({
-    password: ''
+    password: "",
   });
-  const [signupFormErrors, setSignupFormErrors] = useState<SignupFormErrors>({});
+  const [signupFormErrors, setSignupFormErrors] = useState<SignupFormErrors>(
+    {}
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   // const [showWelcomeDialog, setShowWelcomeDialog] = useState(false); // No longer needed
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  const sessionId = searchParams.get('session');
-
-
+  const sessionId = searchParams.get("session");
 
   // Welcome dialog disabled - no longer showing
   // useEffect(() => {
@@ -96,7 +101,7 @@ function PaymentSuccessContent() {
   useEffect(() => {
     const verifyPayment = async () => {
       if (!sessionId) {
-        setError('Missing session ID');
+        setError("Missing session ID");
         setIsVerifying(false);
         return;
       }
@@ -106,7 +111,9 @@ function PaymentSuccessContent() {
         // Wait a bit for guest ID to be loaded
         setTimeout(() => {
           if (!guestId) {
-            setError('Missing guest ID. Please refresh the page and try again.');
+            setError(
+              "Missing guest ID. Please refresh the page and try again."
+            );
             setIsVerifying(false);
           }
         }, 2000);
@@ -115,52 +122,51 @@ function PaymentSuccessContent() {
 
       try {
         let response;
-        
+
         if (isAuthenticated) {
           // Authenticated user verification
           response = await fetch(STRIPE_VERIFY_PAYMENT_API, {
-            method: 'POST',
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/json',
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+              Accept: "application/json",
             },
             body: JSON.stringify({ session_id: sessionId }),
           });
         } else {
           // Guest user verification
-          
+
           response = await fetch(GUEST_STRIPE_VERIFY_PAYMENT_API, {
-            method: 'POST',
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
+              "Content-Type": "application/json",
+              Accept: "application/json",
             },
-            body: JSON.stringify({ 
-              session_id: sessionId, 
-              guest_id: guestId 
+            body: JSON.stringify({
+              session_id: sessionId,
+              guest_id: guestId,
             }),
           });
         }
 
-
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to verify payment');
+          throw new Error(errorData.message || "Failed to verify payment");
         }
 
         const result = await response.json();
         setVerificationResult(result);
 
         if (result.success) {
-          toast.success('Payment verified successfully!');
+          toast.success("Payment verified successfully!");
         } else {
-          toast.error(result.message || 'Payment verification failed');
+          toast.error(result.message || "Payment verification failed");
         }
       } catch (err: any) {
-        console.error('Payment verification error:', err);
-        setError(err.message || 'Payment verification failed');
-        toast.error('Payment verification failed');
+        console.error("Payment verification error:", err);
+        setError(err.message || "Payment verification failed");
+        toast.error("Payment verification failed");
       } finally {
         setIsVerifying(false);
       }
@@ -175,11 +181,13 @@ function PaymentSuccessContent() {
         if (guestId) {
           verifyPayment();
         } else {
-          setError('Guest ID not available. Please refresh the page and try again.');
+          setError(
+            "Guest ID not available. Please refresh the page and try again."
+          );
           setIsVerifying(false);
         }
       }, 3000);
-      
+
       return () => clearTimeout(timer);
     }
   }, [sessionId, guestId, isAuthenticated, token]);
@@ -188,23 +196,26 @@ function PaymentSuccessContent() {
     try {
       await navigator.clipboard.writeText(text);
       setCopiedField(field);
-      toast.success('Copied to clipboard!');
+      toast.success("Copied to clipboard!");
       setTimeout(() => setCopiedField(null), 2000);
     } catch {
-      toast.error('Failed to copy to clipboard');
+      toast.error("Failed to copy to clipboard");
     }
   };
 
-  const handleSignupInputChange = (field: keyof SignupFormData, value: string) => {
-    setSignupFormData(prev => ({
+  const handleSignupInputChange = (
+    field: keyof SignupFormData,
+    value: string
+  ) => {
+    setSignupFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
 
     if (signupFormErrors[field]) {
-      setSignupFormErrors(prev => ({
+      setSignupFormErrors((prev) => ({
         ...prev,
-        [field]: undefined
+        [field]: undefined,
       }));
     }
   };
@@ -241,48 +252,50 @@ function PaymentSuccessContent() {
     setIsSigningUp(true);
     try {
       const response = await fetch(REGISTER_API, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
         body: JSON.stringify({
           name: guestId,
           email: verificationResult.data.customer_email,
           password: signupFormData.password,
-          password_confirmation: signupFormData.password
+          password_confirmation: signupFormData.password,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Registration failed');
+        throw new Error(errorData.message || "Registration failed");
       }
 
       const result = await response.json();
       if (result.success) {
-        toast.success('Account created successfully!');
+        toast.success("Account created successfully!");
         setShowSuccessDialog(true);
         setTimeout(() => {
-          router.push('/');
+          router.push("/");
         }, 2000);
       }
     } catch (error: any) {
-      console.error('Registration error:', error);
-      toast.error(error.message || 'Failed to create account. Please try again.');
+      console.error("Registration error:", error);
+      toast.error(
+        error.message || "Failed to create account. Please try again."
+      );
     } finally {
       setIsSigningUp(false);
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
+    return new Date(dateString).toLocaleString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
     });
   };
 
@@ -302,19 +315,22 @@ function PaymentSuccessContent() {
               </div>
               <div className="space-y-4">
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                  {!isAuthenticated && !guestId ? 'Loading Guest Information...' : 'Verifying Your Payment'}
+                  {!isAuthenticated && !guestId
+                    ? "Loading Guest Information..."
+                    : "Verifying Your Payment"}
                 </h2>
                 <p className="text-lg text-gray-600 max-w-md mx-auto">
-                  {!isAuthenticated && !guestId 
-                    ? 'We\'re loading your guest information to verify your payment. This will just take a moment.'
-                    : 'We\'re confirming your payment and preparing your order. This will just take a moment.'
-                  }
+                  {!isAuthenticated && !guestId
+                    ? "We're loading your guest information to verify your payment. This will just take a moment."
+                    : "We're confirming your payment and preparing your order. This will just take a moment."}
                 </p>
                 {!isAuthenticated && !guestId && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
                     <div className="flex items-center gap-2 text-blue-700">
                       <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                      <span className="text-sm font-medium">Waiting for guest ID...</span>
+                      <span className="text-sm font-medium">
+                        Waiting for guest ID...
+                      </span>
                     </div>
                   </div>
                 )}
@@ -348,7 +364,6 @@ function PaymentSuccessContent() {
                   <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                     Payment Successful!
                   </h2>
-                 
                 </div>
               </div>
 
@@ -365,12 +380,20 @@ function PaymentSuccessContent() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-600">Order ID</span>
+                        <span className="text-sm font-medium text-gray-600">
+                          Order ID
+                        </span>
                         <button
-                          onClick={() => copyToClipboard(verificationResult.data?.order_id.toString() || '', 'order_id')}
+                          onClick={() =>
+                            copyToClipboard(
+                              verificationResult.data?.order_id.toString() ||
+                                "",
+                              "order_id"
+                            )
+                          }
                           className="p-1 hover:bg-gray-200 rounded transition-colors"
                         >
-                          {copiedField === 'order_id' ? (
+                          {copiedField === "order_id" ? (
                             <CheckCircle2 className="w-4 h-4 text-green-600" />
                           ) : (
                             <Copy className="w-4 h-4 text-gray-400" />
@@ -381,15 +404,22 @@ function PaymentSuccessContent() {
                         #{verificationResult.data.order_id}
                       </p>
                     </div>
-                    
+
                     <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-600">Order Number</span>
+                        <span className="text-sm font-medium text-gray-600">
+                          Order Number
+                        </span>
                         <button
-                          onClick={() => copyToClipboard(verificationResult.data?.order_number || '', 'order_number')}
+                          onClick={() =>
+                            copyToClipboard(
+                              verificationResult.data?.order_number || "",
+                              "order_number"
+                            )
+                          }
                           className="p-1 hover:bg-gray-200 rounded transition-colors"
                         >
-                          {copiedField === 'order_number' ? (
+                          {copiedField === "order_number" ? (
                             <CheckCircle2 className="w-4 h-4 text-green-600" />
                           ) : (
                             <Copy className="w-4 h-4 text-gray-400" />
@@ -407,17 +437,21 @@ function PaymentSuccessContent() {
                     <div className="bg-green-50 rounded-xl p-4 border border-green-200">
                       <div className="flex items-center gap-2 mb-2">
                         <Shield className="w-5 h-5 text-green-600" />
-                        <span className="text-sm font-medium text-green-700">Payment Status</span>
+                        <span className="text-sm font-medium text-green-700">
+                          Payment Status
+                        </span>
                       </div>
                       <p className="font-bold text-lg text-green-800 capitalize">
                         {verificationResult.data.payment_status}
                       </p>
                     </div>
-                    
+
                     <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
                       <div className="flex items-center gap-2 mb-2">
                         <Zap className="w-5 h-5 text-orange-600" />
-                        <span className="text-sm font-medium text-orange-700">Total Amount</span>
+                        <span className="text-sm font-medium text-orange-700">
+                          Total Amount
+                        </span>
                       </div>
                       <p className="font-bold text-2xl text-orange-800">
                         ${verificationResult.data.amount_total}
@@ -427,20 +461,26 @@ function PaymentSuccessContent() {
 
                   {/* Additional Details */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Mail className="w-5 h-5 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-700">Customer Email</span>
+                    {verificationResult.data.customer_email && (
+                      <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Mail className="w-5 h-5 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-700">
+                            Customer Email
+                          </span>
+                        </div>
+                        <p className="font-medium text-blue-800">
+                          {verificationResult.data.customer_email}
+                        </p>
                       </div>
-                      <p className="font-medium text-blue-800">
-                        {verificationResult.data.customer_email}
-                      </p>
-                    </div>
-                    
+                    )}
+
                     <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
                       <div className="flex items-center gap-2 mb-2">
                         <Calendar className="w-5 h-5 text-purple-600" />
-                        <span className="text-sm font-medium text-purple-700">Paid At</span>
+                        <span className="text-sm font-medium text-purple-700">
+                          Paid At
+                        </span>
                       </div>
                       <p className="font-medium text-purple-800">
                         {formatDate(verificationResult.data.paid_at)}
@@ -452,7 +492,9 @@ function PaymentSuccessContent() {
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                     <div className="flex items-center gap-2 mb-2">
                       <CreditCard className="w-5 h-5 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-700">Payment Method</span>
+                      <span className="text-sm font-medium text-gray-700">
+                        Payment Method
+                      </span>
                     </div>
                     <p className="font-medium text-gray-800 capitalize">
                       {verificationResult.data.payment_method}
@@ -465,7 +507,9 @@ function PaymentSuccessContent() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Truck className="w-5 h-5 text-orange-600" />
-                          <span className="text-sm font-medium text-orange-700">Track Your Order</span>
+                          <span className="text-sm font-medium text-orange-700">
+                            Track Your Order
+                          </span>
                         </div>
                         <a
                           href={verificationResult.data.order_tracking_url}
@@ -491,37 +535,50 @@ function PaymentSuccessContent() {
                       Join Our Family & Unlock Amazing Benefits!
                     </h3>
                   </div>
-                  
+
                   <div className="p-6">
                     <div className="text-center mb-8">
                       <p className="text-lg text-gray-700 mb-6">
-                        Create your account now and enjoy exclusive perks on every order!
+                        Create your account now and enjoy exclusive perks on
+                        every order!
                       </p>
-                      
+
                       {/* Benefits Grid */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                         <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
                           <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <Truck className="w-6 h-6 text-blue-600" />
                           </div>
-                          <h4 className="font-bold text-gray-900 mb-2">Track Orders</h4>
-                          <p className="text-sm text-gray-600">Real-time order tracking from kitchen to your door</p>
+                          <h4 className="font-bold text-gray-900 mb-2">
+                            Track Orders
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            Real-time order tracking from kitchen to your door
+                          </p>
                         </div>
-                        
+
                         <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
                           <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <Gift className="w-6 h-6 text-green-600" />
                           </div>
-                          <h4 className="font-bold text-gray-900 mb-2">Exclusive Deals</h4>
-                          <p className="text-sm text-gray-600">Special offers and discounts just for members</p>
+                          <h4 className="font-bold text-gray-900 mb-2">
+                            Exclusive Deals
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            Special offers and discounts just for members
+                          </p>
                         </div>
-                        
+
                         <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
                           <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <Heart className="w-6 h-6 text-red-600" />
                           </div>
-                          <h4 className="font-bold text-gray-900 mb-2">Save Favorites</h4>
-                          <p className="text-sm text-gray-600">Quick reorder your favorite items anytime</p>
+                          <h4 className="font-bold text-gray-900 mb-2">
+                            Save Favorites
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            Quick reorder your favorite items anytime
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -539,11 +596,18 @@ function PaymentSuccessContent() {
                             </label>
                             <div className="relative">
                               <input
-                                type={showPassword ? 'text' : 'password'}
+                                type={showPassword ? "text" : "password"}
                                 value={signupFormData.password}
-                                onChange={(e) => handleSignupInputChange('password', e.target.value)}
+                                onChange={(e) =>
+                                  handleSignupInputChange(
+                                    "password",
+                                    e.target.value
+                                  )
+                                }
                                 className={`w-full px-4 py-3 pr-12 border rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all text-sm ${
-                                  signupFormErrors.password ? 'border-red-500' : 'border-gray-300'
+                                  signupFormErrors.password
+                                    ? "border-red-500"
+                                    : "border-gray-300"
                                 }`}
                                 placeholder="Enter your password"
                               />
@@ -552,11 +616,17 @@ function PaymentSuccessContent() {
                                 onClick={() => setShowPassword(!showPassword)}
                                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                               >
-                                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                {showPassword ? (
+                                  <EyeOff className="w-5 h-5" />
+                                ) : (
+                                  <Eye className="w-5 h-5" />
+                                )}
                               </button>
                             </div>
                             {signupFormErrors.password && (
-                              <p className="text-red-500 text-sm mt-2">{signupFormErrors.password}</p>
+                              <p className="text-red-500 text-sm mt-2">
+                                {signupFormErrors.password}
+                              </p>
                             )}
                           </div>
 
@@ -571,7 +641,7 @@ function PaymentSuccessContent() {
                                 Creating...
                               </>
                             ) : (
-                              'Create Account'
+                              "Create Account"
                             )}
                           </button>
                         </div>
@@ -639,20 +709,23 @@ function PaymentSuccessContent() {
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
             </div>
-            
+
             <h2 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-3">
               Welcome to Our Family!
             </h2>
-            
+
             <p className="text-gray-600 mb-8 leading-relaxed">
-              Your account has been created successfully! You can now track your orders,
-              save your favorites, and enjoy exclusive deals on every order.
+              Your account has been created successfully! You can now track your
+              orders, save your favorites, and enjoy exclusive deals on every
+              order.
             </p>
-            
+
             <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-xl p-4 border border-orange-200">
               <div className="flex items-center justify-center gap-3 text-orange-600">
                 <div className="w-5 h-5 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
-                <span className="font-medium">Redirecting to explore more menu...</span>
+                <span className="font-medium">
+                  Redirecting to explore more menu...
+                </span>
               </div>
             </div>
           </div>
@@ -699,45 +772,45 @@ function PaymentSuccessContent() {
 
 export default function PaymentSuccessPage() {
   return (
-    <Suspense fallback={
-      <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50">
-        <div className="relative h-[500px] flex items-center justify-center overflow-hidden">
-          <div className="absolute inset-0 z-0">
-            <Image
-              src="https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?q=80&w=1164&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-              alt="Payment success background"
-              fill
-              className="object-cover"
-              priority
-              sizes="100vw"
-            />
-            <div className="absolute inset-0 bg-black/50"></div>
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50">
+          <div className="relative h-[500px] flex items-center justify-center overflow-hidden">
+            <div className="absolute inset-0 z-0">
+              <Image
+                src="https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?q=80&w=1164&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                alt="Payment success background"
+                fill
+                className="object-cover"
+                priority
+                sizes="100vw"
+              />
+              <div className="absolute inset-0 bg-black/50"></div>
+            </div>
+
+            <div className="relative z-10 text-center px-4">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-4">
+                PAYMENT SUCCESS
+              </h1>
+              <div className="w-24 h-1 bg-gradient-to-r from-orange-400 to-red-500 mx-auto rounded-full"></div>
+              <p className="text-lg sm:text-xl text-gray-200 mt-6 max-w-2xl mx-auto">
+                Your order has been placed successfully and payment is confirmed
+              </p>
+            </div>
           </div>
 
-          <div className="relative z-10 text-center px-4">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-4">
-              PAYMENT SUCCESS
-            </h1>
-            <div className="w-24 h-1 bg-gradient-to-r from-orange-400 to-red-500 mx-auto rounded-full"></div>
-            <p className="text-lg sm:text-xl text-gray-200 mt-6 max-w-2xl mx-auto">
-              Your order has been placed successfully and payment is confirmed
-            </p>
+          <div className="ah-container px-4 sm:px-6 lg:px-8 py-8 sm:py-16 lg:py-24">
+            <div className="max-w-md mx-auto text-center">
+              <RefreshCw className="w-16 h-16 text-blue-500 animate-spin mx-auto mb-6" />
+              <h2 className="text-2xl font-bold text-gray-900">
+                Verifying Payment
+              </h2>
+              <p className="text-gray-600">Loading...</p>
+            </div>
           </div>
-        </div>
-
-        <div className="ah-container px-4 sm:px-6 lg:px-8 py-8 sm:py-16 lg:py-24">
-          <div className="max-w-md mx-auto text-center">
-            <RefreshCw className="w-16 h-16 text-blue-500 animate-spin mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-gray-900">
-              Verifying Payment
-            </h2>
-            <p className="text-gray-600">
-              Loading...
-            </p>
-          </div>
-        </div>
-      </main>
-    }>
+        </main>
+      }
+    >
       <PaymentSuccessContent />
     </Suspense>
   );

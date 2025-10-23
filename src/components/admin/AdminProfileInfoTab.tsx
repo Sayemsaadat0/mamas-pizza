@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react'
 import { User, Mail, Upload, Edit3, Save, X } from 'lucide-react'
-import { useAuth, authAPI } from '@/lib/stores/useAuth'
+import { useAuth } from '@/lib/stores/useAuth'
+import { authAPI } from '@/lib/api/auth.api'
 import { useNotification } from '@/components/ui/NotificationProvider'
 import AdminProfileCard from './AdminProfileCard'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'

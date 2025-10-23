@@ -11,8 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const DeliveryAddressTab: React.FC = () => {
   const { isAuthenticated, updateDeliveryAddress } = useAuth()
+
+
   const { showNotification } = useNotification()
-  const { loading: meLoading, refetch: refetchMe } = useMeAPI()
+  const { loading: meLoading } = useMeAPI()
   const { addresses, loading: fetchLoading, fetchAddresses } = useDeliveryAddresses()
   const { createAddress, loading: createLoading } = useCreateDeliveryAddress()
   const { updateAddress, loading: updateLoading } = useUpdateDeliveryAddress()
@@ -105,12 +107,10 @@ const DeliveryAddressTab: React.FC = () => {
 
     try {
       if (existingAddress) {
-        // Update existing address
         const updatedAddress = await updateAddress(existingAddress.id, formData)
-        // console.log(updatedAddress)
-        // Store in auth store
         if (updatedAddress) {
-          updateDeliveryAddress(updatedAddress)
+
+          updateDeliveryAddress(updatedAddress.delivery_address)
         }
         
         showNotification({
@@ -129,7 +129,6 @@ const DeliveryAddressTab: React.FC = () => {
         }
         const result = await createAddress(addressData)
         
-        // Store in auth store
         if (result) {
           updateDeliveryAddress(result)
         }
@@ -140,12 +139,6 @@ const DeliveryAddressTab: React.FC = () => {
           message: 'Delivery address created successfully!',
         })
       }
-
-      // Refresh addresses and user data after successful operation
-      await Promise.all([
-        fetchAddresses(),
-        refetchMe() 
-      ])
       setIsEditing(false)
     } catch (error: any) {
       showNotification({
@@ -178,11 +171,55 @@ const DeliveryAddressTab: React.FC = () => {
 
   const isLoading = fetchLoading || createLoading || updateLoading || isSubmitting || meLoading
 
+  // Skeleton component for loading states
+  const SkeletonField = () => (
+    <div className="space-y-2">
+      <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+      <div className="h-12 bg-gray-200 rounded-xl animate-pulse"></div>
+    </div>
+  )
+
+  const SkeletonButton = () => (
+    <div className="h-10 bg-gray-200 rounded-lg w-32 animate-pulse"></div>
+  )
+
   if (!isAuthenticated) {
     return (
       <div className="bg-white rounded-2xl shadow-lg p-6">
         <h3 className="text-xl font-bold text-gray-900 mb-4">Delivery Address</h3>
         <p className="text-gray-600">Please log in to manage your delivery address.</p>
+      </div>
+    )
+  }
+
+  // Show skeleton while loading
+  if (isLoading && !existingAddress) {
+    return (
+      <div className="space-y-8 pb-12">
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          {/* Header Skeleton */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="h-6 bg-gray-200 rounded w-40 animate-pulse"></div>
+            <SkeletonButton />
+          </div>
+
+          {/* Description Skeleton */}
+          <div className="h-4 bg-gray-200 rounded w-64 mb-6 animate-pulse"></div>
+
+          {/* Form Skeleton */}
+          <div className="space-y-6">
+            <SkeletonField />
+            <SkeletonField />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <SkeletonField />
+              <SkeletonField />
+            </div>
+            <SkeletonField />
+            <div className="pt-4">
+              <div className="h-12 bg-gray-200 rounded-lg w-full animate-pulse"></div>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
@@ -194,7 +231,12 @@ const DeliveryAddressTab: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold text-gray-900">Delivery Address</h3>
 
-          {existingAddress && !isEditing ? (
+          {isSubmitting ? (
+            <div className="flex gap-2">
+              <div className="h-10 bg-gray-200 rounded-lg w-20 animate-pulse"></div>
+              <div className="h-10 bg-gray-200 rounded-lg w-24 animate-pulse"></div>
+            </div>
+          ) : existingAddress && !isEditing ? (
             <button
               onClick={handleEdit}
               className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
@@ -240,20 +282,24 @@ const DeliveryAddressTab: React.FC = () => {
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <MapPin size={20} className="text-gray-400" />
               </div>
-              <input
-                id="address_line_1"
-                name="address_line_1"
-                type="text"
-                value={formData.address_line_1}
-                onChange={handleInputChange}
-                placeholder="e.g., House 10, Road 5, Dhaka"
-                disabled={!isEditing || isLoading}
-                className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${isEditing
-                    ? 'border-gray-200 bg-white'
-                    : 'border-gray-100 bg-gray-50'
-                  }`}
-                required
-              />
+              {isSubmitting ? (
+                <div className="h-12 bg-gray-200 rounded-xl animate-pulse"></div>
+              ) : (
+                <input
+                  id="address_line_1"
+                  name="address_line_1"
+                  type="text"
+                  value={formData.address_line_1}
+                  onChange={handleInputChange}
+                  placeholder="e.g., House 10, Road 5, Dhaka"
+                  disabled={!isEditing || isLoading}
+                  className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${isEditing
+                      ? 'border-gray-200 bg-white'
+                      : 'border-gray-100 bg-gray-50'
+                    }`}
+                  required
+                />
+              )}
             </div>
           </div>
 
@@ -266,19 +312,23 @@ const DeliveryAddressTab: React.FC = () => {
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <Home size={20} className="text-gray-400" />
               </div>
-              <input
-                id="address_line_2"
-                name="address_line_2"
-                type="text"
-                value={formData.address_line_2}
-                onChange={handleInputChange}
-                placeholder="e.g., Apt 4B, Near the main gate"
-                disabled={!isEditing || isLoading}
-                className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${isEditing
-                    ? 'border-gray-200 bg-white'
-                    : 'border-gray-100 bg-gray-50'
-                  }`}
-              />
+              {isSubmitting ? (
+                <div className="h-12 bg-gray-200 rounded-xl animate-pulse"></div>
+              ) : (
+                <input
+                  id="address_line_2"
+                  name="address_line_2"
+                  type="text"
+                  value={formData.address_line_2}
+                  onChange={handleInputChange}
+                  placeholder="e.g., Apt 4B, Near the main gate"
+                  disabled={!isEditing || isLoading}
+                  className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${isEditing
+                      ? 'border-gray-200 bg-white'
+                      : 'border-gray-100 bg-gray-50'
+                    }`}
+                />
+              )}
             </div>
           </div>
 
@@ -293,20 +343,24 @@ const DeliveryAddressTab: React.FC = () => {
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <MapPin size={20} className="text-gray-400" />
                 </div>
-                <input
-                  id="city"
-                  name="city"
-                  type="text"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                  placeholder="e.g., New York"
-                  disabled={!isEditing || isLoading}
-                  className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${isEditing
-                      ? 'border-gray-200 bg-white'
-                      : 'border-gray-100 bg-gray-50'
-                    }`}
-                  required
-                />
+                {isSubmitting ? (
+                  <div className="h-12 bg-gray-200 rounded-xl animate-pulse"></div>
+                ) : (
+                  <input
+                    id="city"
+                    name="city"
+                    type="text"
+                    value={formData.city}
+                    onChange={handleInputChange}
+                    placeholder="e.g., New York"
+                    disabled={!isEditing || isLoading}
+                    className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${isEditing
+                        ? 'border-gray-200 bg-white'
+                        : 'border-gray-100 bg-gray-50'
+                      }`}
+                    required
+                  />
+                )}
               </div>
             </div>
 
@@ -319,26 +373,29 @@ const DeliveryAddressTab: React.FC = () => {
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
                   <Hash size={20} className="text-gray-400" />
                 </div>
-                <Select
-                  value={formData.post_code}
-
-                  onValueChange={handlePostCodeChange}
-                  disabled={!isEditing || isLoading || postCodesLoading}
-                >
-                  <SelectTrigger className={`w-full rounded-xl border-2 pl-12 pr-4 py-6 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${isEditing
-                      ? 'border-gray-200 bg-white'
-                      : 'border-gray-100 bg-gray-50'
-                    }`}>
-                    <SelectValue placeholder="Select a post code" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {postCodes.map((postCode) => (
-                      <SelectItem key={postCode.id} value={postCode.code} className="bg-white">
-                        {postCode.code}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {isSubmitting ? (
+                  <div className="h-12 bg-gray-200 rounded-xl animate-pulse"></div>
+                ) : (
+                  <Select
+                    value={formData.post_code}
+                    onValueChange={handlePostCodeChange}
+                    disabled={!isEditing || isLoading || postCodesLoading}
+                  >
+                    <SelectTrigger className={`w-full rounded-xl border-2 pl-12 pr-4 py-6 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 ${isEditing
+                        ? 'border-gray-200 bg-white'
+                        : 'border-gray-100 bg-gray-50'
+                      }`}>
+                      <SelectValue placeholder="Select a post code" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {postCodes.map((postCode) => (
+                        <SelectItem key={postCode.id} value={postCode.code} className="bg-white">
+                          {postCode.code}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
               {postCodesLoading && (
                 <p className="text-xs text-gray-500 mt-1">Loading post codes...</p>
@@ -355,38 +412,46 @@ const DeliveryAddressTab: React.FC = () => {
               <div className="absolute top-3 left-4 pointer-events-none">
                 <MessageSquare size={20} className="text-gray-400" />
               </div>
-              <textarea
-                id="details"
-                name="details"
-                value={formData.details}
-                onChange={handleInputChange}
-                placeholder="e.g., Please call before delivery"
-                rows={3}
-                disabled={!isEditing || isLoading}
-                className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 resize-none ${isEditing
-                    ? 'border-gray-200 bg-white'
-                    : 'border-gray-100 bg-gray-50'
-                  }`}
-              />
+              {isSubmitting ? (
+                <div className="h-20 bg-gray-200 rounded-xl animate-pulse"></div>
+              ) : (
+                <textarea
+                  id="details"
+                  name="details"
+                  value={formData.details}
+                  onChange={handleInputChange}
+                  placeholder="e.g., Please call before delivery"
+                  rows={3}
+                  disabled={!isEditing || isLoading}
+                  className={`w-full rounded-xl border-2 pl-12 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 resize-none ${isEditing
+                      ? 'border-gray-200 bg-white'
+                      : 'border-gray-100 bg-gray-50'
+                    }`}
+                />
+              )}
             </div>
           </div>
 
           {/* Submit Button for new addresses */}
           {!existingAddress && (
             <div className="pt-4">
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full flex items-center justify-center gap-2 bg-orange-500 text-white py-3 px-6 rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold"
-              >
-                <Save size={20} />
-                {isLoading ? 'Creating Address...' : 'Save Address'}
-              </button>
+              {isSubmitting ? (
+                <div className="h-12 bg-gray-200 rounded-lg w-full animate-pulse"></div>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full flex items-center justify-center gap-2 bg-orange-500 text-white py-3 px-6 rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold"
+                >
+                  <Save size={20} />
+                  {isLoading ? 'Creating Address...' : 'Save Address'}
+                </button>
+              )}
             </div>
           )}
         </form>
 
-        {existingAddress && !isEditing && (
+        {/* {existingAddress && !isEditing && (
           <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-xl">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -395,7 +460,7 @@ const DeliveryAddressTab: React.FC = () => {
               </p>
             </div>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   )

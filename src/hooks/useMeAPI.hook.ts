@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback } from 'react';
-import { useAuth, authAPI } from '@/lib/stores/useAuth';
+import { useAuth } from '@/lib/stores/useAuth';
+import { authAPI } from '@/lib/api/auth.api';
 
 export interface MeAPIResponse {
   success: boolean;
@@ -32,6 +33,7 @@ export function useMeAPI() {
         setUserData(result.user);
         // Update the auth state with fresh data
         updateUser(result.user);
+        console.log('Updated user data:', result.user);
         return {
           success: true,
           data: result.user,

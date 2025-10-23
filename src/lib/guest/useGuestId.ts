@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 const GUEST_ID_KEY = 'mamas_guest_id';
 
 // Generate 16-digit guest ID with uppercase letters and numbers
-const generateGuestId = (): string => {
+export const generateGuestId = (): string => {
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const numbers = '0123456789';
   let result = '';
