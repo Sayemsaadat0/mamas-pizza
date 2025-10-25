@@ -1,10 +1,31 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { Heart, Users, Award,  ChefHat, Leaf, Shield, Smile } from 'lucide-react';
+import { usePageVisitTracker } from '@/hooks/usePageVisitTracker';
 
 export default function AboutPage() {
+  const { handleSectionEnter } = usePageVisitTracker();
+  const hasTrackedExtended = useRef(false);
+    
+  // Track page visit on load
+  useEffect(() => {
+    handleSectionEnter("About", "Hero");
+    
+    // Track extended visit after 5 seconds
+    const extendedTimer = setTimeout(() => {
+      if (!hasTrackedExtended.current) {
+        handleSectionEnter("About", "Hero");
+        hasTrackedExtended.current = true;
+      }
+    }, 5000); // 5 seconds
+
+    return () => {
+      clearTimeout(extendedTimer);
+    };
+  }, [handleSectionEnter]);
+
   return (
     <main className="min-h-screen mt-[200px]">
       {/* Our Story */}

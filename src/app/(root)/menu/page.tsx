@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useCategories } from "@/hooks/category.hook";
 import { useMenus } from "@/hooks/menu.hook";
@@ -15,6 +15,7 @@ import MenuOfferCards from "@/components/pages/home-page/MenuOfferCards";
 import { Utensils, Percent, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { GUEST_CART_API, USER_CART_API } from "@/app/api";
+import { usePageVisitTracker } from "@/hooks/usePageVisitTracker";
 
 const Menu = () => {
   // --- State ---
@@ -263,6 +264,26 @@ const Menu = () => {
   const handleRetryAddToCart = (menu: any) => {
     handleAddToCart(menu);
   };
+
+  const { handleSectionEnter } = usePageVisitTracker();
+  const hasTrackedExtended = useRef(false);
+    
+  // Track page visit on load
+  useEffect(() => {
+    handleSectionEnter("Menu Page", "Menu");
+    
+    // Track extended visit after 5 seconds
+    const extendedTimer = setTimeout(() => {
+      if (!hasTrackedExtended.current) {
+        handleSectionEnter("Menu Page", "Menu");
+        hasTrackedExtended.current = true;
+      }
+    }, 5000); // 5 seconds
+
+    return () => {
+      clearTimeout(extendedTimer);
+    };
+  }, [handleSectionEnter]);
 
   return (
     <div className="min-h-screen ">

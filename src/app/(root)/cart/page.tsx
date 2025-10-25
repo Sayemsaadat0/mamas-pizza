@@ -33,6 +33,7 @@ import { useGuest } from "@/lib/guest/GuestProvider";
 import { toast } from "sonner";
 import OrderSummary from "./components/OrderSummary";
 import OfferGroupCard from "@/components/pages/cart-page/OfferGroupCard";
+import { usePageVisitTracker } from "@/hooks/usePageVisitTracker";
 
 // interface CartItem {
 //   id: number;
@@ -712,6 +713,25 @@ export default function CartPage() {
       toast.error(error.message || "Failed to create order. Please try again.");
     }
   };
+  const { handleSectionEnter } = usePageVisitTracker();
+  const hasTrackedExtended = useRef(false);
+    
+  // Track page visit on load
+  useEffect(() => {
+    handleSectionEnter("Cart Page", "Cart");
+    
+    // Track extended visit after 5 seconds
+    const extendedTimer = setTimeout(() => {
+      if (!hasTrackedExtended.current) {
+        handleSectionEnter("Cart Page", "Cart");
+        hasTrackedExtended.current = true;
+      }
+    }, 5000); // 5 seconds
+
+    return () => {
+      clearTimeout(extendedTimer);
+    };
+  }, [handleSectionEnter]);
 
   // Loading stateHouse/Flat No. *
   if (loading) {

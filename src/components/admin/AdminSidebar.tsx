@@ -15,6 +15,7 @@ import {
     // Menu,
     LogOut,
     Mail,
+    Eye,
 } from 'lucide-react';
 // import Logo from '../core/Logo';
 import { useSidebar } from '@/app/(admin)/template';
@@ -98,6 +99,11 @@ const sidebarItems: SidebarItem[] = [
         title: 'Contact',
         href: '/admin/contact-management',
         icon: Mail,
+    },
+    {
+        title: 'Visitors',
+        href: '/admin/visitors',
+        icon: Eye,
     },
     {
         title: 'Settings',
