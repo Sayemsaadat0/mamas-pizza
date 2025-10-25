@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useGuests, Guest, PageVisit } from '@/hooks/guests.hook';
+import { useGuestAnalytics } from '@/hooks/guests-analytics.hook';
 import { useAuth } from '@/lib/stores/useAuth';
 import { 
   Users, 
@@ -25,6 +26,7 @@ import {
 const Visitors = () => {
   const { isAuthenticated } = useAuth();
   const { guests, loading, error, fetchGuests } = useGuests();
+  const { analytics, loading: analyticsLoading, error: analyticsError, refetch: refetchAnalytics } = useGuestAnalytics();
   const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null);
 
   useEffect(() => {
@@ -140,45 +142,111 @@ const Visitors = () => {
           </button>
         </div>
 
+        {/* Analytics Section */}
+        {analytics && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl shadow-lg p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Visitor Analytics</h2>
+              <button
+                onClick={refetchAnalytics}
+                className="flex items-center gap-2 px-3 py-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors text-sm"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Refresh
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Eye className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Most Visited Page</p>
+                    <p className="font-semibold text-gray-900">{analytics.most_visited_page}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <Clock className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Most Visited Section</p>
+                    <p className="font-semibold text-gray-900">{analytics.most_visited_section}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <Smartphone className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Mobile Visits</p>
+                    <p className="font-semibold text-gray-900">{analytics.mobile_visited}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-100 rounded-lg">
+                    <Monitor className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Desktop Visits</p>
+                    <p className="font-semibold text-gray-900">{analytics.desktop_visited}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Analytics Loading State */}
+        {analyticsLoading && (
+          <div className="bg-gray-50 rounded-2xl shadow-lg p-6 mb-6">
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-200 border-t-blue-500"></div>
+                <p className="text-blue-600 mt-3 font-medium">Loading analytics...</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Analytics Error State */}
+        {analyticsError && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl shadow-lg p-6 mb-6">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-6 h-6 text-red-500" />
+              <div>
+                <h3 className="text-lg font-semibold text-red-800">Analytics Error</h3>
+                <p className="text-red-600">{analyticsError}</p>
+              </div>
+              <button
+                onClick={refetchAnalytics}
+                className="ml-auto bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Visitors</p>
-                <p className="text-2xl sm:text-3xl font-bold text-gray-900">{guests.length}</p>
-              </div>
-              <Users className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500" />
-            </div>
-          </div>
-          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Active Sessions</p>
-                <p className="text-2xl sm:text-3xl font-bold text-gray-900">
-                  {guests.filter(guest => guest.session > 0).length}
-                </p>
-              </div>
-              <Eye className="w-6 h-6 sm:w-8 sm:h-8 text-green-500" />
-            </div>
-          </div>
-          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Mobile Users</p>
-                <p className="text-2xl sm:text-3xl font-bold text-gray-900">
-                  {guests.filter(guest => guest.device_type.toLowerCase() === 'mobile').length}
-                </p>
-              </div>
-              <Smartphone className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
-            </div>
-          </div>
-        </div>
+     
 
         {/* Visitors List */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+          <div className="px-4 sm:px-6 py-4 border-b flex items-center justify-between border-gray-200">
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Guest Sessions</h2>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{guests.length}</p>
           </div>
           
           {guests.length === 0 ? (
@@ -295,17 +363,7 @@ const Visitors = () => {
                                       <span className="text-sm text-gray-600">Created:</span>
                                       <p className="font-medium">{formatDate(selectedGuest.created_at)}</p>
                                     </div>
-                                    <div className="col-span-2">
-                                      <div className="flex items-center gap-2 p-3 bg-orange-100 rounded-lg">
-                                        <Clock className="w-5 h-5 text-orange-600" />
-                                        <div>
-                                          <span className="text-sm text-gray-600">Total Duration:</span>
-                                          <p className="text-lg font-bold text-orange-800">
-                                            {formatDuration(getTotalSessionDuration(selectedGuest.page_visits))}
-                                          </p>
-                                        </div>
-                                      </div>
-                                    </div>
+                               
                                   </div>
                                 </div>
 
@@ -314,6 +372,9 @@ const Visitors = () => {
                                   <h4 className="font-semibold text-gray-900 mb-3">
                                     Page Visits ({selectedGuest.page_visits?.length || 0})
                                   </h4>
+                                  <p className="text-lg font-bold text-orange-800">
+                                            {formatDuration(getTotalSessionDuration(selectedGuest.page_visits))}
+                                          </p>
                                   {selectedGuest.page_visits && selectedGuest.page_visits.length > 0 ? (
                                     <div className="overflow-x-auto">
                                       <table className="w-full border border-gray-200 rounded-lg">
